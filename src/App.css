@@ -337,8 +337,13 @@ input.input-error { border-color: var(--accent); }
   align-items: center;
   gap: 0.5rem;
   background: var(--surface2);
+  border: 1px solid transparent;
   border-radius: var(--radius-sm);
   padding: 0.35rem 0.5rem;
+}
+
+.song-item.song-playing {
+  border-color: var(--gold);
 }
 
 .song-thumb {

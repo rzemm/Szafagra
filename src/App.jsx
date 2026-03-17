@@ -264,6 +264,22 @@ export default function App() {
     })
   }
 
+  async function playSongNow(song) {
+    if (!roomId) return
+    const pid      = activePid ?? jbState?.activePlaylistId
+    const playlist = playlists.find(p => p.id === pid)
+    const nextCandidates = playlist ? pickRandom(playlist.songs, 3, [song]) : []
+    await setDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), {
+      isPlaying:        true,
+      activePlaylistId: pid,
+      currentSong:      song,
+      candidates:       nextCandidates,
+      roundId:          genId(),
+      voterMap:         {},
+      updatedAt:        serverTimestamp(),
+    })
+  }
+
   async function startJukeboxWith(pid) {
     const playlist = playlists.find(p => p.id === pid)
     if (!playlist?.songs.length || !roomId) return
@@ -490,7 +506,7 @@ export default function App() {
                   </p>
                 )}
                 {activePlaylist.songs.map(s => (
-                  <div key={s.id} className="song-item">
+                  <div key={s.id} className={`song-item${currentSong?.id === s.id && isPlaying ? ' song-playing' : ''}`}>
                     <img
                       src={`https://img.youtube.com/vi/${s.ytId}/default.jpg`}
                       alt=""
@@ -498,7 +514,10 @@ export default function App() {
                     />
                     <span className="song-title">{s.title}</span>
                     {isOwner && (
-                      <button className="btn-icon danger" onClick={() => deleteSong(s.id)}>✕</button>
+                      <>
+                        <button className="btn-icon play" onClick={() => playSongNow(s)} title="Puść teraz">▶</button>
+                        <button className="btn-icon danger" onClick={() => deleteSong(s.id)} title="Usuń">✕</button>
+                      </>
                     )}
                   </div>
                 ))}
@@ -552,9 +571,8 @@ export default function App() {
         {/* ── Player + Voting ── */}
         <div className="player-area">
 
-          <div className="player-card">
-            {isOwner ? (
-              /* Owner: real YouTube player */
+          {isOwner && (
+            <div className="player-card">
               <div className="yt-wrapper">
                 <div ref={playerDivRef} />
                 {!isPlaying && (
@@ -564,42 +582,28 @@ export default function App() {
                   </div>
                 )}
               </div>
-            ) : (
-              /* Guest: shows thumbnail of currently playing song */
-              <div className="yt-wrapper">
-                {currentSong ? (
-                  <img
-                    src={`https://img.youtube.com/vi/${currentSong.ytId}/hqdefault.jpg`}
-                    alt={currentSong.title}
-                    className="guest-thumb"
-                  />
-                ) : (
-                  <div className="player-overlay">
-                    <span className="vinyl-icon">🎵</span>
-                    <p>Jukebox nie gra</p>
-                  </div>
-                )}
-              </div>
-            )}
 
-            {isPlaying && currentSong && (
-              <div className="now-playing">
-                <span className="now-label">TERAZ GRA</span>
-                <span className="now-title">{currentSong.title}</span>
-              </div>
-            )}
+              {isPlaying && currentSong && (
+                <div className="now-playing">
+                  <span className="now-label">TERAZ GRA</span>
+                  <span className="now-title">{currentSong.title}</span>
+                </div>
+              )}
 
-            {isOwner && isPlaying && (
-              <button className="btn-next" onClick={advanceToWinner} title="Pomiń do następnej">
-                ⏭ Następna piosenka
-              </button>
-            )}
-          </div>
+              {isPlaying && (
+                <button className="btn-next" onClick={advanceToWinner} title="Pomiń do następnej">
+                  ⏭ Następna piosenka
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Voting panel */}
           {isPlaying && candidates.length > 0 && (
             <div className="voting-card">
-              <h2 className="section-title voting-title">Zagłosuj na następną piosenkę</h2>
+              <h2 className="section-title voting-title">
+                {isOwner ? 'Wyniki głosowania' : 'Zagłosuj na następną piosenkę'}
+              </h2>
               <div className="candidates">
                 {candidates.map(c => {
                   const votes     = voteCounts[c.id] ?? 0
@@ -619,12 +623,18 @@ export default function App() {
                       <span className="candidate-title">{c.title}</span>
                       <div className="candidate-footer">
                         <span className="vote-count">{votes}</span>
-                        <button
-                          className={`btn-vote${isVoted ? ' active' : ''}`}
-                          onClick={() => vote(c.id)}
-                        >
-                          {isVoted ? '✓ Zagłosowano' : '▲ Głosuj'}
-                        </button>
+                        {isOwner ? (
+                          <button className="btn-vote" onClick={() => playSongNow(c)}>
+                            ▶ Puść teraz
+                          </button>
+                        ) : (
+                          <button
+                            className={`btn-vote${isVoted ? ' active' : ''}`}
+                            onClick={() => vote(c.id)}
+                          >
+                            {isVoted ? '✓ Zagłosowano' : '▲ Głosuj'}
+                          </button>
+                        )}
                       </div>
                     </div>
                   )
