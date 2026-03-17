@@ -751,18 +751,109 @@ input.input-error { border-color: var(--accent); }
 .btn-setting-toggle:hover { border-color: var(--gold); color: var(--gold); }
 .btn-setting-toggle.active { background: var(--gold); color: #000; border-color: var(--gold); }
 
-/* ─── Queue slots ────────────────────────────────────────────────────────────── */
-.queue-slots {
+/* ─── Queue list ─────────────────────────────────────────────────────────────── */
+.queue-list {
+  list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 0.55rem;
 }
 
-.queue-slots .voting-card:nth-child(1) .voting-title { color: var(--gold) !important; }
-.queue-slots .voting-card:nth-child(2) .voting-title { color: var(--accent) !important; }
-.queue-slots .voting-card:nth-child(3) .voting-title { color: var(--text-dim) !important; }
-.queue-slots .voting-card:nth-child(2) { opacity: 0.88; }
-.queue-slots .voting-card:nth-child(3) { opacity: 0.72; }
+.queue-item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.45rem 0.6rem;
+  background: var(--surface2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.queue-pos {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  min-width: 1.1rem;
+  text-align: center;
+}
+
+.queue-item:first-child { border-color: var(--gold); }
+.queue-item:first-child .queue-pos { color: var(--gold); }
+
+.queue-thumb {
+  width: 52px;
+  height: 38px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.queue-title {
+  font-size: 0.87rem;
+  color: var(--text);
+  line-height: 1.3;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ─── Skip card ──────────────────────────────────────────────────────────────── */
+.skip-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.8rem 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.btn-skip {
+  background: var(--surface2);
+  color: var(--text);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 0.45rem 1rem;
+  font-size: 0.87rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-skip:hover { border-color: var(--gold); color: var(--gold); }
+.btn-skip.active { background: var(--gold); color: #000; border-color: var(--gold); }
+
+.skip-count {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ─── Skip threshold input ───────────────────────────────────────────────────── */
+.skip-threshold-input {
+  width: 4.5rem;
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.28rem 0.5rem;
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+.skip-threshold-input:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+
+.setting-hint {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
 
 /* ─── Guest thumbnail ───────────────────────────────────────────────────────── */
 .guest-thumb {

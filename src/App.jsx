@@ -128,7 +128,8 @@ export default function App() {
   const prevSongIdRef  = useRef(null)
   const errorGuardRef  = useRef({ lastSongId: null, lastAt: 0 })
   const skippedSongIdsRef   = useRef(new Set())
-  const loadProgressInterval = useRef(null)
+  const loadProgressInterval  = useRef(null)
+  const skipAdvancePendingRef = useRef(false)
 
   // Stable ref — always holds the latest state for callbacks that can't re-close
   const liveRef = useRef({})
@@ -176,6 +177,18 @@ export default function App() {
     return () => clearInterval(id)
   }, [isPlaying, jbState?.syncAt, jbState?.syncPos, jbState?.duration])
 
+  // Auto-advance when skip vote threshold is reached (owner only)
+  useEffect(() => {
+    if (!isOwner || !isPlaying) return
+    const threshold = roomSettings?.skipThreshold ?? 0
+    if (threshold <= 0) return
+    const count = Object.keys(jbState?.skipVoters ?? {}).length
+    if (count >= threshold && !skipAdvancePendingRef.current) {
+      skipAdvancePendingRef.current = true
+      advanceToWinner().finally(() => { skipAdvancePendingRef.current = false })
+    }
+  }, [jbState?.skipVoters]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // ──────────────────────────────────────────────────────────────────────────
   // Playback helpers
   // ──────────────────────────────────────────────────────────────────────────
@@ -196,120 +209,111 @@ export default function App() {
     const { activePlaylistId } = jbState
     const voteMode  = roomSettings?.voteMode  ?? 'highest'
     const queueMode = roomSettings?.queueMode ?? false
-
-    const playlist       = playlists.find(p => p.id === activePlaylistId)
-    const skippedSongIds = skippedSongIdsRef.current
-    const skippedAsSongs = [...skippedSongIds].map(id => ({ id }))
-
-    // ── Slot-1 winner ─────────────────────────────────────────────────────
-    const slot1All  = jbState.candidates ?? []
-    const slot1Pool = slot1All.filter(c => !skippedSongIds.has(c.id))
-    const pool      = slot1Pool.length ? slot1Pool : slot1All
-    if (!pool.length) return
-    const winner = resolveWinner(pool, jbState.voterMap ?? {}, voteMode)
-    if (!winner) return
-
-    prevSongIdRef.current = winner.id
-    playVideo(winner.ytId)
+    const playlist  = playlists.find(p => p.id === activePlaylistId)
+    const skippedIds  = skippedSongIdsRef.current
+    const skippedObjs = [...skippedIds].map(id => ({ id }))
 
     if (queueMode) {
       // Queue shifts: [q1, q2, q3] → play q1, new queue = [q2, q3, newRandom]
       const queue    = jbState.queue ?? []
-      const nextSong = queue[0] ?? winner
-      const shifted  = queue.slice(1)
-      const newSong  = playlist
-        ? pickRandom(playlist.songs, 1, [nextSong, ...shifted, ...skippedAsSongs])[0]
+      const nextSong = queue[0]
+      if (!nextSong) return
+      const shifted = queue.slice(1)
+      const fresh   = playlist
+        ? pickRandom(playlist.songs, 1, [nextSong, ...shifted, ...skippedObjs])[0]
         : null
-      const newQueue = newSong ? [...shifted, newSong] : shifted
+      const newQueue = fresh ? [...shifted, fresh] : shifted
 
       prevSongIdRef.current = nextSong.id
       playVideo(nextSong.ytId)
-
       await setDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), {
         isPlaying: true, activePlaylistId, currentSong: nextSong,
         queue: newQueue,
         candidates: [], roundId: genId(), voterMap: {}, skipVoters: {},
         syncAt: serverTimestamp(), syncPos: 0, duration: null, updatedAt: serverTimestamp(),
       })
-    } else {
-      const nextCandidates = playlist
-        ? pickRandom(playlist.songs, 3, [winner, ...skippedAsSongs])
-        : []
-      await setDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), {
-        isPlaying: true, activePlaylistId, currentSong: winner,
-        candidates: nextCandidates, roundId: genId(), voterMap: {}, skipVoters: {},
-        syncAt: serverTimestamp(), syncPos: 0, duration: null, updatedAt: serverTimestamp(),
-      })
+      return
     }
+
+    // Normal (voting) mode
+    const allCands  = jbState.candidates ?? []
+    const pool      = allCands.filter(c => !skippedIds.has(c.id))
+    const finalPool = pool.length ? pool : allCands
+    if (!finalPool.length) return
+    const winner = resolveWinner(finalPool, jbState.voterMap ?? {}, voteMode)
+    if (!winner) return
+
+    prevSongIdRef.current = winner.id
+    playVideo(winner.ytId)
+    const nextCands = playlist
+      ? pickRandom(playlist.songs, 3, [winner, ...skippedObjs])
+      : []
+    await setDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), {
+      isPlaying: true, activePlaylistId, currentSong: winner,
+      candidates: nextCands, roundId: genId(), voterMap: {}, skipVoters: {},
+      syncAt: serverTimestamp(), syncPos: 0, duration: null, updatedAt: serverTimestamp(),
+    })
   }
 
   async function playSongNow(song) {
     if (!roomId) return
     const pid      = activePid ?? jbState?.activePlaylistId
     const playlist = playlists.find(p => p.id === pid)
-    const cands1   = playlist ? pickRandom(playlist.songs, 3, [song]) : []
 
     prevSongIdRef.current = song.id
     playVideo(song.ytId)
 
-    const state = {
-      isPlaying: true, activePlaylistId: pid, currentSong: song,
-      candidates: cands1, roundId: genId(), voterMap: {},
-      syncAt: serverTimestamp(), syncPos: 0, duration: null, updatedAt: serverTimestamp(),
-    }
     if (queueMode && playlist) {
-      const cands2 = pickRandom(playlist.songs, 3, [song, ...cands1])
-      const cands3 = pickRandom(playlist.songs, 3, [song, ...cands1, ...cands2])
-      Object.assign(state, {
-        candidates2: cands2, voterMap2: {}, roundId2: genId(),
-        candidates3: cands3, voterMap3: {}, roundId3: genId(),
+      const queue = pickRandom(playlist.songs, 3, [song])
+      await setDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), {
+        isPlaying: true, activePlaylistId: pid, currentSong: song,
+        queue,
+        candidates: [], roundId: genId(), voterMap: {}, skipVoters: {},
+        syncAt: serverTimestamp(), syncPos: 0, duration: null, updatedAt: serverTimestamp(),
+      })
+    } else {
+      const cands = playlist ? pickRandom(playlist.songs, 3, [song]) : []
+      await setDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), {
+        isPlaying: true, activePlaylistId: pid, currentSong: song,
+        candidates: cands, roundId: genId(), voterMap: {}, skipVoters: {},
+        syncAt: serverTimestamp(), syncPos: 0, duration: null, updatedAt: serverTimestamp(),
       })
     }
-    await setDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), state)
   }
 
   async function skipBrokenSongAndAdvance(song) {
-    if (!song?.id) {
-      await advanceToWinner()
-      return
-    }
+    if (!song?.id) { await advanceToWinner(); return }
 
-    const { jbState, roomId, playlists } = liveRef.current
+    const { jbState, roomId, playlists, roomSettings } = liveRef.current
     if (!jbState || !roomId) return
 
     skippedSongIdsRef.current.add(song.id)
 
-    const { candidates = [], activePlaylistId } = jbState
-    const playlist = playlists.find(p => p.id === activePlaylistId)
-    const skippedAsSongs = [...skippedSongIdsRef.current].map(id => ({ id }))
+    const { activePlaylistId } = jbState
+    const qm = roomSettings?.queueMode ?? false
 
-    const candidateFallback = candidates.find(
-      c => c.id !== song.id && !skippedSongIdsRef.current.has(c.id)
-    )
+    // In queue mode just advance through the queue
+    if (qm) { await advanceToWinner(); return }
 
-    const randomFallback = playlist
-      ? pickRandom(playlist.songs, 1, [song, ...skippedAsSongs])[0]
-      : null
+    const playlist    = playlists.find(p => p.id === activePlaylistId)
+    const skippedObjs = [...skippedSongIdsRef.current].map(id => ({ id }))
+    const candidates  = jbState.candidates ?? []
 
-    const nextSong = candidateFallback ?? randomFallback
-    if (!nextSong) {
-      await advanceToWinner()
-      return
-    }
+    const fallback = candidates.find(c => c.id !== song.id && !skippedSongIdsRef.current.has(c.id))
+      ?? (playlist ? pickRandom(playlist.songs, 1, [song, ...skippedObjs])[0] : null)
 
-    const nextCandidates = playlist
-      ? pickRandom(playlist.songs, 3, [nextSong, song, ...skippedAsSongs])
+    if (!fallback) { await advanceToWinner(); return }
+
+    prevSongIdRef.current = fallback.id
+    playVideo(fallback.ytId)
+
+    const nextCands = playlist
+      ? pickRandom(playlist.songs, 3, [fallback, song, ...skippedObjs])
       : []
-
-    const { queueMode: qm } = liveRef.current.roomSettings ?? {}
     await setDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), {
-      isPlaying: true, activePlaylistId, currentSong: nextSong,
-      candidates: nextCandidates, roundId: genId(), voterMap: {},
+      isPlaying: true, activePlaylistId, currentSong: fallback,
+      candidates: nextCands, roundId: genId(), voterMap: {}, skipVoters: {},
       syncAt: serverTimestamp(), syncPos: 0, duration: null, updatedAt: serverTimestamp(),
-      ...(qm ? {
-        candidates2: jbState.candidates2 ?? [], voterMap2: jbState.voterMap2 ?? {}, roundId2: jbState.roundId2 ?? genId(),
-        candidates3: jbState.candidates3 ?? [], voterMap3: jbState.voterMap3 ?? {}, roundId3: jbState.roundId3 ?? genId(),
-      } : {}),
     })
   }
 
@@ -525,25 +529,26 @@ export default function App() {
     selectPlaylist(pid)
     const shuffled = [...playlist.songs].sort(() => Math.random() - 0.5)
     const first    = shuffled[0]
-    const cands1   = shuffled.slice(1, 4)
 
     prevSongIdRef.current = first.id
     playVideo(first.ytId)
 
-    const state = {
-      isPlaying: true, activePlaylistId: pid, currentSong: first,
-      candidates: cands1, roundId: genId(), voterMap: {},
-      syncAt: serverTimestamp(), syncPos: 0, duration: null, updatedAt: serverTimestamp(),
-    }
     if (queueMode) {
-      const cands2 = pickRandom(playlist.songs, 3, [first, ...cands1])
-      const cands3 = pickRandom(playlist.songs, 3, [first, ...cands1, ...cands2])
-      Object.assign(state, {
-        candidates2: cands2, voterMap2: {}, roundId2: genId(),
-        candidates3: cands3, voterMap3: {}, roundId3: genId(),
+      const queue = pickRandom(playlist.songs, 3, [first])
+      await setDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), {
+        isPlaying: true, activePlaylistId: pid, currentSong: first,
+        queue,
+        candidates: [], roundId: genId(), voterMap: {}, skipVoters: {},
+        syncAt: serverTimestamp(), syncPos: 0, duration: null, updatedAt: serverTimestamp(),
+      })
+    } else {
+      const cands = shuffled.slice(1, 4)
+      await setDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), {
+        isPlaying: true, activePlaylistId: pid, currentSong: first,
+        candidates: cands, roundId: genId(), voterMap: {}, skipVoters: {},
+        syncAt: serverTimestamp(), syncPos: 0, duration: null, updatedAt: serverTimestamp(),
       })
     }
-    await setDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), state)
   }
 
   async function saveSettings(key, value) {
@@ -729,7 +734,27 @@ export default function App() {
                 <button
                   className={`btn-setting-toggle${queueMode ? ' active' : ''}`}
                   onClick={() => saveSettings('queueMode', !queueMode)}
-                >{queueMode ? '✓ 3 sloty' : 'Wyłączona'}</button>
+                >{queueMode ? '✓ Lista kolejki' : 'Wyłączona'}</button>
+              </div>
+              <div className="setting-row">
+                <span className="setting-label">Pomiń po głosach</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <input
+                    type="number"
+                    min="0"
+                    max="99"
+                    className="skip-threshold-input"
+                    value={skipThreshold || ''}
+                    placeholder="0"
+                    onChange={e => {
+                      const v = parseInt(e.target.value, 10)
+                      saveSettings('skipThreshold', isNaN(v) || v < 0 ? 0 : v)
+                    }}
+                  />
+                  <span className="setting-hint">
+                    {skipThreshold > 0 ? `${skipThreshold} głos${skipThreshold === 1 ? '' : skipThreshold < 5 ? 'y' : 'ów'}` : 'wyłączone'}
+                  </span>
+                </div>
               </div>
             </div>
           )}
