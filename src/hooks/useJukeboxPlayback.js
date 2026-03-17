@@ -1,9 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { doc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
-import { db } from '../firebase'
-import { generateNextOptions, resolveOption } from '../lib/jukebox'
-
-const STATE_ID = 'main'
+import { generateVotingOptions, moveToNextTrack } from '../domain/jukebox'
+import { patchMainState, setMainState, updatePlaybackSync } from '../services/jukeboxService'
 
 export function useJukeboxPlayback({ authReady, isOwner, roomId, playlists, settings, jukeboxState, activePlaylistId, selectPlaylist }) {
   const [ytPlayerState, setYtPlayerState] = useState(-1)
@@ -53,58 +50,25 @@ export function useJukeboxPlayback({ authReady, isOwner, roomId, playlists, sett
   }
 
   async function advanceToWinner() {
-    const { jukeboxState: state, roomId: rid, playlists: allPlaylists, settings: roomSettings } = liveRef.current
+    const { jukeboxState: state, roomId: rid, settings: roomSettings } = liveRef.current
     if (!state || !rid) return
 
-    const skippedIds = skippedSongIdsRef.current
-    const queue = state.queue ?? []
-    const validQueue = queue.filter(song => !skippedIds.has(song.id))
+    const nextState = moveToNextTrack({
+      state,
+      voteMode: roomSettings?.voteMode ?? 'highest',
+      skippedSongIds: [...skippedSongIdsRef.current],
+    })
+    if (!nextState) return
 
-    if (validQueue.length > 0) {
-      const nextSong = validQueue[0]
-      prevSongIdRef.current = nextSong.id
-      playVideo(nextSong.ytId)
-      await setDoc(doc(db, 'rooms', rid, 'state', STATE_ID), {
-        isPlaying: true,
-        activePlaylistId: state.activePlaylistId,
-        currentSong: nextSong,
-        queue: validQueue.slice(1),
-        nextOptions: state.nextOptions ?? {},
-        nextVotes: state.nextVotes ?? {},
-        skipVoters: {},
-        syncAt: serverTimestamp(),
-        syncPos: 0,
-        duration: null,
-        updatedAt: serverTimestamp(),
-      })
-      return
-    }
+    prevSongIdRef.current = nextState.currentSong.id
+    playVideo(nextState.currentSong.ytId)
 
-    const options = state.nextOptions ?? {}
-    const votes = state.nextVotes ?? {}
-    const keys = Object.keys(options).sort()
-    if (!keys.length) return
-
-    const winKey = resolveOption(keys, votes, roomSettings?.voteMode ?? 'highest')
-    const winSongs = (options[winKey] ?? []).filter(song => !skippedIds.has(song.id))
-    if (!winSongs.length) return
-
-    const [first, ...rest] = winSongs
-    prevSongIdRef.current = first.id
-    playVideo(first.ytId)
-
-    await setDoc(doc(db, 'rooms', rid, 'state', STATE_ID), {
+    await setMainState(rid, {
       isPlaying: true,
-      activePlaylistId: state.activePlaylistId,
-      currentSong: first,
-      queue: rest,
-      nextOptions: {},
-      nextVotes: {},
+      ...nextState,
       skipVoters: {},
-      syncAt: serverTimestamp(),
       syncPos: 0,
       duration: null,
-      updatedAt: serverTimestamp(),
     })
   }
 
@@ -116,8 +80,8 @@ export function useJukeboxPlayback({ authReady, isOwner, roomId, playlists, sett
     prevSongIdRef.current = song.id
     playVideo(song.ytId)
 
-    const { nextOptions: no, nextVotes: nv } = generateNextOptions(playlist, queueSize, [song])
-    await setDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), {
+    const { nextOptions: no, nextVotes: nv } = generateVotingOptions(playlist, queueSize, [song])
+    await setMainState(roomId, {
       isPlaying: true,
       activePlaylistId: pid,
       currentSong: song,
@@ -125,10 +89,8 @@ export function useJukeboxPlayback({ authReady, isOwner, roomId, playlists, sett
       nextOptions: no,
       nextVotes: nv,
       skipVoters: {},
-      syncAt: serverTimestamp(),
       syncPos: 0,
       duration: null,
-      updatedAt: serverTimestamp(),
     })
   }
 
@@ -139,8 +101,8 @@ export function useJukeboxPlayback({ authReady, isOwner, roomId, playlists, sett
     const playlist = playlists.find(p => p.id === jukeboxState.activePlaylistId)
     if (!playlist?.songs.length) return
     const used = [currentSong, ...queue].filter(Boolean)
-    const { nextOptions: no, nextVotes: nv } = generateNextOptions(playlist, queueSize, used)
-    updateDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), { nextOptions: no, nextVotes: nv }).catch(() => {})
+    const { nextOptions: no, nextVotes: nv } = generateVotingOptions(playlist, queueSize, used)
+    patchMainState(roomId, { nextOptions: no, nextVotes: nv }).catch(() => {})
   }, [isOwner, isPlaying, jukeboxState, roomId, voteThreshold, nextOptionKeys.length, playlists, queueSize, currentSong])
 
   useEffect(() => {
@@ -192,9 +154,9 @@ export function useJukeboxPlayback({ authReady, isOwner, roomId, playlists, sett
               const dur = Math.round(localPlayer.getDuration?.() ?? 0)
               const pos = Math.round(localPlayer.getCurrentTime?.() ?? 0)
               if (liveRef.current.roomId && dur > 0) {
-                const update = { syncPos: pos, syncAt: serverTimestamp() }
+                const update = { syncPos: pos }
                 if (!liveRef.current.jukeboxState?.duration) update.duration = dur
-                updateDoc(doc(db, 'rooms', liveRef.current.roomId, 'state', STATE_ID), update).catch(() => {})
+                updatePlaybackSync(liveRef.current.roomId, update).catch(() => {})
               }
             }
             clearInterval(loadProgressInterval.current)
@@ -267,10 +229,10 @@ export function useJukeboxPlayback({ authReady, isOwner, roomId, playlists, sett
     playVideo(first.ytId)
 
     const { nextOptions: no, nextVotes: nv } = initialQueue.length <= 1
-      ? generateNextOptions(playlist, queueSize, [first, ...initialQueue])
+      ? generateVotingOptions(playlist, queueSize, [first, ...initialQueue])
       : { nextOptions: {}, nextVotes: {} }
 
-    await setDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), {
+    await setMainState(roomId, {
       isPlaying: true,
       activePlaylistId: pid,
       currentSong: first,
@@ -278,18 +240,15 @@ export function useJukeboxPlayback({ authReady, isOwner, roomId, playlists, sett
       nextOptions: no,
       nextVotes: nv,
       skipVoters: {},
-      syncAt: serverTimestamp(),
       syncPos: 0,
       duration: null,
-      updatedAt: serverTimestamp(),
     })
   }
 
   async function stopJukebox() {
     if (!roomId || !jukeboxState) return
-    await updateDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), {
+    await patchMainState(roomId, {
       isPlaying: false,
-      updatedAt: serverTimestamp(),
     })
     prevSongIdRef.current = null
     try { playerRef.current?.stopVideo() } catch {}

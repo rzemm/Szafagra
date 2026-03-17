@@ -29,6 +29,14 @@
   font-family: 'Segoe UI', system-ui, sans-serif;
 }
 
+.error-banner {
+  background: rgba(232, 65, 90, 0.18);
+  border-bottom: 1px solid var(--accent);
+  color: #ffdfe4;
+  font-size: 0.85rem;
+  padding: 0.55rem 1rem;
+}
+
 .main {
   display: flex;
   flex: 1;
