@@ -82,9 +82,9 @@ export function PlaylistSidebar(props) {
               <div className="setting-row">
                 <span className="setting-label">Próg głosowania</span>
                 <div className="note-picker">
-                  {[1, 2, 3].map((count) => (
+                  {[0, 1, 2, 3, 4].map((count) => (
                     <button key={count} className={`note-btn${voteThreshold === count ? ' active' : ''}`} onClick={() => saveSettings('voteThreshold', count)}>
-                      {count}
+                      {count === 0 ? 'off' : count}
                     </button>
                   ))}
                 </div>
@@ -93,7 +93,7 @@ export function PlaylistSidebar(props) {
               <div className="setting-row">
                 <span className="setting-label">Skip (goście)</span>
                 <div className="note-picker">
-                  {[0, 1, 2, 3, 4, 5].map((count) => (
+                  {[0, 1, 2, 3, 4].map((count) => (
                     <button key={count} className={`note-btn${skipThreshold === count ? ' active' : ''}`} onClick={() => saveSettings('skipThreshold', count)}>
                       {count === 0 ? 'off' : count}
                     </button>
@@ -102,7 +102,7 @@ export function PlaylistSidebar(props) {
               </div>
 
               <div className="share-row">
-                <input value={window.location.href} readOnly />
+                <input value={new URLSearchParams(window.location.search).get('room') ?? ''} readOnly />
                 <button className="btn-share-mini" onClick={copyLink}>{copied ? '✓' : '🔗'}</button>
               </div>
 
@@ -111,7 +111,7 @@ export function PlaylistSidebar(props) {
                   value={joinUrl}
                   onChange={(event) => setJoinUrl(event.target.value)}
                   onKeyDown={(event) => event.key === 'Enter' && handleJoinRoom()}
-                  placeholder="Wklej link do pokoju..."
+                  placeholder="ID pokoju..."
                 />
                 <button className="btn-accent" onClick={handleJoinRoom}>→</button>
               </div>

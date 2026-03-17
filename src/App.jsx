@@ -168,7 +168,10 @@ export default function App() {
   const saveSettings = useCallback(async (key, value) => {
     if (!roomId || !isOwner) return
     await executeAction(() => saveRoomSetting(roomId, key, value), 'Nie udało się zapisać ustawień.')
-  }, [executeAction, isOwner, roomId])
+    if (key === 'queueSize') {
+      await executeAction(() => playback.resizeVotingOptions(value), 'Nie udało się zaktualizować opcji głosowania.')
+    }
+  }, [executeAction, isOwner, playback.resizeVotingOptions, roomId])
 
   const vote = useCallback(async (optionKey) => {
     if (!user || !roomId || !jukeboxState) return
@@ -251,9 +254,9 @@ export default function App() {
     )
   }, [activePlaylist, executeAction, roomId, uiState.activePlaylistId])
 
-  const copyLink = useCallback(() => navigator.clipboard.writeText(window.location.href).then(() => {
+  const copyLink = useCallback(() => navigator.clipboard.writeText(roomId ?? '').then(() => {
     dispatch({ type: 'setCopied', value: true })
-  }), [])
+  }), [roomId])
 
   const handleJoinRoom = useCallback(() => {
     const input = uiState.joinUrl.trim()
@@ -373,7 +376,7 @@ export default function App() {
                 />
               </div>
 
-              {isPlaying && queue.length <= voteThreshold && nextOptionKeys.length > 0 && (
+              {isPlaying && nextOptionKeys.length > 0 && (
                 <VotingPanel
                   nextOptionKeys={nextOptionKeys}
                   nextOptions={nextOptions}
@@ -395,7 +398,6 @@ export default function App() {
               currentSong={currentSong}
               remaining={playback.remaining}
               queue={queue}
-              voteThreshold={voteThreshold}
               nextOptionKeys={nextOptionKeys}
               nextOptions={nextOptions}
               nextVotesData={nextVotesData}
