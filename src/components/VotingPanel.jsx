@@ -1,14 +1,25 @@
+import { useMemo } from 'react'
+
 export function VotingPanel({ nextOptionKeys, nextOptions, nextVotesData, userId, onVote, showPlayNow = false, onPlayNow }) {
+  const myVote = nextVotesData[userId] ?? null
+  const countsByOption = useMemo(() => {
+    const counts = Object.fromEntries(nextOptionKeys.map(key => [key, 0]))
+    for (const vote of Object.values(nextVotesData)) {
+      if (vote in counts) counts[vote] += 1
+    }
+    return counts
+  }, [nextOptionKeys, nextVotesData])
+
+  const maxOptVotes = useMemo(() => Math.max(0, ...Object.values(countsByOption)), [countsByOption])
+
   return (
     <div className="voting-card">
       <h2 className="section-title voting-title">Zagłosuj na następne piosenki</h2>
       <div className="options-list">
         {nextOptionKeys.map(key => {
           const songs = nextOptions[key] ?? []
-          const myVote = nextVotesData[userId] ?? null
           const isVoted = myVote === key
-          const voteCount = Object.values(nextVotesData).filter(v => v === key).length
-          const maxOptVotes = Math.max(0, ...nextOptionKeys.map(k => Object.values(nextVotesData).filter(v => v === k).length))
+          const voteCount = countsByOption[key] ?? 0
           const isWinning = voteCount > 0 && voteCount === maxOptVotes
           return (
             <div key={key} className={`vote-option${isVoted ? ' voted' : ''}${isWinning ? ' winning' : ''}`}>
