@@ -49,6 +49,33 @@ function pickRandom(pool, count, exclude = []) {
     .slice(0, count)
 }
 
+function resolveWinner(candidates, voterMap, voteMode) {
+  if (!candidates.length) return null
+  const counts = Object.fromEntries(
+    candidates.map(c => [c.id, Object.values(voterMap).filter(v => v === c.id).length])
+  )
+  if (voteMode === 'weighted') {
+    const weights = candidates.map(c => counts[c.id] + 1)
+    const total   = weights.reduce((a, b) => a + b, 0)
+    let rng = Math.random() * total
+    for (let i = 0; i < candidates.length; i++) {
+      rng -= weights[i]
+      if (rng <= 0) return candidates[i]
+    }
+    return candidates[candidates.length - 1]
+  }
+  const maxV    = Math.max(...Object.values(counts))
+  const winners = candidates.filter(c => counts[c.id] === maxV)
+  return winners[Math.floor(Math.random() * winners.length)]
+}
+
+function formatTime(sec) {
+  if (sec == null) return '--:--'
+  const m = Math.floor(sec / 60)
+  const s = Math.floor(sec % 60)
+  return `${m}:${s.toString().padStart(2, '0')}`
+}
+
 async function fetchYtTitle(url) {
   try {
     const res = await fetch(
@@ -72,9 +99,9 @@ export default function App() {
   const [authReady,  setAuthReady]  = useState(false)
 
   // ── Firestore data ─────────────────────────────────────────────────────────
-  const [playlists,  setPlaylists]  = useState([])
-  const [jbState,    setJbState]    = useState(null)
-  // jbState shape: { isPlaying, activePlaylistId, currentSong, candidates, roundId, voterMap }
+  const [playlists,     setPlaylists]     = useState([])
+  const [jbState,       setJbState]       = useState(null)
+  const [roomSettings,  setRoomSettings]  = useState({})
 
   // ── UI state ───────────────────────────────────────────────────────────────
   const [activePid,      setActivePid]      = useState(() =>
@@ -90,6 +117,7 @@ export default function App() {
   const [copied,         setCopied]          = useState(false)
   const [ytPlayerState,  setYtPlayerState]   = useState(-1) // -1=uninit,1=playing,2=paused,3=buffering,5=cued
   const [loadProgress,   setLoadProgress]    = useState(0)
+  const [remaining,      setRemaining]       = useState(null)
   const [viewAsGuest,    setViewAsGuest]     = useState(false)
 
   // ── YouTube player refs ────────────────────────────────────────────────────
@@ -118,12 +146,35 @@ export default function App() {
   )
   const maxVotes = candidates.length ? Math.max(...Object.values(voteCounts)) : 0
 
+  const queueMode      = roomSettings?.queueMode      ?? false
+  const voteMode       = roomSettings?.voteMode       ?? 'highest'
+  const skipThreshold  = roomSettings?.skipThreshold  ?? 0
+
+  const songQueue  = jbState?.queue ?? []
+  const skipVoters = jbState?.skipVoters ?? {}
+  const skipCount  = Object.keys(skipVoters).length
+  const mySkipVote = skipVoters[user?.uid] ?? false
+
   // Owner can preview the guest view — all logic still uses isOwner, only rendering uses this
   const showOwnerUI = isOwner && !viewAsGuest
 
   useEffect(() => {
-    liveRef.current = { jbState, roomId, user, playlists }
-  }, [jbState, roomId, user, playlists])
+    liveRef.current = { jbState, roomId, user, playlists, roomSettings }
+  }, [jbState, roomId, user, playlists, roomSettings])
+
+  useEffect(() => {
+    if (!isPlaying || !jbState?.syncAt || !jbState?.duration) {
+      setRemaining(null)
+      return
+    }
+    function tick() {
+      const elapsed = (Date.now() - jbState.syncAt.toMillis()) / 1000
+      setRemaining(Math.max(0, jbState.duration - (jbState.syncPos ?? 0) - elapsed))
+    }
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [isPlaying, jbState?.syncAt, jbState?.syncPos, jbState?.duration])
 
   // ──────────────────────────────────────────────────────────────────────────
   // Playback helpers
@@ -139,63 +190,82 @@ export default function App() {
 
   // Called by YouTube onStateChange → reads live state via ref (no stale closure)
   async function advanceToWinner() {
-    const { jbState, roomId, playlists } = liveRef.current
+    const { jbState, roomId, playlists, roomSettings } = liveRef.current
     if (!jbState || !roomId) return
 
-    const { candidates = [], voterMap = {}, activePlaylistId } = jbState
-    if (!candidates.length) return
+    const { activePlaylistId } = jbState
+    const voteMode  = roomSettings?.voteMode  ?? 'highest'
+    const queueMode = roomSettings?.queueMode ?? false
 
+    const playlist       = playlists.find(p => p.id === activePlaylistId)
     const skippedSongIds = skippedSongIdsRef.current
-    const eligibleCandidates = candidates.filter(c => !skippedSongIds.has(c.id))
-    const pool = eligibleCandidates.length ? eligibleCandidates : candidates
-
-    const counts   = Object.fromEntries(
-      pool.map(c => [c.id, Object.values(voterMap).filter(v => v === c.id).length])
-    )
-    const maxV     = Math.max(...Object.values(counts))
-    const winners  = pool.filter(c => counts[c.id] === maxV)
-    const winner   = winners[Math.floor(Math.random() * winners.length)]
-
-    const playlist      = playlists.find(p => p.id === activePlaylistId)
     const skippedAsSongs = [...skippedSongIds].map(id => ({ id }))
-    const nextCandidates = playlist
-      ? pickRandom(playlist.songs, 3, [winner, ...skippedAsSongs])
-      : []
 
-    // Play immediately if called from button (user gesture context)
+    // ── Slot-1 winner ─────────────────────────────────────────────────────
+    const slot1All  = jbState.candidates ?? []
+    const slot1Pool = slot1All.filter(c => !skippedSongIds.has(c.id))
+    const pool      = slot1Pool.length ? slot1Pool : slot1All
+    if (!pool.length) return
+    const winner = resolveWinner(pool, jbState.voterMap ?? {}, voteMode)
+    if (!winner) return
+
     prevSongIdRef.current = winner.id
     playVideo(winner.ytId)
 
-    await setDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), {
-      isPlaying:        true,
-      activePlaylistId,
-      currentSong:      winner,
-      candidates:       nextCandidates,
-      roundId:          genId(),
-      voterMap:         {},
-      updatedAt:        serverTimestamp(),
-    })
+    if (queueMode) {
+      // Queue shifts: [q1, q2, q3] → play q1, new queue = [q2, q3, newRandom]
+      const queue    = jbState.queue ?? []
+      const nextSong = queue[0] ?? winner
+      const shifted  = queue.slice(1)
+      const newSong  = playlist
+        ? pickRandom(playlist.songs, 1, [nextSong, ...shifted, ...skippedAsSongs])[0]
+        : null
+      const newQueue = newSong ? [...shifted, newSong] : shifted
+
+      prevSongIdRef.current = nextSong.id
+      playVideo(nextSong.ytId)
+
+      await setDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), {
+        isPlaying: true, activePlaylistId, currentSong: nextSong,
+        queue: newQueue,
+        candidates: [], roundId: genId(), voterMap: {}, skipVoters: {},
+        syncAt: serverTimestamp(), syncPos: 0, duration: null, updatedAt: serverTimestamp(),
+      })
+    } else {
+      const nextCandidates = playlist
+        ? pickRandom(playlist.songs, 3, [winner, ...skippedAsSongs])
+        : []
+      await setDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), {
+        isPlaying: true, activePlaylistId, currentSong: winner,
+        candidates: nextCandidates, roundId: genId(), voterMap: {}, skipVoters: {},
+        syncAt: serverTimestamp(), syncPos: 0, duration: null, updatedAt: serverTimestamp(),
+      })
+    }
   }
 
   async function playSongNow(song) {
     if (!roomId) return
     const pid      = activePid ?? jbState?.activePlaylistId
     const playlist = playlists.find(p => p.id === pid)
-    const nextCandidates = playlist ? pickRandom(playlist.songs, 3, [song]) : []
+    const cands1   = playlist ? pickRandom(playlist.songs, 3, [song]) : []
 
-    // Call within user gesture context to satisfy browser autoplay policy
     prevSongIdRef.current = song.id
     playVideo(song.ytId)
 
-    await setDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), {
-      isPlaying:        true,
-      activePlaylistId: pid,
-      currentSong:      song,
-      candidates:       nextCandidates,
-      roundId:          genId(),
-      voterMap:         {},
-      updatedAt:        serverTimestamp(),
-    })
+    const state = {
+      isPlaying: true, activePlaylistId: pid, currentSong: song,
+      candidates: cands1, roundId: genId(), voterMap: {},
+      syncAt: serverTimestamp(), syncPos: 0, duration: null, updatedAt: serverTimestamp(),
+    }
+    if (queueMode && playlist) {
+      const cands2 = pickRandom(playlist.songs, 3, [song, ...cands1])
+      const cands3 = pickRandom(playlist.songs, 3, [song, ...cands1, ...cands2])
+      Object.assign(state, {
+        candidates2: cands2, voterMap2: {}, roundId2: genId(),
+        candidates3: cands3, voterMap3: {}, roundId3: genId(),
+      })
+    }
+    await setDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), state)
   }
 
   async function skipBrokenSongAndAdvance(song) {
@@ -231,14 +301,15 @@ export default function App() {
       ? pickRandom(playlist.songs, 3, [nextSong, song, ...skippedAsSongs])
       : []
 
+    const { queueMode: qm } = liveRef.current.roomSettings ?? {}
     await setDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), {
-      isPlaying: true,
-      activePlaylistId,
-      currentSong: nextSong,
-      candidates: nextCandidates,
-      roundId: genId(),
-      voterMap: {},
-      updatedAt: serverTimestamp(),
+      isPlaying: true, activePlaylistId, currentSong: nextSong,
+      candidates: nextCandidates, roundId: genId(), voterMap: {},
+      syncAt: serverTimestamp(), syncPos: 0, duration: null, updatedAt: serverTimestamp(),
+      ...(qm ? {
+        candidates2: jbState.candidates2 ?? [], voterMap2: jbState.voterMap2 ?? {}, roundId2: jbState.roundId2 ?? genId(),
+        candidates3: jbState.candidates3 ?? [], voterMap3: jbState.voterMap3 ?? {}, roundId3: jbState.roundId3 ?? genId(),
+      } : {}),
     })
   }
 
@@ -304,7 +375,12 @@ export default function App() {
       snap => setJbState(snap.exists() ? snap.data() : null)
     )
 
-    return () => { unsubPl(); unsubState() }
+    const unsubRoom = onSnapshot(
+      doc(db, 'rooms', roomId),
+      snap => snap.exists() && setRoomSettings(snap.data().settings ?? {})
+    )
+
+    return () => { unsubPl(); unsubState(); unsubRoom() }
   }, [roomId])
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -349,6 +425,16 @@ export default function App() {
           onStateChange(e) {
             if (!alive) return
             setYtPlayerState(e.data)
+            if (e.data === window.YT.PlayerState.PLAYING) {
+              const dur = Math.round(localPlayer.getDuration?.() ?? 0)
+              const pos = Math.round(localPlayer.getCurrentTime?.() ?? 0)
+              const { roomId: rid, jbState: ljs } = liveRef.current
+              if (rid && dur > 0) {
+                const update = { syncPos: pos, syncAt: serverTimestamp() }
+                if (!ljs?.duration) update.duration = dur
+                updateDoc(doc(db, 'rooms', rid, 'state', STATE_ID), update).catch(() => {})
+              }
+            }
             // Track buffer progress while loading
             clearInterval(loadProgressInterval.current)
             if (e.data === window.YT.PlayerState.BUFFERING) {
@@ -439,21 +525,30 @@ export default function App() {
     selectPlaylist(pid)
     const shuffled = [...playlist.songs].sort(() => Math.random() - 0.5)
     const first    = shuffled[0]
-    const cands    = shuffled.slice(1, 4)
+    const cands1   = shuffled.slice(1, 4)
 
-    // Call within user gesture context to satisfy browser autoplay policy
     prevSongIdRef.current = first.id
     playVideo(first.ytId)
 
-    await setDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), {
-      isPlaying:        true,
-      activePlaylistId: pid,
-      currentSong:      first,
-      candidates:       cands,
-      roundId:          genId(),
-      voterMap:         {},
-      updatedAt:        serverTimestamp(),
-    })
+    const state = {
+      isPlaying: true, activePlaylistId: pid, currentSong: first,
+      candidates: cands1, roundId: genId(), voterMap: {},
+      syncAt: serverTimestamp(), syncPos: 0, duration: null, updatedAt: serverTimestamp(),
+    }
+    if (queueMode) {
+      const cands2 = pickRandom(playlist.songs, 3, [first, ...cands1])
+      const cands3 = pickRandom(playlist.songs, 3, [first, ...cands1, ...cands2])
+      Object.assign(state, {
+        candidates2: cands2, voterMap2: {}, roundId2: genId(),
+        candidates3: cands3, voterMap3: {}, roundId3: genId(),
+      })
+    }
+    await setDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), state)
+  }
+
+  async function saveSettings(key, value) {
+    if (!roomId || !isOwner) return
+    await updateDoc(doc(db, 'rooms', roomId), { [`settings.${key}`]: value })
   }
 
   async function stopJukebox() {
@@ -478,6 +573,17 @@ export default function App() {
       await updateDoc(ref, { [`voterMap.${uid}`]: deleteField() })
     } else {
       await updateDoc(ref, { [`voterMap.${uid}`]: cid })
+    }
+  }
+
+  async function voteSkip() {
+    if (!user || !roomId || !isPlaying) return
+    const uid = user.uid
+    const ref = doc(db, 'rooms', roomId, 'state', STATE_ID)
+    if (skipVoters[uid]) {
+      await updateDoc(ref, { [`skipVoters.${uid}`]: deleteField() })
+    } else {
+      await updateDoc(ref, { [`skipVoters.${uid}`]: true })
     }
   }
 
@@ -600,6 +706,34 @@ export default function App() {
 
         {/* ── Sidebar ── */}
         <aside className="sidebar">
+
+          {/* ── Ustawienia (admin) ── */}
+          {showOwnerUI && (
+            <div className="section">
+              <h2 className="section-title">Ustawienia pokoju</h2>
+              <div className="setting-row">
+                <span className="setting-label">Głosowanie</span>
+                <div className="setting-toggle-group">
+                  <button
+                    className={`btn-setting${voteMode === 'highest' ? ' active' : ''}`}
+                    onClick={() => saveSettings('voteMode', 'highest')}
+                  >Najwyższy wynik</button>
+                  <button
+                    className={`btn-setting${voteMode === 'weighted' ? ' active' : ''}`}
+                    onClick={() => saveSettings('voteMode', 'weighted')}
+                  >Ważone losowanie</button>
+                </div>
+              </div>
+              <div className="setting-row">
+                <span className="setting-label">Kolejka piosenek</span>
+                <button
+                  className={`btn-setting-toggle${queueMode ? ' active' : ''}`}
+                  onClick={() => saveSettings('queueMode', !queueMode)}
+                >{queueMode ? '✓ 3 sloty' : 'Wyłączona'}</button>
+              </div>
+            </div>
+          )}
+
           <div className="section">
             <h2 className="section-title">Playlisty</h2>
 
@@ -766,6 +900,9 @@ export default function App() {
                     )}
                   </span>
                   <span className="now-title">{currentSong.title}</span>
+                  {remaining != null && (
+                    <span className="now-timer">{formatTime(remaining)}</span>
+                  )}
                 </div>
               )}
 
@@ -777,8 +914,40 @@ export default function App() {
             </div>
           )}
 
+          {/* Now playing — guest view */}
+          {isPlaying && currentSong && !showOwnerUI && (
+            <div className="now-playing-guest">
+              <span className="now-label">Teraz gra</span>
+              <span className="now-title">{currentSong.title}</span>
+              {remaining != null && (
+                <span className="now-timer">{formatTime(remaining)}</span>
+              )}
+            </div>
+          )}
+
           {/* Voting panel */}
-          {isPlaying && candidates.length > 0 && (
+          {/* Queue list — kolejka następnych piosenek */}
+          {isPlaying && queueMode && songQueue.length > 0 && (
+            <div className="voting-card">
+              <h2 className="section-title voting-title">Kolejka</h2>
+              <ol className="queue-list">
+                {songQueue.map((song, i) => (
+                  <li key={song.id} className="queue-item">
+                    <span className="queue-pos">{i + 1}</span>
+                    <img
+                      src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`}
+                      alt=""
+                      className="queue-thumb"
+                    />
+                    <span className="queue-title">{song.title}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+
+          {/* Voting panel — kandydaci na następną piosenkę (tryb normalny) */}
+          {isPlaying && !queueMode && candidates.length > 0 && (
             <div className="voting-card">
               <h2 className="section-title voting-title">
                 {showOwnerUI ? 'Wyniki głosowania' : 'Zagłosuj na następną piosenkę'}
@@ -789,28 +958,16 @@ export default function App() {
                   const isWinning = votes > 0 && votes === maxVotes
                   const isVoted   = myVote === c.id
                   return (
-                    <div
-                      key={c.id}
-                      className={`candidate${isWinning ? ' winning' : ''}${isVoted ? ' voted' : ''}`}
-                    >
+                    <div key={c.id} className={`candidate${isWinning ? ' winning' : ''}${isVoted ? ' voted' : ''}`}>
                       {isWinning && <div className="winning-badge">PROWADZI</div>}
-                      <img
-                        src={`https://img.youtube.com/vi/${c.ytId}/mqdefault.jpg`}
-                        alt={c.title}
-                        className="candidate-thumb"
-                      />
+                      <img src={`https://img.youtube.com/vi/${c.ytId}/mqdefault.jpg`} alt={c.title} className="candidate-thumb" />
                       <span className="candidate-title">{c.title}</span>
                       <div className="candidate-footer">
                         <span className="vote-count">{votes}</span>
                         {showOwnerUI ? (
-                          <button className="btn-vote" onClick={() => playSongNow(c)}>
-                            ▶ Puść teraz
-                          </button>
+                          <button className="btn-vote" onClick={() => playSongNow(c)}>▶ Puść teraz</button>
                         ) : (
-                          <button
-                            className={`btn-vote${isVoted ? ' active' : ''}`}
-                            onClick={() => vote(c.id)}
-                          >
+                          <button className={`btn-vote${isVoted ? ' active' : ''}`} onClick={() => vote(c.id)}>
                             {isVoted ? '✓ Zagłosowano' : '▲ Głosuj'}
                           </button>
                         )}
@@ -822,7 +979,24 @@ export default function App() {
             </div>
           )}
 
-          {isPlaying && candidates.length === 0 && (
+          {/* Skip panel */}
+          {isPlaying && skipThreshold > 0 && (
+            <div className="skip-card">
+              {!showOwnerUI && (
+                <button
+                  className={`btn-skip${mySkipVote ? ' active' : ''}`}
+                  onClick={voteSkip}
+                >
+                  {mySkipVote ? '✓ Chcę pominąć' : '⏭ Pomiń piosenkę'}
+                </button>
+              )}
+              <span className="skip-count">
+                {skipCount}/{skipThreshold} {showOwnerUI ? 'głosów na pominięcie' : ''}
+              </span>
+            </div>
+          )}
+
+          {isPlaying && !queueMode && candidates.length === 0 && (
             <div className="voting-card">
               <p className="empty-hint">Za mało piosenek na głosowanie (dodaj co najmniej 2).</p>
             </div>
