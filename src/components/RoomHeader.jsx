@@ -1,4 +1,4 @@
-export function RoomHeader({ showOwnerUI, isOwner, sidebarOpen, setSidebarOpen, viewAsGuest, setViewAsGuest, copied, copyLink }) {
+export function RoomHeader({ showOwnerUI, isOwner, sidebarOpen, toggleSidebar, viewAsGuest, toggleViewAsGuest, copied, copyLink }) {
   return (
     <header className="header">
       <div className="header-inner">
@@ -6,14 +6,15 @@ export function RoomHeader({ showOwnerUI, isOwner, sidebarOpen, setSidebarOpen, 
         <h1>JUKEBOX</h1>
         {!showOwnerUI && <span className="visitor-badge">{isOwner ? 'Podgląd gościa' : 'Tryb gościa'}</span>}
       </div>
+
       <div className="header-actions">
         {showOwnerUI && (
-          <button className="btn-view-toggle" onClick={() => setSidebarOpen(v => !v)} title={sidebarOpen ? 'Ukryj panel' : 'Pokaż panel'}>
+          <button className="btn-view-toggle" onClick={toggleSidebar} title={sidebarOpen ? 'Ukryj panel' : 'Pokaż panel'}>
             {sidebarOpen ? '◀ Panel' : '▶ Panel'}
           </button>
         )}
         {isOwner && (
-          <button className="btn-view-toggle" onClick={() => setViewAsGuest(v => !v)}>
+          <button className="btn-view-toggle" onClick={toggleViewAsGuest}>
             {viewAsGuest ? '⚙ Widok admina' : '👁 Widok gościa'}
           </button>
         )}

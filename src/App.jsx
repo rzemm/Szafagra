@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useReducer } from 'react'
 import { RoomHeader } from './components/RoomHeader'
 import { PlaylistSidebar } from './components/PlaylistSidebar'
 import { VotingPanel } from './components/VotingPanel'
@@ -12,36 +12,98 @@ import { extractYtId, fetchYtTitle } from './lib/youtube'
 import { createPlaylist, removePlaylist, renamePlaylist, replacePlaylistSongs, saveRoomSetting, toggleSkipVote, voteNextOption } from './services/jukeboxService'
 import './App.css'
 
+const initialUiState = {
+  activePlaylistId: new URLSearchParams(window.location.search).get('playlist'),
+  newPlaylistName: '',
+  newSongUrl: '',
+  newSongTitle: '',
+  urlErr: '',
+  fetchingTitle: false,
+  editingId: null,
+  editingName: '',
+  copied: false,
+  joinUrl: '',
+  viewAsGuest: false,
+  sidebarOpen: true,
+  collapsed: {},
+  uiError: '',
+}
+
+function uiReducer(state, action) {
+  switch (action.type) {
+    case 'setActivePlaylist':
+      return { ...state, activePlaylistId: action.payload }
+    case 'initActivePlaylist': {
+      const nextValue = typeof action.payload === 'function'
+        ? action.payload(state.activePlaylistId)
+        : action.payload
+      return { ...state, activePlaylistId: nextValue }
+    }
+    case 'setField':
+      return { ...state, [action.field]: action.value }
+    case 'toggleField':
+      return { ...state, [action.field]: !state[action.field] }
+    case 'toggleSection':
+      return {
+        ...state,
+        collapsed: {
+          ...state.collapsed,
+          [action.key]: !state.collapsed[action.key],
+        },
+      }
+    case 'startPlaylistEdit':
+      return { ...state, editingId: action.playlistId, editingName: action.name }
+    case 'cancelPlaylistEdit':
+      return { ...state, editingId: null, editingName: '' }
+    case 'setUrlInput':
+      return { ...state, newSongUrl: action.value, urlErr: '' }
+    case 'songTitleFetchStart':
+      return { ...state, fetchingTitle: true, urlErr: '' }
+    case 'songTitleFetchEnd':
+      return { ...state, fetchingTitle: false }
+    case 'songAdded':
+      return { ...state, newSongUrl: '', newSongTitle: '', urlErr: '' }
+    case 'playlistAdded':
+      return { ...state, activePlaylistId: action.playlistId, newPlaylistName: '' }
+    case 'setCopied':
+      return { ...state, copied: action.value }
+    case 'setUiError':
+      return { ...state, uiError: action.value }
+    default:
+      return state
+  }
+}
+
 export default function App() {
-  const [activePlaylistId, setActivePlaylistId] = useState(() => new URLSearchParams(window.location.search).get('playlist'))
-  const [newPlaylistName, setNewPlaylistName] = useState('')
-  const [newSongUrl, setNewSongUrl] = useState('')
-  const [newSongTitle, setNewSongTitle] = useState('')
-  const [urlErr, setUrlErr] = useState('')
-  const [fetchingTitle, setFetchingTitle] = useState(false)
-  const [editingId, setEditingId] = useState(null)
-  const [editingName, setEditingName] = useState('')
-  const [copied, setCopied] = useState(false)
-  const [joinUrl, setJoinUrl] = useState('')
-  const [viewAsGuest, setViewAsGuest] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [collapsed, setCollapsed] = useState({})
-  const [uiError, setUiError] = useState('')
-
+  const [uiState, dispatch] = useReducer(uiReducer, initialUiState)
   const { user, roomId, isOwner, authReady } = useRoomAuth()
-  const { playlists, jukeboxState, settings } = useRoomSubscriptions(roomId, setActivePlaylistId)
 
-  const selectPlaylist = pid => {
-    setActivePlaylistId(pid)
+  const setInitialActivePlaylist = useCallback((updater) => {
+    dispatch({ type: 'initActivePlaylist', payload: updater })
+  }, [])
+
+  const { playlists, jukeboxState, settings } = useRoomSubscriptions(roomId, setInitialActivePlaylist)
+
+  const selectPlaylist = useCallback((playlistId) => {
+    dispatch({ type: 'setActivePlaylist', payload: playlistId })
     const url = new URL(window.location.href)
-    if (pid) url.searchParams.set('playlist', pid)
+    if (playlistId) url.searchParams.set('playlist', playlistId)
     else url.searchParams.delete('playlist')
     window.history.replaceState({}, '', url.toString())
-  }
+  }, [])
 
-  const playback = useJukeboxPlayback({ authReady, isOwner, roomId, playlists, settings, jukeboxState, activePlaylistId, selectPlaylist })
+  const playback = useJukeboxPlayback({
+    authReady,
+    isOwner,
+    roomId,
+    playlists,
+    settings,
+    jukeboxState,
+    activePlaylistId: uiState.activePlaylistId,
+    selectPlaylist,
+  })
 
-  const activePlaylist = playlists.find(p => p.id === activePlaylistId) ?? null
+  const activePlaylist = playlists.find(playlist => playlist.id === uiState.activePlaylistId) ?? null
   const isPlaying = jukeboxState?.isPlaying ?? false
   const currentSong = jukeboxState?.currentSong ?? null
   const queue = jukeboxState?.queue ?? []
@@ -52,129 +114,185 @@ export default function App() {
   const skipThreshold = settings?.skipThreshold ?? 0
   const skipVoters = jukeboxState?.skipVoters ?? {}
   const skipCount = Object.keys(skipVoters).length
-  const mySkipVote = skipVoters[user?.uid] ?? false
-  const showOwnerUI = isOwner && !viewAsGuest
+  const userId = user?.uid ?? null
+  const mySkipVote = userId ? (skipVoters[userId] ?? false) : false
+  const showOwnerUI = isOwner && !uiState.viewAsGuest
 
-  const toggleSection = key => setCollapsed(s => ({ ...s, [key]: !s[key] }))
+  useEffect(() => {
+    if (!uiState.copied) return
+    const timeoutId = setTimeout(() => {
+      dispatch({ type: 'setCopied', value: false })
+    }, 2500)
+    return () => clearTimeout(timeoutId)
+  }, [uiState.copied])
 
-  const executeAction = async (action, errorMessage) => {
-    setUiError('')
+  const setField = useCallback((field, value) => {
+    dispatch({ type: 'setField', field, value })
+  }, [])
+
+  const toggleSection = useCallback((key) => {
+    dispatch({ type: 'toggleSection', key })
+  }, [])
+
+  const toggleSidebar = useCallback(() => {
+    dispatch({ type: 'toggleField', field: 'sidebarOpen' })
+  }, [])
+
+  const toggleViewAsGuest = useCallback(() => {
+    dispatch({ type: 'toggleField', field: 'viewAsGuest' })
+  }, [])
+
+  const startEditPlaylist = useCallback((playlistId, name) => {
+    dispatch({ type: 'startPlaylistEdit', playlistId, name })
+  }, [])
+
+  const cancelEditPlaylist = useCallback(() => {
+    dispatch({ type: 'cancelPlaylistEdit' })
+  }, [])
+
+  const handleSongUrlChange = useCallback((value) => {
+    dispatch({ type: 'setUrlInput', value })
+  }, [])
+
+  const executeAction = useCallback(async (action, errorMessage) => {
+    dispatch({ type: 'setUiError', value: '' })
     try {
       return await action()
-    } catch (err) {
-      console.error(err)
-      setUiError(errorMessage)
+    } catch (error) {
+      console.error(error)
+      dispatch({ type: 'setUiError', value: errorMessage })
       return null
     }
-  }
+  }, [])
 
-  const saveSettings = async (key, value) => {
+  const saveSettings = useCallback(async (key, value) => {
     if (!roomId || !isOwner) return
     await executeAction(() => saveRoomSetting(roomId, key, value), 'Nie udało się zapisać ustawień.')
-  }
+  }, [executeAction, isOwner, roomId])
 
-  const vote = async optionKey => {
+  const vote = useCallback(async (optionKey) => {
     if (!user || !roomId || !jukeboxState) return
     const uid = user.uid
     const currentVote = (jukeboxState.nextVotes ?? {})[uid]
     await executeAction(() => voteNextOption(roomId, uid, optionKey, currentVote), 'Nie udało się zapisać głosu.')
-  }
+  }, [executeAction, jukeboxState, roomId, user])
 
-  const voteSkip = async () => {
-    if (!user || !roomId || !isPlaying) return
-    const uid = user.uid
-    await executeAction(() => toggleSkipVote(roomId, uid, skipVoters[uid]), 'Nie udało się zapisać głosu pominięcia.')
-  }
+  const voteSkip = useCallback(async () => {
+    if (!userId || !roomId || !isPlaying) return
+    await executeAction(() => toggleSkipVote(roomId, userId, mySkipVote), 'Nie udało się zapisać głosu pominięcia.')
+  }, [executeAction, isPlaying, mySkipVote, roomId, userId])
 
-  const addPlaylist = async () => {
-    const name = newPlaylistName.trim()
+  const addPlaylist = useCallback(async () => {
+    const name = uiState.newPlaylistName.trim()
     if (!name || !roomId) return
     const ref = await executeAction(() => createPlaylist(roomId, name), 'Nie udało się utworzyć playlisty.')
     if (!ref) return
-    setActivePlaylistId(ref.id)
-    setNewPlaylistName('')
-  }
+    dispatch({ type: 'playlistAdded', playlistId: ref.id })
+    selectPlaylist(ref.id)
+  }, [executeAction, roomId, selectPlaylist, uiState.newPlaylistName])
 
-  const deletePlaylist = async id => {
+  const deletePlaylist = useCallback(async (playlistId) => {
     if (!roomId) return
-    const done = await executeAction(() => removePlaylist(roomId, id), 'Nie udało się usunąć playlisty.')
+    const done = await executeAction(() => removePlaylist(roomId, playlistId), 'Nie udało się usunąć playlisty.')
     if (done === null) return
-    if (activePlaylistId === id) setActivePlaylistId(null)
-  }
+    if (uiState.activePlaylistId === playlistId) selectPlaylist(null)
+  }, [executeAction, roomId, selectPlaylist, uiState.activePlaylistId])
 
-  const saveEditPlaylist = async () => {
-    const name = editingName.trim()
-    if (name && editingId && roomId) {
-      await executeAction(() => renamePlaylist(roomId, editingId, name), 'Nie udało się zmienić nazwy playlisty.')
+  const saveEditPlaylist = useCallback(async () => {
+    const name = uiState.editingName.trim()
+    if (name && uiState.editingId && roomId) {
+      await executeAction(() => renamePlaylist(roomId, uiState.editingId, name), 'Nie udało się zmienić nazwy playlisty.')
     }
-    setEditingId(null)
-    setEditingName('')
-  }
+    dispatch({ type: 'cancelPlaylistEdit' })
+  }, [executeAction, roomId, uiState.editingId, uiState.editingName])
 
-  const handleUrlBlur = async () => {
-    const url = newSongUrl.trim()
-    if (!url || newSongTitle.trim()) return
+  const handleUrlBlur = useCallback(async () => {
+    const url = uiState.newSongUrl.trim()
+    if (!url || uiState.newSongTitle.trim()) return
+
     const ytId = extractYtId(url)
-    if (!ytId) return setUrlErr('Nieprawidłowy link YouTube')
-    setUrlErr('')
-    setFetchingTitle(true)
+    if (!ytId) {
+      dispatch({ type: 'setField', field: 'urlErr', value: 'Nieprawidłowy link YouTube' })
+      return
+    }
+
+    dispatch({ type: 'songTitleFetchStart' })
     const title = await executeAction(() => fetchYtTitle(url), 'Nie udało się pobrać tytułu utworu.')
-    if (title) setNewSongTitle(title)
-    setFetchingTitle(false)
-  }
+    if (title) dispatch({ type: 'setField', field: 'newSongTitle', value: title })
+    dispatch({ type: 'songTitleFetchEnd' })
+  }, [executeAction, uiState.newSongTitle, uiState.newSongUrl])
 
-  const addSong = async () => {
-    const url = newSongUrl.trim()
-    const title = newSongTitle.trim()
-    if (!url || !activePlaylistId || !roomId) return
+  const addSong = useCallback(async () => {
+    const url = uiState.newSongUrl.trim()
+    const title = uiState.newSongTitle.trim()
+    if (!url || !uiState.activePlaylistId || !roomId) return
+
     const ytId = extractYtId(url)
-    if (!ytId) return setUrlErr('Nieprawidłowy link YouTube')
+    if (!ytId) {
+      dispatch({ type: 'setField', field: 'urlErr', value: 'Nieprawidłowy link YouTube' })
+      return
+    }
+
     const cleanUrl = `https://youtu.be/${ytId}`
     const song = { id: genId(), url: cleanUrl, title: title || cleanUrl, ytId }
     const done = await executeAction(
-      () => replacePlaylistSongs(roomId, activePlaylistId, [...(activePlaylist?.songs ?? []), song]),
+      () => replacePlaylistSongs(roomId, uiState.activePlaylistId, [...(activePlaylist?.songs ?? []), song]),
       'Nie udało się dodać utworu.',
     )
     if (done === null) return
-    setNewSongUrl('')
-    setNewSongTitle('')
-    setUrlErr('')
-  }
+    dispatch({ type: 'songAdded' })
+  }, [activePlaylist, executeAction, roomId, uiState.activePlaylistId, uiState.newSongTitle, uiState.newSongUrl])
 
-  const deleteSong = async sid => {
+  const deleteSong = useCallback(async (songId) => {
     if (!activePlaylist || !roomId) return
     await executeAction(
-      () => replacePlaylistSongs(roomId, activePlaylistId, activePlaylist.songs.filter(s => s.id !== sid)),
+      () => replacePlaylistSongs(roomId, uiState.activePlaylistId, activePlaylist.songs.filter(song => song.id !== songId)),
       'Nie udało się usunąć utworu.',
     )
-  }
+  }, [activePlaylist, executeAction, roomId, uiState.activePlaylistId])
 
-  const copyLink = () => navigator.clipboard.writeText(window.location.href).then(() => {
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2500)
-  })
+  const copyLink = useCallback(() => navigator.clipboard.writeText(window.location.href).then(() => {
+    dispatch({ type: 'setCopied', value: true })
+  }), [])
 
-  const handleJoinRoom = () => {
-    const input = joinUrl.trim()
+  const handleJoinRoom = useCallback(() => {
+    const input = uiState.joinUrl.trim()
     if (!input) return
+
     let targetRoomId = input
-    try { const u = new URL(input); if (u.searchParams.get('room')) targetRoomId = u.searchParams.get('room') } catch {}
-    const dest = new URL(window.location.origin + window.location.pathname)
-    dest.searchParams.set('room', targetRoomId)
-    window.location.href = dest.toString()
-  }
+    try {
+      const url = new URL(input)
+      if (url.searchParams.get('room')) targetRoomId = url.searchParams.get('room')
+    } catch (error) {
+      void error
+    }
+
+    const destination = new URL(window.location.origin + window.location.pathname)
+    destination.searchParams.set('room', targetRoomId)
+    window.location.href = destination.toString()
+  }, [uiState.joinUrl])
 
   if (!authReady) return <div className="splash"><div className="splash-icon">🎵</div><p>Łączenie...</p></div>
 
   return (
     <div className="app">
-      {uiError && <div className="error-banner">{uiError}</div>}
-      <RoomHeader showOwnerUI={showOwnerUI} isOwner={isOwner} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} viewAsGuest={viewAsGuest} setViewAsGuest={setViewAsGuest} copied={copied} copyLink={copyLink} />
+      {uiState.uiError && <div className="error-banner">{uiState.uiError}</div>}
+      <RoomHeader
+        showOwnerUI={showOwnerUI}
+        isOwner={isOwner}
+        sidebarOpen={uiState.sidebarOpen}
+        toggleSidebar={toggleSidebar}
+        viewAsGuest={uiState.viewAsGuest}
+        toggleViewAsGuest={toggleViewAsGuest}
+        copied={uiState.copied}
+        copyLink={copyLink}
+      />
+
       <main className="main">
         <PlaylistSidebar
-          sidebarOpen={sidebarOpen}
+          sidebarOpen={uiState.sidebarOpen}
           showOwnerUI={showOwnerUI}
-          collapsed={collapsed}
+          collapsed={uiState.collapsed}
           toggleSection={toggleSection}
           voteMode={playback.voteMode}
           queueSize={Math.max(1, settings?.queueSize ?? 1)}
@@ -184,47 +302,104 @@ export default function App() {
           isPlaying={isPlaying}
           playlists={playlists}
           activePlaylist={activePlaylist}
-          activePlaylistId={activePlaylistId}
-          editingId={editingId}
-          editingName={editingName}
-          setEditingId={setEditingId}
-          setEditingName={setEditingName}
+          activePlaylistId={uiState.activePlaylistId}
+          editingId={uiState.editingId}
+          editingName={uiState.editingName}
+          startEditPlaylist={startEditPlaylist}
+          cancelEditPlaylist={cancelEditPlaylist}
+          setEditingName={(value) => setField('editingName', value)}
           saveEditPlaylist={saveEditPlaylist}
           selectPlaylist={selectPlaylist}
           startJukeboxWith={playback.startJukeboxWith}
           deletePlaylist={deletePlaylist}
-          newPlaylistName={newPlaylistName}
-          setNewPlaylistName={setNewPlaylistName}
+          newPlaylistName={uiState.newPlaylistName}
+          setNewPlaylistName={(value) => setField('newPlaylistName', value)}
           addPlaylist={addPlaylist}
           currentSong={currentSong}
           playSongNow={playback.playSongNow}
           deleteSong={deleteSong}
-          newSongUrl={newSongUrl}
-          setNewSongUrl={setNewSongUrl}
-          newSongTitle={newSongTitle}
-          setNewSongTitle={setNewSongTitle}
-          urlErr={urlErr}
-          setUrlErr={setUrlErr}
-          fetchingTitle={fetchingTitle}
+          newSongUrl={uiState.newSongUrl}
+          setNewSongUrl={handleSongUrlChange}
+          newSongTitle={uiState.newSongTitle}
+          setNewSongTitle={(value) => setField('newSongTitle', value)}
+          urlErr={uiState.urlErr}
+          fetchingTitle={uiState.fetchingTitle}
           handleUrlBlur={handleUrlBlur}
           addSong={addSong}
           stopJukebox={playback.stopJukebox}
-          copied={copied}
+          copied={uiState.copied}
           copyLink={copyLink}
-          joinUrl={joinUrl}
-          setJoinUrl={setJoinUrl}
+          joinUrl={uiState.joinUrl}
+          setJoinUrl={(value) => setField('joinUrl', value)}
           handleJoinRoom={handleJoinRoom}
         />
 
         <div className={`player-area${showOwnerUI ? ' player-area-admin' : ''}`}>
           {showOwnerUI ? (
             <>
-              <div className="admin-col">{isPlaying && <div className="voting-card"><h2 className="section-title voting-title">Zaraz zagra</h2><ol className="queue-list">{queue.map((song, i) => <li key={song.id} className="queue-item"><span className="queue-pos">{i + 1}</span><img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="queue-thumb" /><span className="queue-title">{song.title}</span><button className="btn-icon play" onClick={() => playback.playSongNow(song)}>▶</button></li>)}</ol></div>}</div>
-              <NowPlayingPanel isPlaying={isPlaying} currentSong={currentSong} remaining={playback.remaining} ytPlayerState={playback.ytPlayerState} loadProgress={playback.loadProgress} playerRef={playback.playerRef} playerDivRef={playback.playerDivRef} advanceToWinner={playback.advanceToWinner} skipThreshold={skipThreshold} skipCount={skipCount} />
-              <div className="admin-col">{isPlaying && queue.length <= voteThreshold && nextOptionKeys.length > 0 && <VotingPanel nextOptionKeys={nextOptionKeys} nextOptions={nextOptions} nextVotesData={nextVotesData} userId={user?.uid} onVote={vote} showPlayNow onPlayNow={playback.playSongNow} />}</div>
+              <div className="admin-col">
+                {isPlaying && (
+                  <div className="voting-card">
+                    <h2 className="section-title voting-title">Zaraz zagra</h2>
+                    <ol className="queue-list">
+                      {queue.map((song, index) => (
+                        <li key={song.id} className="queue-item">
+                          <span className="queue-pos">{index + 1}</span>
+                          <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="queue-thumb" />
+                          <span className="queue-title">{song.title}</span>
+                          <button className="btn-icon play" onClick={() => playback.playSongNow(song)}>▶</button>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
+              </div>
+
+              <NowPlayingPanel
+                isPlaying={isPlaying}
+                currentSong={currentSong}
+                remaining={playback.remaining}
+                ytPlayerState={playback.ytPlayerState}
+                loadProgress={playback.loadProgress}
+                playerRef={playback.playerRef}
+                playerDivRef={playback.playerDivRef}
+                advanceToWinner={playback.advanceToWinner}
+                skipThreshold={skipThreshold}
+                skipCount={skipCount}
+              />
+
+              <div className="admin-col">
+                {isPlaying && queue.length <= voteThreshold && nextOptionKeys.length > 0 && (
+                  <VotingPanel
+                    nextOptionKeys={nextOptionKeys}
+                    nextOptions={nextOptions}
+                    nextVotesData={nextVotesData}
+                    userId={userId}
+                    onVote={vote}
+                    showPlayNow
+                    onPlayNow={playback.playSongNow}
+                  />
+                )}
+              </div>
             </>
           ) : (
-            <GuestView isOwner={isOwner} playerDivRef={playback.playerDivRef} isPlaying={isPlaying} currentSong={currentSong} remaining={playback.remaining} queue={queue} voteThreshold={voteThreshold} nextOptionKeys={nextOptionKeys} nextOptions={nextOptions} nextVotesData={nextVotesData} userId={user?.uid} vote={vote} skipThreshold={skipThreshold} mySkipVote={mySkipVote} voteSkip={voteSkip} />
+            <GuestView
+              isOwner={isOwner}
+              playerDivRef={playback.playerDivRef}
+              isPlaying={isPlaying}
+              currentSong={currentSong}
+              remaining={playback.remaining}
+              queue={queue}
+              voteThreshold={voteThreshold}
+              nextOptionKeys={nextOptionKeys}
+              nextOptions={nextOptions}
+              nextVotesData={nextVotesData}
+              userId={userId}
+              vote={vote}
+              skipThreshold={skipThreshold}
+              mySkipVote={mySkipVote}
+              voteSkip={voteSkip}
+            />
           )}
         </div>
       </main>

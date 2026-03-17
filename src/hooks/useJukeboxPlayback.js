@@ -1,21 +1,16 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { generateVotingOptions, moveToNextTrack } from '../domain/jukebox'
 import { patchMainState, setMainState, updatePlaybackSync } from '../services/jukeboxService'
+import { useYouTubePlayer } from './useYouTubePlayer'
 
 export function useJukeboxPlayback({ authReady, isOwner, roomId, playlists, settings, jukeboxState, activePlaylistId, selectPlaylist }) {
-  const [ytPlayerState, setYtPlayerState] = useState(-1)
-  const [loadProgress, setLoadProgress] = useState(0)
-  const [remaining, setRemaining] = useState(null)
+  const [timerTick, setTimerTick] = useState(0)
 
-  const playerRef = useRef(null)
-  const playerReadyRef = useRef(false)
-  const pendingRef = useRef(null)
-  const playerDivRef = useRef(null)
   const prevSongIdRef = useRef(null)
   const errorGuardRef = useRef({ lastSongId: null, lastAt: 0 })
   const skippedSongIdsRef = useRef(new Set())
-  const loadProgressInterval = useRef(null)
   const skipAdvancePendingRef = useRef(false)
+  const advanceToWinnerRef = useRef(async () => {})
   const liveRef = useRef({})
 
   const isPlaying = jukeboxState?.isPlaying ?? false
@@ -25,31 +20,59 @@ export function useJukeboxPlayback({ authReady, isOwner, roomId, playlists, sett
   const voteThreshold = settings?.voteThreshold ?? 1
   const nextOptions = jukeboxState?.nextOptions ?? {}
   const nextOptionKeys = Object.keys(nextOptions).sort()
+  const nowMs = timerTick || jukeboxState?.syncAt?.toMillis?.() || 0
+  const remaining = isPlaying && jukeboxState?.syncAt && jukeboxState?.duration
+    ? Math.max(0, jukeboxState.duration - (jukeboxState.syncPos ?? 0) - ((nowMs - jukeboxState.syncAt.toMillis()) / 1000))
+    : null
 
   useEffect(() => {
     liveRef.current = { jukeboxState, roomId, playlists, settings }
   }, [jukeboxState, roomId, playlists, settings])
 
-  useEffect(() => {
-    if (!isPlaying || !jukeboxState?.syncAt || !jukeboxState?.duration) {
-      setRemaining(null)
-      return
-    }
-    const tick = () => {
-      const elapsed = (Date.now() - jukeboxState.syncAt.toMillis()) / 1000
-      setRemaining(Math.max(0, jukeboxState.duration - (jukeboxState.syncPos ?? 0) - elapsed))
-    }
-    tick()
-    const id = setInterval(tick, 1000)
-    return () => clearInterval(id)
-  }, [isPlaying, jukeboxState?.syncAt, jukeboxState?.syncPos, jukeboxState?.duration])
+  const handlePlayerPlaying = useCallback((player) => {
+    const duration = Math.round(player?.getDuration?.() ?? 0)
+    const position = Math.round(player?.getCurrentTime?.() ?? 0)
+    const liveRoomId = liveRef.current.roomId
 
-  function playVideo(ytId) {
-    if (playerReadyRef.current && playerRef.current) playerRef.current.loadVideoById(ytId)
-    else pendingRef.current = ytId
-  }
+    if (!liveRoomId || duration <= 0) return
 
-  async function advanceToWinner() {
+    const update = { syncPos: position }
+    if (!liveRef.current.jukeboxState?.duration) update.duration = duration
+    updatePlaybackSync(liveRoomId, update).catch(() => {})
+  }, [])
+
+  const handlePlayerEnded = useCallback(() => {
+    advanceToWinnerRef.current()
+  }, [])
+
+  const handlePlayerError = useCallback((code) => {
+    const song = liveRef.current.jukeboxState?.currentSong
+    if (![2, 5, 100, 101, 150].includes(code)) return
+
+    const now = Date.now()
+    if (song?.id && errorGuardRef.current.lastSongId === song.id && now - errorGuardRef.current.lastAt < 3000) return
+
+    errorGuardRef.current = { lastSongId: song?.id ?? null, lastAt: now }
+    if (song?.id) skippedSongIdsRef.current.add(song.id)
+    advanceToWinnerRef.current()
+  }, [])
+
+  const {
+    playerDivRef,
+    playerRef,
+    ytPlayerState,
+    loadProgress,
+    loadVideoById,
+    stopVideo,
+  } = useYouTubePlayer({
+    enabled: isOwner && authReady,
+    currentVideoId: jukeboxState?.isPlaying ? jukeboxState?.currentSong?.ytId : null,
+    onPlaying: handlePlayerPlaying,
+    onEnded: handlePlayerEnded,
+    onRecoverableError: handlePlayerError,
+  })
+
+  const advanceToWinner = useCallback(async () => {
     const { jukeboxState: state, roomId: rid, settings: roomSettings } = liveRef.current
     if (!state || !rid) return
 
@@ -61,7 +84,7 @@ export function useJukeboxPlayback({ authReady, isOwner, roomId, playlists, sett
     if (!nextState) return
 
     prevSongIdRef.current = nextState.currentSong.id
-    playVideo(nextState.currentSong.ytId)
+    loadVideoById(nextState.currentSong.ytId)
 
     await setMainState(rid, {
       isPlaying: true,
@@ -70,15 +93,33 @@ export function useJukeboxPlayback({ authReady, isOwner, roomId, playlists, sett
       syncPos: 0,
       duration: null,
     })
-  }
+  }, [loadVideoById])
 
-  async function playSongNow(song) {
+  useEffect(() => {
+    advanceToWinnerRef.current = advanceToWinner
+  }, [advanceToWinner])
+
+  useEffect(() => {
+    if (!isPlaying || !jukeboxState?.syncAt || !jukeboxState?.duration) return
+    const timeoutId = setTimeout(() => {
+      setTimerTick(Date.now())
+    }, 0)
+    const intervalId = setInterval(() => {
+      setTimerTick(Date.now())
+    }, 1000)
+    return () => {
+      clearTimeout(timeoutId)
+      clearInterval(intervalId)
+    }
+  }, [isPlaying, jukeboxState?.syncAt, jukeboxState?.duration])
+
+  const playSongNow = useCallback(async (song) => {
     if (!roomId) return
     const pid = activePlaylistId ?? jukeboxState?.activePlaylistId
     const playlist = playlists.find(p => p.id === pid)
 
     prevSongIdRef.current = song.id
-    playVideo(song.ytId)
+    loadVideoById(song.ytId)
 
     const { nextOptions: no, nextVotes: nv } = generateVotingOptions(playlist, queueSize, [song])
     await setMainState(roomId, {
@@ -92,7 +133,7 @@ export function useJukeboxPlayback({ authReady, isOwner, roomId, playlists, sett
       syncPos: 0,
       duration: null,
     })
-  }
+  }, [activePlaylistId, jukeboxState?.activePlaylistId, loadVideoById, playlists, queueSize, roomId])
 
   useEffect(() => {
     if (!isOwner || !isPlaying || !jukeboxState || !roomId) return
@@ -116,108 +157,17 @@ export function useJukeboxPlayback({ authReady, isOwner, roomId, playlists, sett
         skipAdvancePendingRef.current = false
       })
     }
-  }, [isOwner, isPlaying, settings?.skipThreshold, jukeboxState?.skipVoters])
-
-  useEffect(() => {
-    if (!isOwner || !authReady) return
-    let alive = true
-    let localPlayer = null
-
-    function createPlayer() {
-      if (!alive || !playerDivRef.current || localPlayer) return
-      playerDivRef.current.innerHTML = ''
-      const ytTarget = document.createElement('div')
-      playerDivRef.current.appendChild(ytTarget)
-
-      localPlayer = new window.YT.Player(ytTarget, {
-        height: '202',
-        width: '360',
-        playerVars: { rel: 0, modestbranding: 1 },
-        events: {
-          onReady() {
-            if (!alive) return
-            playerRef.current = localPlayer
-            playerReadyRef.current = true
-            const liveState = liveRef.current.jukeboxState
-            const ytId = pendingRef.current ?? (liveState?.isPlaying ? liveState?.currentSong?.ytId : null)
-            if (ytId) {
-              localPlayer.loadVideoById(ytId)
-              pendingRef.current = null
-              prevSongIdRef.current = liveState?.currentSong?.id ?? null
-              setYtPlayerState(3)
-            }
-          },
-          onStateChange(e) {
-            if (!alive) return
-            setYtPlayerState(e.data)
-            if (e.data === window.YT.PlayerState.PLAYING) {
-              const dur = Math.round(localPlayer.getDuration?.() ?? 0)
-              const pos = Math.round(localPlayer.getCurrentTime?.() ?? 0)
-              if (liveRef.current.roomId && dur > 0) {
-                const update = { syncPos: pos }
-                if (!liveRef.current.jukeboxState?.duration) update.duration = dur
-                updatePlaybackSync(liveRef.current.roomId, update).catch(() => {})
-              }
-            }
-            clearInterval(loadProgressInterval.current)
-            if (e.data === window.YT.PlayerState.BUFFERING) {
-              setLoadProgress(Math.round((localPlayer.getVideoLoadedFraction?.() ?? 0) * 100))
-              loadProgressInterval.current = setInterval(() => {
-                if (!alive) return
-                const pct = Math.round((localPlayer.getVideoLoadedFraction?.() ?? 0) * 100)
-                setLoadProgress(pct)
-                if (pct >= 100) clearInterval(loadProgressInterval.current)
-              }, 500)
-            } else {
-              setLoadProgress(Math.round((localPlayer.getVideoLoadedFraction?.() ?? 0) * 100))
-            }
-            if (e.data === window.YT.PlayerState.ENDED) advanceToWinner()
-          },
-          onError(e) {
-            if (!alive) return
-            const code = e?.data
-            const song = liveRef.current.jukeboxState?.currentSong
-            if (![2, 5, 100, 101, 150].includes(code)) return
-            const now = Date.now()
-            if (song?.id && errorGuardRef.current.lastSongId === song.id && now - errorGuardRef.current.lastAt < 3000) return
-            errorGuardRef.current = { lastSongId: song?.id ?? null, lastAt: now }
-            if (song?.id) skippedSongIdsRef.current.add(song.id)
-            advanceToWinner()
-          },
-        },
-      })
-    }
-
-    if (window.YT?.Player) createPlayer()
-    else {
-      window.onYouTubeIframeAPIReady = createPlayer
-      if (!document.querySelector('script[src*="iframe_api"]')) {
-        const s = document.createElement('script')
-        s.src = 'https://www.youtube.com/iframe_api'
-        document.head.appendChild(s)
-      }
-    }
-
-    return () => {
-      alive = false
-      playerReadyRef.current = false
-      playerRef.current = null
-      clearInterval(loadProgressInterval.current)
-      setYtPlayerState(-1)
-      setLoadProgress(0)
-      try { localPlayer?.destroy() } catch {}
-    }
-  }, [isOwner, authReady])
+  }, [advanceToWinner, isOwner, isPlaying, settings?.skipThreshold, jukeboxState?.skipVoters])
 
   useEffect(() => {
     if (!isOwner || !jukeboxState?.isPlaying || !jukeboxState?.currentSong) return
     const { id, ytId } = jukeboxState.currentSong
     if (prevSongIdRef.current === id) return
     prevSongIdRef.current = id
-    playVideo(ytId)
-  }, [isOwner, jukeboxState?.isPlaying, jukeboxState?.currentSong?.id])
+    loadVideoById(ytId)
+  }, [isOwner, jukeboxState?.isPlaying, jukeboxState?.currentSong, loadVideoById])
 
-  async function startJukeboxWith(pid) {
+  const startJukeboxWith = useCallback(async (pid) => {
     const playlist = playlists.find(p => p.id === pid)
     if (!playlist?.songs.length || !roomId) return
     selectPlaylist(pid)
@@ -226,7 +176,7 @@ export function useJukeboxPlayback({ authReady, isOwner, roomId, playlists, sett
     const initialQueue = queueSize > 1 ? shuffled.slice(1, queueSize) : []
 
     prevSongIdRef.current = first.id
-    playVideo(first.ytId)
+    loadVideoById(first.ytId)
 
     const { nextOptions: no, nextVotes: nv } = initialQueue.length <= 1
       ? generateVotingOptions(playlist, queueSize, [first, ...initialQueue])
@@ -243,16 +193,16 @@ export function useJukeboxPlayback({ authReady, isOwner, roomId, playlists, sett
       syncPos: 0,
       duration: null,
     })
-  }
+  }, [loadVideoById, playlists, queueSize, roomId, selectPlaylist])
 
-  async function stopJukebox() {
+  const stopJukebox = useCallback(async () => {
     if (!roomId || !jukeboxState) return
     await patchMainState(roomId, {
       isPlaying: false,
     })
     prevSongIdRef.current = null
-    try { playerRef.current?.stopVideo() } catch {}
-  }
+    stopVideo()
+  }, [jukeboxState, roomId, stopVideo])
 
   return {
     playerDivRef,
