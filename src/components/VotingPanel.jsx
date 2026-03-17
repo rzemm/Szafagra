@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 
-export function VotingPanel({ nextOptionKeys, nextOptions, nextVotesData, userId, onVote, showPlayNow = false, onPlayNow }) {
+export function VotingPanel({ nextOptionKeys, nextOptions, nextVotesData, userId, onVote, showPlayNow = false, onPlayNow, columns = false, onChooseOption }) {
   const myVote = nextVotesData[userId] ?? null
   const countsByOption = useMemo(() => {
     const counts = Object.fromEntries(nextOptionKeys.map(key => [key, 0]))
@@ -15,7 +15,7 @@ export function VotingPanel({ nextOptionKeys, nextOptions, nextVotesData, userId
   return (
     <div className="voting-card">
       <h2 className="section-title voting-title">Zagłosuj na następne piosenki</h2>
-      <div className="options-list">
+      <div className={`options-list${columns ? ' options-columns' : ''}`}>
         {nextOptionKeys.map(key => {
           const songs = nextOptions[key] ?? []
           const isVoted = myVote === key
@@ -27,6 +27,9 @@ export function VotingPanel({ nextOptionKeys, nextOptions, nextVotesData, userId
                 <span className="vote-option-label">Opcja {parseInt(key) + 1}</span>
                 {voteCount > 0 && <span className="vote-option-count">{voteCount} głos{voteCount === 1 ? '' : voteCount < 5 ? 'y' : 'ów'}</span>}
                 <button className={`btn-vote-option${isVoted ? ' active' : ''}`} onClick={() => onVote(key)}>{isVoted ? '✓ Zagłosowano' : '▲ Głosuj'}</button>
+                {onChooseOption && (
+                  <button className="btn-choose-option" onClick={() => onChooseOption(key)}>★ Wybierz</button>
+                )}
               </div>
               <div className="option-songs">
                 {songs.map((song, i) => (

@@ -36,7 +36,6 @@ export function PlaylistSidebar(props) {
     fetchingTitle,
     handleUrlBlur,
     addSong,
-    stopJukebox,
     copied,
     copyLink,
     joinUrl,
@@ -215,37 +214,25 @@ export function PlaylistSidebar(props) {
               </div>
 
               {showOwnerUI && (
-                <>
-                  <div className="add-song-form">
-                    <input
-                      value={newSongUrl}
-                      onChange={(event) => setNewSongUrl(event.target.value)}
-                      onBlur={handleUrlBlur}
-                      onKeyDown={(event) => event.key === 'Enter' && addSong()}
-                      placeholder="Link YouTube..."
-                      className={urlErr ? 'input-error' : ''}
-                    />
-                    <input
-                      value={newSongTitle}
-                      onChange={(event) => setNewSongTitle(event.target.value)}
-                      onKeyDown={(event) => event.key === 'Enter' && addSong()}
-                      placeholder={fetchingTitle ? 'Pobieranie tytułu...' : 'Tytuł (pobierany auto)'}
-                      disabled={fetchingTitle}
-                    />
-                    {urlErr && <p className="error-msg">{urlErr}</p>}
-                    <button className="btn-primary" onClick={addSong}>+ Dodaj piosenkę</button>
-                  </div>
-
-                  <div className="play-controls">
-                    {!isPlaying ? (
-                      <button className="btn-start" onClick={() => startJukeboxWith(activePlaylistId)} disabled={activePlaylist.songs.length === 0}>
-                        ▶ START
-                      </button>
-                    ) : (
-                      <button className="btn-stop" onClick={stopJukebox}>■ STOP</button>
-                    )}
-                  </div>
-                </>
+                <div className="add-song-form">
+                  <input
+                    value={newSongUrl}
+                    onChange={(event) => setNewSongUrl(event.target.value)}
+                    onBlur={handleUrlBlur}
+                    onKeyDown={(event) => event.key === 'Enter' && addSong()}
+                    placeholder="Link YouTube..."
+                    className={urlErr ? 'input-error' : ''}
+                  />
+                  <input
+                    value={newSongTitle}
+                    onChange={(event) => setNewSongTitle(event.target.value)}
+                    onKeyDown={(event) => event.key === 'Enter' && addSong()}
+                    placeholder={fetchingTitle ? 'Pobieranie tytułu...' : 'Tytuł (pobierany auto)'}
+                    disabled={fetchingTitle}
+                  />
+                  {urlErr && <p className="error-msg">{urlErr}</p>}
+                  <button className="btn-primary" onClick={addSong}>+ Dodaj piosenkę</button>
+                </div>
               )}
             </>
           )}

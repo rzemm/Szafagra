@@ -326,7 +326,6 @@ export default function App() {
           fetchingTitle={uiState.fetchingTitle}
           handleUrlBlur={handleUrlBlur}
           addSong={addSong}
-          stopJukebox={playback.stopJukebox}
           copied={uiState.copied}
           copyLink={copyLink}
           joinUrl={uiState.joinUrl}
@@ -337,50 +336,56 @@ export default function App() {
         <div className={`player-area${showOwnerUI ? ' player-area-admin' : ''}`}>
           {showOwnerUI ? (
             <>
-              <div className="admin-col">
-                {isPlaying && (
-                  <div className="voting-card">
-                    <h2 className="section-title voting-title">Zaraz zagra</h2>
-                    <ol className="queue-list">
-                      {queue.map((song, index) => (
-                        <li key={song.id} className="queue-item">
-                          <span className="queue-pos">{index + 1}</span>
-                          <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="queue-thumb" />
-                          <span className="queue-title">{song.title}</span>
-                          <button className="btn-icon play" onClick={() => playback.playSongNow(song)}>▶</button>
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
-                )}
+              <div className="admin-top-row">
+                <div className="admin-col">
+                  {isPlaying && (
+                    <div className="voting-card">
+                      <h2 className="section-title voting-title">Zaraz zagra</h2>
+                      <ol className="queue-list">
+                        {queue.map((song, index) => (
+                          <li key={song.id} className="queue-item">
+                            <span className="queue-pos">{index + 1}</span>
+                            <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="queue-thumb" />
+                            <span className="queue-title">{song.title}</span>
+                            <button className="btn-icon play" onClick={() => playback.playSongNow(song)}>▶</button>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
+                </div>
+
+                <NowPlayingPanel
+                  isPlaying={isPlaying}
+                  currentSong={currentSong}
+                  remaining={playback.remaining}
+                  ytPlayerState={playback.ytPlayerState}
+                  loadProgress={playback.loadProgress}
+                  playerRef={playback.playerRef}
+                  playerDivRef={playback.playerDivRef}
+                  advanceToWinner={playback.advanceToWinner}
+                  skipThreshold={skipThreshold}
+                  skipCount={skipCount}
+                  startJukeboxWith={playback.startJukeboxWith}
+                  stopJukebox={playback.stopJukebox}
+                  activePlaylistId={uiState.activePlaylistId}
+                  activePlaylist={activePlaylist}
+                />
               </div>
 
-              <NowPlayingPanel
-                isPlaying={isPlaying}
-                currentSong={currentSong}
-                remaining={playback.remaining}
-                ytPlayerState={playback.ytPlayerState}
-                loadProgress={playback.loadProgress}
-                playerRef={playback.playerRef}
-                playerDivRef={playback.playerDivRef}
-                advanceToWinner={playback.advanceToWinner}
-                skipThreshold={skipThreshold}
-                skipCount={skipCount}
-              />
-
-              <div className="admin-col">
-                {isPlaying && queue.length <= voteThreshold && nextOptionKeys.length > 0 && (
-                  <VotingPanel
-                    nextOptionKeys={nextOptionKeys}
-                    nextOptions={nextOptions}
-                    nextVotesData={nextVotesData}
-                    userId={userId}
-                    onVote={vote}
-                    showPlayNow
-                    onPlayNow={playback.playSongNow}
-                  />
-                )}
-              </div>
+              {isPlaying && queue.length <= voteThreshold && nextOptionKeys.length > 0 && (
+                <VotingPanel
+                  nextOptionKeys={nextOptionKeys}
+                  nextOptions={nextOptions}
+                  nextVotesData={nextVotesData}
+                  userId={userId}
+                  onVote={vote}
+                  showPlayNow
+                  onPlayNow={playback.playSongNow}
+                  columns
+                  onChooseOption={playback.advanceToOption}
+                />
+              )}
             </>
           ) : (
             <GuestView

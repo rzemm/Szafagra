@@ -204,6 +204,30 @@ export function useJukeboxPlayback({ authReady, isOwner, roomId, playlists, sett
     stopVideo()
   }, [jukeboxState, roomId, stopVideo])
 
+  const advanceToOption = useCallback(async (key) => {
+    const { jukeboxState: state, roomId: rid } = liveRef.current
+    if (!state || !rid) return
+
+    const songs = ((state.nextOptions ?? {})[key] ?? []).filter(song => !skippedSongIdsRef.current.has(song.id))
+    if (!songs.length) return
+
+    const [currentSong, ...queue] = songs
+    prevSongIdRef.current = currentSong.id
+    loadVideoById(currentSong.ytId)
+
+    await setMainState(rid, {
+      isPlaying: true,
+      activePlaylistId: state.activePlaylistId,
+      currentSong,
+      queue,
+      nextOptions: {},
+      nextVotes: {},
+      skipVoters: {},
+      syncPos: 0,
+      duration: null,
+    })
+  }, [loadVideoById])
+
   return {
     playerDivRef,
     ytPlayerState,
@@ -211,6 +235,7 @@ export function useJukeboxPlayback({ authReady, isOwner, roomId, playlists, sett
     remaining,
     playSongNow,
     advanceToWinner,
+    advanceToOption,
     startJukeboxWith,
     stopJukebox,
     playerRef,

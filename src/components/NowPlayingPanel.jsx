@@ -1,6 +1,15 @@
+import { useState } from 'react'
 import { formatTime } from '../lib/jukebox'
 
-export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerState, loadProgress, playerRef, playerDivRef, advanceToWinner, skipThreshold, skipCount }) {
+export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerState, loadProgress, playerRef, playerDivRef, advanceToWinner, skipThreshold, skipCount, startJukeboxWith, stopJukebox, activePlaylistId, activePlaylist }) {
+  const [volume, setVolume] = useState(80)
+
+  const handleVolumeChange = (e) => {
+    const val = Number(e.target.value)
+    setVolume(val)
+    playerRef.current?.setVolume(val)
+  }
+
   return (
     <div className="admin-col admin-col-center">
       <div className="player-card">
@@ -21,12 +30,40 @@ export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerSta
             {remaining != null && <span className="now-timer">{formatTime(remaining)}</span>}
           </div>
         )}
-        {isPlaying && (
-          <div className="player-controls">
-            <button className="btn-playpause" onClick={() => ytPlayerState === 1 ? playerRef.current?.pauseVideo() : playerRef.current?.playVideo()}>{ytPlayerState === 1 ? '⏸' : '▶'}</button>
-            <button className="btn-next" onClick={advanceToWinner}>⏭ Następna</button>
-          </div>
-        )}
+        <div className="player-controls">
+          {!isPlaying ? (
+            <button
+              className="btn-ctrl btn-ctrl-start"
+              onClick={() => startJukeboxWith(activePlaylistId)}
+              disabled={!activePlaylistId || !activePlaylist?.songs.length}
+            >
+              ▶ START
+            </button>
+          ) : (
+            <>
+              <button
+                className="btn-ctrl"
+                onClick={() => ytPlayerState === 1 ? playerRef.current?.pauseVideo() : playerRef.current?.playVideo()}
+              >
+                {ytPlayerState === 1 ? '⏸' : '▶'}
+              </button>
+              <button className="btn-ctrl" onClick={advanceToWinner}>⏭</button>
+              <button className="btn-ctrl btn-ctrl-stop" onClick={stopJukebox}>■ STOP</button>
+            </>
+          )}
+        </div>
+        <div className="volume-row">
+          <span className="volume-icon">🔈</span>
+          <input
+            type="range"
+            min="0"
+            max="100"
+            value={volume}
+            onChange={handleVolumeChange}
+            className="volume-slider"
+          />
+          <span className="volume-icon">🔊</span>
+        </div>
       </div>
       {isPlaying && skipThreshold > 0 && <div className="skip-card"><span className="skip-count">{skipCount}/{skipThreshold} głosów na pominięcie</span></div>}
     </div>
