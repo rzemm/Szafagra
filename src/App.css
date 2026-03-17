@@ -120,6 +120,25 @@
   background: var(--surface3);
 }
 
+.playlist-item.playing {
+  border-color: var(--gold);
+}
+
+.playlist-item.active.playing {
+  border-color: var(--gold);
+}
+
+.playing-dot {
+  color: var(--gold);
+  font-size: 0.85rem;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
 .playlist-name-btn {
   flex: 1;
   display: flex;
@@ -182,6 +201,9 @@ button {
 
 .btn-icon:hover { background: var(--surface3); color: var(--text); }
 .btn-icon.danger:hover { background: rgba(232, 65, 90, 0.15); color: var(--accent); }
+.btn-icon.play { color: var(--gold); }
+.btn-icon.play:hover { background: rgba(245, 166, 35, 0.12); color: var(--gold); }
+.btn-icon.play:disabled { color: var(--text-dim); opacity: 0.4; cursor: not-allowed; }
 
 .btn-accent {
   background: var(--accent);
@@ -243,6 +265,19 @@ button {
 }
 
 .btn-stop:hover { border-color: var(--accent); color: var(--accent); }
+
+.btn-next {
+  background: var(--surface2);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 0.4rem 1rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.btn-next:hover { border-color: var(--gold); color: var(--gold); }
 
 .play-controls {
   display: flex;
@@ -363,6 +398,7 @@ input.input-error { border-color: var(--accent); }
 }
 
 .yt-wrapper > div,
+.yt-wrapper > iframe,
 #yt-player,
 #yt-player iframe {
   width: 100% !important;
@@ -370,6 +406,7 @@ input.input-error { border-color: var(--accent); }
   position: absolute;
   top: 0;
   left: 0;
+  border: 0;
 }
 
 .player-overlay {
@@ -527,4 +564,68 @@ input.input-error { border-color: var(--accent); }
   padding: 0.2rem 0.6rem;
   border-radius: 20px;
   white-space: nowrap;
+}
+
+/* ─── Splash / loading ──────────────────────────────────────────────────────── */
+.splash {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  background: var(--bg);
+  color: var(--text-dim);
+  font-size: 1rem;
+}
+
+.splash-icon {
+  font-size: 3rem;
+  animation: spin 2s linear infinite;
+}
+
+/* ─── Header additions ──────────────────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.visitor-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: var(--surface3);
+  color: var(--gold);
+  border: 1px solid var(--gold);
+  border-radius: 20px;
+  padding: 0.2rem 0.6rem;
+  margin-left: 0.8rem;
+}
+
+.btn-share {
+  background: var(--surface2);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.btn-share:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+/* ─── Guest thumbnail ───────────────────────────────────────────────────────── */
+.guest-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
