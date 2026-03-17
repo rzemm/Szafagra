@@ -52,6 +52,10 @@ export function createPlaylist(roomId, name) {
   return addDoc(playlistsRef(roomId), { name, songs: [], createdAt: serverTimestamp() })
 }
 
+export function createPlaylistWithSongs(roomId, name, songs) {
+  return addDoc(playlistsRef(roomId), { name, songs, createdAt: serverTimestamp() })
+}
+
 export function removePlaylist(roomId, playlistId) {
   return deleteDoc(playlistRef(roomId, playlistId))
 }

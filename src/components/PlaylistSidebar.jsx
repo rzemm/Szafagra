@@ -25,6 +25,8 @@ export function PlaylistSidebar(props) {
     newPlaylistName,
     setNewPlaylistName,
     addPlaylist,
+    exportPlaylist,
+    importPlaylist,
     currentSong,
     playSongNow,
     deleteSong,
@@ -42,6 +44,12 @@ export function PlaylistSidebar(props) {
     setJoinUrl,
     handleJoinRoom,
   } = props
+
+  const handleImportChange = async (event) => {
+    const [file] = event.target.files ?? []
+    if (file) await importPlaylist(file)
+    event.target.value = ''
+  }
 
   return (
     <aside className={`sidebar${sidebarOpen ? '' : ' sidebar-hidden'}`}>
@@ -173,15 +181,27 @@ export function PlaylistSidebar(props) {
             </div>
 
             {showOwnerUI && (
-              <div className="add-row">
-                <input
-                  value={newPlaylistName}
-                  onChange={(event) => setNewPlaylistName(event.target.value)}
-                  onKeyDown={(event) => event.key === 'Enter' && addPlaylist()}
-                  placeholder="Nazwa nowej playlisty..."
-                />
-                <button className="btn-accent" onClick={addPlaylist}>+</button>
-              </div>
+              <>
+                <div className="add-row">
+                  <input
+                    value={newPlaylistName}
+                    onChange={(event) => setNewPlaylistName(event.target.value)}
+                    onKeyDown={(event) => event.key === 'Enter' && addPlaylist()}
+                    placeholder="Nazwa nowej playlisty..."
+                  />
+                  <button className="btn-accent" onClick={addPlaylist}>+</button>
+                </div>
+
+                <div className="playlist-import-export">
+                  <button className="btn-secondary" onClick={exportPlaylist} disabled={!activePlaylist}>
+                    Wyeksportuj playlistę
+                  </button>
+                  <label className="btn-secondary btn-file">
+                    Zaimportuj playlistę
+                    <input type="file" accept="application/json,.json" onChange={handleImportChange} />
+                  </label>
+                </div>
+              </>
             )}
           </>
         )}
