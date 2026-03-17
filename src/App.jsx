@@ -156,6 +156,12 @@ export default function App() {
   const [loadProgress,   setLoadProgress]    = useState(0)
   const [remaining,      setRemaining]       = useState(null)
   const [viewAsGuest,    setViewAsGuest]     = useState(false)
+  const [sidebarOpen,    setSidebarOpen]     = useState(true)
+  const [collapsed,      setCollapsed]       = useState({})
+
+  function toggleSection(key) {
+    setCollapsed(c => ({ ...c, [key]: !c[key] }))
+  }
 
   // ── YouTube player refs ────────────────────────────────────────────────────
   const playerRef      = useRef(null)
@@ -176,9 +182,10 @@ export default function App() {
   const isPlaying   = jbState?.isPlaying  ?? false
   const currentSong = jbState?.currentSong ?? null
 
-  const queueSize     = Math.max(1, roomSettings?.queueSize     ?? 1)
-  const voteMode      = roomSettings?.voteMode      ?? 'highest'
-  const skipThreshold = roomSettings?.skipThreshold ?? 0
+  const queueSize      = Math.max(1, roomSettings?.queueSize      ?? 1)
+  const voteMode       = roomSettings?.voteMode       ?? 'highest'
+  const skipThreshold  = roomSettings?.skipThreshold  ?? 0
+  const voteThreshold  = roomSettings?.voteThreshold  ?? 1
 
   // Single-vote options (object, NOT array — Firestore forbids nested arrays)
   const nextOptions    = jbState?.nextOptions ?? {}   // { '0': [song,...], '1': [...], '2': [...] }
@@ -210,19 +217,19 @@ export default function App() {
     return () => clearInterval(id)
   }, [isPlaying, jbState?.syncAt, jbState?.syncPos, jbState?.duration])
 
-  // Auto-generate nextOptions when queue ≤ 1 and no options exist yet
+  // Auto-generate nextOptions when queue ≤ voteThreshold and no options exist yet
   useEffect(() => {
     if (!isOwner || !isPlaying || !jbState || !roomId) return
     const queue = jbState.queue ?? []
-    if (queue.length > 1) return             // still enough songs, no voting needed
-    if (nextOptionKeys.length > 0) return    // options already exist
+    if (queue.length > voteThreshold) return    // still enough songs, no voting needed
+    if (nextOptionKeys.length > 0) return        // options already exist
     const { activePlaylistId } = jbState
     const playlist = playlists.find(p => p.id === activePlaylistId)
     if (!playlist?.songs.length) return
     const used = [currentSong, ...queue].filter(Boolean)
     const { nextOptions: no, nextVotes: nv } = generateNextOptions(playlist, queueSize, used)
     updateDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), { nextOptions: no, nextVotes: nv }).catch(() => {})
-  }, [isPlaying, isOwner, nextOptionKeys.length, (jbState?.queue ?? []).length, queueSize, roomId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isPlaying, isOwner, nextOptionKeys.length, (jbState?.queue ?? []).length, queueSize, voteThreshold, roomId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-advance when skip vote threshold is reached (owner only)
   useEffect(() => {
@@ -652,7 +659,8 @@ export default function App() {
     if (!url || !activePid || !roomId) return
     const ytId = extractYtId(url)
     if (!ytId) { setUrlErr('Nieprawidłowy link YouTube'); return }
-    const song = { id: genId(), url, title: title || url, ytId }
+    const cleanUrl = `https://youtu.be/${ytId}`
+    const song = { id: genId(), url: cleanUrl, title: title || cleanUrl, ytId }
     await updateDoc(doc(db, 'rooms', roomId, 'playlists', activePid), {
       songs: [...(activePlaylist?.songs ?? []), song],
     })
@@ -723,6 +731,11 @@ export default function App() {
           {!showOwnerUI && <span className="visitor-badge">{isOwner ? 'Podgląd gościa' : 'Tryb gościa'}</span>}
         </div>
         <div className="header-actions">
+          {showOwnerUI && (
+            <button className="btn-view-toggle" onClick={() => setSidebarOpen(v => !v)} title={sidebarOpen ? 'Ukryj panel' : 'Pokaż panel'}>
+              {sidebarOpen ? '◀ Panel' : '▶ Panel'}
+            </button>
+          )}
           {isOwner && (
             <button className="btn-view-toggle" onClick={() => setViewAsGuest(v => !v)}>
               {viewAsGuest ? '⚙ Widok admina' : '👁 Widok gościa'}
@@ -737,12 +750,18 @@ export default function App() {
       <main className="main">
 
         {/* ── Sidebar ── */}
-        <aside className="sidebar">
+        <aside className={`sidebar${sidebarOpen ? '' : ' sidebar-hidden'}`}>
 
           {/* ── Ustawienia (admin) ── */}
           {showOwnerUI && (
             <div className="section">
-              <h2 className="section-title">Ustawienia pokoju</h2>
+              <div className="section-title-row">
+                <h2 className="section-title">Ustawienia pokoju</h2>
+                <button className="btn-collapse" onClick={() => toggleSection('settings')}>
+                  {collapsed.settings ? '▶' : '▼'}
+                </button>
+              </div>
+              {!collapsed.settings && <>
               <div className="setting-row">
                 <span className="setting-label">Głosowanie</span>
                 <div className="setting-toggle-group">
@@ -757,19 +776,29 @@ export default function App() {
                 </div>
               </div>
               <div className="setting-row">
-                <span className="setting-label">Ilość następnych piosenek</span>
-                <div className="setting-queue-row">
-                  <input
-                    type="range"
-                    min="1"
-                    max="5"
-                    value={queueSize}
-                    className="queue-size-slider"
-                    onChange={e => saveSettings('queueSize', parseInt(e.target.value))}
-                  />
-                  <span className="setting-hint">
-                    {`${queueSize} ${queueSize === 1 ? 'piosenka' : queueSize < 5 ? 'piosenki' : 'piosenek'}`}
-                  </span>
+                <span className="setting-label">Utworów w grupie</span>
+                <div className="note-picker">
+                  {[1,2,3,4,5].map(n => (
+                    <button
+                      key={n}
+                      className={`note-btn${n <= queueSize ? ' active' : ''}`}
+                      onClick={() => saveSettings('queueSize', n === queueSize && n > 1 ? n - 1 : n)}
+                      title={`${n}`}
+                    >♪</button>
+                  ))}
+                </div>
+              </div>
+              <div className="setting-row">
+                <span className="setting-label">Głosuj, gdy zostało ≤</span>
+                <div className="note-picker">
+                  {[1,2,3].map(n => (
+                    <button
+                      key={n}
+                      className={`note-btn${n <= voteThreshold ? ' active' : ''}`}
+                      onClick={() => saveSettings('voteThreshold', n === voteThreshold ? n - 1 : n)}
+                      title={`${n}`}
+                    >♪</button>
+                  ))}
                 </div>
               </div>
               <div className="setting-row">
@@ -792,12 +821,19 @@ export default function App() {
                   </span>
                 </div>
               </div>
+              </>}
             </div>
           )}
 
           {/* ── Link do pokoju / wejdź ── */}
           <div className="section">
-            <h2 className="section-title">{showOwnerUI ? 'Link do pokoju' : 'Wejdź do pokoju'}</h2>
+            <div className="section-title-row">
+              <h2 className="section-title">{showOwnerUI ? 'Link do pokoju' : 'Wejdź do pokoju'}</h2>
+              <button className="btn-collapse" onClick={() => toggleSection('link')}>
+                {collapsed.link ? '▶' : '▼'}
+              </button>
+            </div>
+            {!collapsed.link && <>
             {showOwnerUI && (
               <div className="room-link-row">
                 <input
@@ -821,10 +857,17 @@ export default function App() {
               />
               <button className="btn-accent" onClick={handleJoinRoom} title="Przejdź do pokoju">→</button>
             </div>
+            </>}
           </div>
 
           <div className="section">
-            <h2 className="section-title">Playlisty</h2>
+            <div className="section-title-row">
+              <h2 className="section-title">Playlisty</h2>
+              <button className="btn-collapse" onClick={() => toggleSection('playlists')}>
+                {collapsed.playlists ? '▶' : '▼'}
+              </button>
+            </div>
+            {!collapsed.playlists && <>
 
             <div className="playlist-list">
               {playlists.length === 0 && (
@@ -884,11 +927,18 @@ export default function App() {
                 <button className="btn-accent" onClick={addPlaylist} title="Dodaj">+</button>
               </div>
             )}
+            </>}
           </div>
 
           {activePlaylist && (
             <div className="section songs-section">
-              <h2 className="section-title">{activePlaylist.name}</h2>
+              <div className="section-title-row">
+                <h2 className="section-title">{activePlaylist.name}</h2>
+                <button className="btn-collapse" onClick={() => toggleSection('songs')}>
+                  {collapsed.songs ? '▶' : '▼'}
+                </button>
+              </div>
+              {!collapsed.songs && <>
 
               <div className="song-list">
                 {activePlaylist.songs.length === 0 && (
@@ -951,6 +1001,7 @@ export default function App() {
                   </div>
                 </>
               )}
+              </>}
             </div>
           )}
 
@@ -960,173 +1011,226 @@ export default function App() {
         </aside>
 
         {/* ── Player + Voting ── */}
-        <div className="player-area">
+        <div className={`player-area${showOwnerUI ? ' player-area-admin' : ''}`}>
 
-          {isOwner && (
-            <div className="player-card" style={showOwnerUI ? undefined : { position: 'fixed', top: '-9999px', left: '-9999px', pointerEvents: 'none' }}>
-              <div className="yt-wrapper">
-                <div ref={playerDivRef} />
-                {/* Blokada klikania na iframe */}
-                <div className="yt-click-blocker" />
-                {!isPlaying && (
-                  <div className="player-overlay">
-                    <span className="vinyl-icon">🎵</span>
-                    <p>Wybierz playlistę i naciśnij START</p>
+          {showOwnerUI ? (
+            <>
+              {/* ── Admin: lewa kolumna — zakolejkowane ── */}
+              <div className="admin-col">
+                {isPlaying ? (
+                  <div className="voting-card">
+                    <h2 className="section-title voting-title">Zaraz zagra</h2>
+                    {(jbState?.queue ?? []).length > 0 ? (
+                      <ol className="queue-list">
+                        {jbState.queue.map((song, i) => (
+                          <li key={song.id} className="queue-item">
+                            <span className="queue-pos">{i + 1}</span>
+                            <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="queue-thumb" />
+                            <span className="queue-title">{song.title}</span>
+                            <button className="btn-icon play" onClick={() => playSongNow(song)} title="Puść teraz">▶</button>
+                          </li>
+                        ))}
+                      </ol>
+                    ) : (
+                      <p className="empty-hint">Kolejka pusta</p>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+
+              {/* ── Admin: środkowa kolumna — odtwarzacz ── */}
+              <div className="admin-col admin-col-center">
+                <div className="player-card">
+                  <div className="yt-wrapper">
+                    <div ref={playerDivRef} />
+                    <div className="yt-click-blocker" />
+                    {!isPlaying && (
+                      <div className="player-overlay">
+                        <span className="vinyl-icon">🎵</span>
+                        <p>Wybierz playlistę i naciśnij START</p>
+                      </div>
+                    )}
+                  </div>
+                  {isPlaying && currentSong && (
+                    <div className="now-playing">
+                      <span className="now-label">
+                        TERAZ GRA
+                        {ytPlayerState === 3 && loadProgress < 100 && <span className="load-pct"> · {loadProgress}%</span>}
+                      </span>
+                      <span className="now-title">{currentSong.title}</span>
+                      {remaining != null && <span className="now-timer">{formatTime(remaining)}</span>}
+                    </div>
+                  )}
+                  {isPlaying && (
+                    <div className="player-controls">
+                      <button
+                        className="btn-playpause"
+                        onClick={() => ytPlayerState === 1 ? playerRef.current?.pauseVideo() : playerRef.current?.playVideo()}
+                        title={ytPlayerState === 1 ? 'Pauza' : 'Odtwórz'}
+                      >
+                        {ytPlayerState === 1 ? '⏸' : '▶'}
+                      </button>
+                      <button className="btn-next" onClick={advanceToWinner} title="Następna piosenka">⏭ Następna</button>
+                    </div>
+                  )}
+                </div>
+                {isPlaying && skipThreshold > 0 && (
+                  <div className="skip-card">
+                    <span className="skip-count">{skipCount}/{skipThreshold} głosów na pominięcie</span>
                   </div>
                 )}
               </div>
 
-              {isPlaying && currentSong && (
-                <div className="now-playing">
-                  <span className="now-label">
-                    TERAZ GRA
-                    {ytPlayerState === 3 && loadProgress < 100 && (
-                      <span className="load-pct"> · {loadProgress}%</span>
-                    )}
-                  </span>
-                  <span className="now-title">{currentSong.title}</span>
-                  {remaining != null && (
-                    <span className="now-timer">{formatTime(remaining)}</span>
-                  )}
-                </div>
-              )}
-
-              {isPlaying && (
-                <div className="player-controls">
-                  <button
-                    className="btn-playpause"
-                    onClick={() => ytPlayerState === 1
-                      ? playerRef.current?.pauseVideo()
-                      : playerRef.current?.playVideo()
-                    }
-                    title={ytPlayerState === 1 ? 'Pauza' : 'Odtwórz'}
-                  >
-                    {ytPlayerState === 1 ? '⏸' : '▶'}
-                  </button>
-                  <button className="btn-next" onClick={advanceToWinner} title="Następna piosenka">
-                    ⏭ Następna
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Now playing — guest view */}
-          {isPlaying && currentSong && !showOwnerUI && (
-            <div className="now-playing-guest">
-              <span className="now-label">Teraz gra</span>
-              <span className="now-title">{currentSong.title}</span>
-              {remaining != null && (
-                <span className="now-timer">{formatTime(remaining)}</span>
-              )}
-            </div>
-          )}
-
-          {/* Current batch queue — zaraz zagra */}
-          {isPlaying && (jbState?.queue ?? []).length > 0 && (
-            <div className="voting-card">
-              <h2 className="section-title voting-title">Zaraz zagra</h2>
-              <ol className="queue-list">
-                {(jbState.queue).map((song, i) => (
-                  <li key={song.id} className="queue-item">
-                    <span className="queue-pos">{i + 1}</span>
-                    <img
-                      src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`}
-                      alt=""
-                      className="queue-thumb"
-                    />
-                    <span className="queue-title">{song.title}</span>
-                    {showOwnerUI && (
-                      <button className="btn-icon play" onClick={() => playSongNow(song)} title="Puść teraz">▶</button>
-                    )}
-                  </li>
-                ))}
-              </ol>
-            </div>
-          )}
-
-          {/* Single voting panel — 3 options, each = N-song sequence */}
-          {isPlaying && (jbState?.queue ?? []).length <= 1 && nextOptionKeys.length > 0 && (
-            <div className="voting-card">
-              <h2 className="section-title voting-title">Zagłosuj na następne piosenki</h2>
-              <div className="options-list">
-                {nextOptionKeys.map(key => {
-                  const songs      = nextOptions[key] ?? []
-                  const myVote     = nextVotesData[user?.uid] ?? null
-                  const isVoted    = myVote === key
-                  const voteCount  = Object.values(nextVotesData).filter(v => v === key).length
-                  const maxOptVotes = Math.max(0, ...nextOptionKeys.map(k =>
-                    Object.values(nextVotesData).filter(v => v === k).length
-                  ))
-                  const isWinning  = voteCount > 0 && voteCount === maxOptVotes
-                  return (
-                    <div key={key} className={`vote-option${isVoted ? ' voted' : ''}${isWinning ? ' winning' : ''}`}>
-                      <div className="vote-option-header">
-                        <span className="vote-option-label">Opcja {parseInt(key) + 1}</span>
-                        {voteCount > 0 && (
-                          <span className="vote-option-count">
-                            {voteCount} głos{voteCount === 1 ? '' : voteCount < 5 ? 'y' : 'ów'}
-                          </span>
-                        )}
-                        {!showOwnerUI && (
-                          <button
-                            className={`btn-vote-option${isVoted ? ' active' : ''}`}
-                            onClick={() => vote(key)}
-                          >
-                            {isVoted ? '✓ Zagłosowano' : '▲ Głosuj'}
-                          </button>
-                        )}
-                      </div>
-                      <div className="option-songs">
-                        {songs.map((s, i) => (
-                          <div key={s.id} className="option-song-item">
-                            <span className="option-song-pos">{i + 1}</span>
-                            <img
-                              src={`https://img.youtube.com/vi/${s.ytId}/default.jpg`}
-                              alt=""
-                              className="slot-thumb"
-                            />
-                            <span className="slot-title">{s.title}</span>
-                            {showOwnerUI && (
-                              <button className="btn-icon play" onClick={() => playSongNow(s)} title="Puść teraz">▶</button>
-                            )}
+              {/* ── Admin: prawa kolumna — głosowanie ── */}
+              <div className="admin-col">
+                {isPlaying && (jbState?.queue ?? []).length <= voteThreshold && nextOptionKeys.length > 0 && (
+                  <div className="voting-card">
+                    <h2 className="section-title voting-title">Zagłosuj na następne piosenki</h2>
+                    <div className="options-list">
+                      {nextOptionKeys.map(key => {
+                        const songs       = nextOptions[key] ?? []
+                        const myVote      = nextVotesData[user?.uid] ?? null
+                        const isVoted     = myVote === key
+                        const voteCount   = Object.values(nextVotesData).filter(v => v === key).length
+                        const maxOptVotes = Math.max(0, ...nextOptionKeys.map(k =>
+                          Object.values(nextVotesData).filter(v => v === k).length
+                        ))
+                        const isWinning   = voteCount > 0 && voteCount === maxOptVotes
+                        return (
+                          <div key={key} className={`vote-option${isVoted ? ' voted' : ''}${isWinning ? ' winning' : ''}`}>
+                            <div className="vote-option-header">
+                              <span className="vote-option-label">Opcja {parseInt(key) + 1}</span>
+                              {voteCount > 0 && (
+                                <span className="vote-option-count">
+                                  {voteCount} głos{voteCount === 1 ? '' : voteCount < 5 ? 'y' : 'ów'}
+                                </span>
+                              )}
+                            </div>
+                            <div className="option-songs">
+                              {songs.map((s, i) => (
+                                <div key={s.id} className="option-song-item">
+                                  <span className="option-song-pos">{i + 1}</span>
+                                  <img src={`https://img.youtube.com/vi/${s.ytId}/default.jpg`} alt="" className="slot-thumb" />
+                                  <span className="slot-title">{s.title}</span>
+                                  <button className="btn-icon play" onClick={() => playSongNow(s)} title="Puść teraz">▶</button>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        ))}
-                      </div>
+                        )
+                      })}
                     </div>
-                  )
-                })}
+                  </div>
+                )}
+                {isPlaying && (jbState?.queue ?? []).length <= voteThreshold && nextOptionKeys.length === 0 && (
+                  <div className="voting-card">
+                    <p className="empty-hint">Za mało piosenek na głosowanie (dodaj więcej do playlisty).</p>
+                  </div>
+                )}
               </div>
-            </div>
-          )}
-
-          {/* Skip panel */}
-          {isPlaying && skipThreshold > 0 && (
-            <div className="skip-card">
-              {!showOwnerUI && (
-                <button
-                  className={`btn-skip${mySkipVote ? ' active' : ''}`}
-                  onClick={voteSkip}
-                >
-                  {mySkipVote ? '✓ Chcę pominąć' : '⏭ Pomiń piosenkę'}
-                </button>
+            </>
+          ) : (
+            <>
+              {/* YT player ukryty poza ekranem gdy owner w widoku gościa */}
+              {isOwner && (
+                <div style={{ position: 'fixed', top: '-9999px', left: '-9999px', pointerEvents: 'none' }}>
+                  <div ref={playerDivRef} />
+                </div>
               )}
-              <span className="skip-count">
-                {skipCount}/{skipThreshold} {showOwnerUI ? 'głosów na pominięcie' : ''}
-              </span>
-            </div>
-          )}
 
-          {isPlaying && (jbState?.queue ?? []).length <= 1 && nextOptionKeys.length === 0 && (
-            <div className="voting-card">
-              <p className="empty-hint">Za mało piosenek na głosowanie (dodaj więcej do playlisty).</p>
-            </div>
-          )}
+              {/* Now playing — guest view */}
+              {isPlaying && currentSong && (
+                <div className="now-playing-guest">
+                  <span className="now-label">Teraz gra</span>
+                  <span className="now-title">{currentSong.title}</span>
+                  {remaining != null && <span className="now-timer">{formatTime(remaining)}</span>}
+                </div>
+              )}
 
-          {!isPlaying && !showOwnerUI && (
-            <div className="voting-card">
-              <p className="empty-hint">Właściciel pokoju jeszcze nie uruchomił jukeboxu…</p>
-            </div>
+              {/* Queue — guest */}
+              {isPlaying && (jbState?.queue ?? []).length > 0 && (
+                <div className="voting-card">
+                  <h2 className="section-title voting-title">Zaraz zagra</h2>
+                  <ol className="queue-list">
+                    {jbState.queue.map((song, i) => (
+                      <li key={song.id} className="queue-item">
+                        <span className="queue-pos">{i + 1}</span>
+                        <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="queue-thumb" />
+                        <span className="queue-title">{song.title}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+
+              {/* Voting — guest */}
+              {isPlaying && (jbState?.queue ?? []).length <= voteThreshold && nextOptionKeys.length > 0 && (
+                <div className="voting-card">
+                  <h2 className="section-title voting-title">Zagłosuj na następne piosenki</h2>
+                  <div className="options-list">
+                    {nextOptionKeys.map(key => {
+                      const songs       = nextOptions[key] ?? []
+                      const myVote      = nextVotesData[user?.uid] ?? null
+                      const isVoted     = myVote === key
+                      const voteCount   = Object.values(nextVotesData).filter(v => v === key).length
+                      const maxOptVotes = Math.max(0, ...nextOptionKeys.map(k =>
+                        Object.values(nextVotesData).filter(v => v === k).length
+                      ))
+                      const isWinning   = voteCount > 0 && voteCount === maxOptVotes
+                      return (
+                        <div key={key} className={`vote-option${isVoted ? ' voted' : ''}${isWinning ? ' winning' : ''}`}>
+                          <div className="vote-option-header">
+                            <span className="vote-option-label">Opcja {parseInt(key) + 1}</span>
+                            {voteCount > 0 && (
+                              <span className="vote-option-count">
+                                {voteCount} głos{voteCount === 1 ? '' : voteCount < 5 ? 'y' : 'ów'}
+                              </span>
+                            )}
+                            <button
+                              className={`btn-vote-option${isVoted ? ' active' : ''}`}
+                              onClick={() => vote(key)}
+                            >
+                              {isVoted ? '✓ Zagłosowano' : '▲ Głosuj'}
+                            </button>
+                          </div>
+                          <div className="option-songs">
+                            {songs.map((s, i) => (
+                              <div key={s.id} className="option-song-item">
+                                <span className="option-song-pos">{i + 1}</span>
+                                <img src={`https://img.youtube.com/vi/${s.ytId}/default.jpg`} alt="" className="slot-thumb" />
+                                <span className="slot-title">{s.title}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Skip — guest */}
+              {isPlaying && skipThreshold > 0 && (
+                <div className="skip-card">
+                  <button className={`btn-skip${mySkipVote ? ' active' : ''}`} onClick={voteSkip}>
+                    {mySkipVote ? '✓ Chcę pominąć' : '⏭ Pomiń piosenkę'}
+                  </button>
+                  <span className="skip-count">{skipCount}/{skipThreshold}</span>
+                </div>
+              )}
+
+              {isPlaying && (jbState?.queue ?? []).length <= voteThreshold && nextOptionKeys.length === 0 && (
+                <div className="voting-card">
+                  <p className="empty-hint">Za mało piosenek na głosowanie (dodaj więcej do playlisty).</p>
+                </div>
+              )}
+
+              {!isPlaying && (
+                <div className="voting-card">
+                  <p className="empty-hint">Właściciel pokoju jeszcze nie uruchomił jukeboxu…</p>
+                </div>
+              )}
+            </>
           )}
         </div>
       </main>
