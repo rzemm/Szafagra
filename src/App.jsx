@@ -88,6 +88,9 @@ export default function App() {
   const [editingId,      setEditingId]       = useState(null)
   const [editingName,    setEditingName]     = useState('')
   const [copied,         setCopied]          = useState(false)
+  const [ytPlayerState,  setYtPlayerState]   = useState(-1) // -1=uninit,1=playing,2=paused,3=buffering,5=cued
+  const [loadProgress,   setLoadProgress]    = useState(0)
+  const [viewAsGuest,    setViewAsGuest]     = useState(false)
 
   // ── YouTube player refs ────────────────────────────────────────────────────
   const playerRef      = useRef(null)
@@ -96,7 +99,8 @@ export default function App() {
   const playerDivRef   = useRef(null)
   const prevSongIdRef  = useRef(null)
   const errorGuardRef  = useRef({ lastSongId: null, lastAt: 0 })
-  const skippedSongIdsRef = useRef(new Set())
+  const skippedSongIdsRef   = useRef(new Set())
+  const loadProgressInterval = useRef(null)
 
   // Stable ref — always holds the latest state for callbacks that can't re-close
   const liveRef = useRef({})
@@ -113,6 +117,9 @@ export default function App() {
     candidates.map(c => [c.id, Object.values(voterMap).filter(v => v === c.id).length])
   )
   const maxVotes = candidates.length ? Math.max(...Object.values(voteCounts)) : 0
+
+  // Owner can preview the guest view — all logic still uses isOwner, only rendering uses this
+  const showOwnerUI = isOwner && !viewAsGuest
 
   useEffect(() => {
     liveRef.current = { jbState, roomId, user, playlists }
@@ -155,6 +162,10 @@ export default function App() {
       ? pickRandom(playlist.songs, 3, [winner, ...skippedAsSongs])
       : []
 
+    // Play immediately if called from button (user gesture context)
+    prevSongIdRef.current = winner.id
+    playVideo(winner.ytId)
+
     await setDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), {
       isPlaying:        true,
       activePlaylistId,
@@ -171,6 +182,11 @@ export default function App() {
     const pid      = activePid ?? jbState?.activePlaylistId
     const playlist = playlists.find(p => p.id === pid)
     const nextCandidates = playlist ? pickRandom(playlist.songs, 3, [song]) : []
+
+    // Call within user gesture context to satisfy browser autoplay policy
+    prevSongIdRef.current = song.id
+    playVideo(song.ytId)
+
     await setDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), {
       isPlaying:        true,
       activePlaylistId: pid,
@@ -296,15 +312,21 @@ export default function App() {
   // ──────────────────────────────────────────────────────────────────────────
 
   useEffect(() => {
-    if (!isOwner) return
+    if (!isOwner || !authReady) return
 
     let alive = true
     let localPlayer = null
 
     function createPlayer() {
-      if (!alive || !playerDivRef.current) return
+      if (!alive || !playerDivRef.current || localPlayer) return
 
-      localPlayer = new window.YT.Player(playerDivRef.current, {
+      // Inject a fresh inner div — YT replaces it with an iframe.
+      // The React-managed outer div stays in the DOM across destroy/recreate cycles.
+      playerDivRef.current.innerHTML = ''
+      const ytTarget = document.createElement('div')
+      playerDivRef.current.appendChild(ytTarget)
+
+      localPlayer = new window.YT.Player(ytTarget, {
         height: '202',
         width: '360',
         playerVars: { rel: 0, modestbranding: 1 },
@@ -321,10 +343,25 @@ export default function App() {
               localPlayer.loadVideoById(ytId)
               pendingRef.current = null
               prevSongIdRef.current = liveState?.currentSong?.id ?? null
+              setYtPlayerState(3) // buffering — will update via onStateChange
             }
           },
           onStateChange(e) {
             if (!alive) return
+            setYtPlayerState(e.data)
+            // Track buffer progress while loading
+            clearInterval(loadProgressInterval.current)
+            if (e.data === window.YT.PlayerState.BUFFERING) {
+              setLoadProgress(Math.round((localPlayer.getVideoLoadedFraction?.() ?? 0) * 100))
+              loadProgressInterval.current = setInterval(() => {
+                if (!alive) { clearInterval(loadProgressInterval.current); return }
+                const pct = Math.round((localPlayer.getVideoLoadedFraction?.() ?? 0) * 100)
+                setLoadProgress(pct)
+                if (pct >= 100) clearInterval(loadProgressInterval.current)
+              }, 500)
+            } else {
+              setLoadProgress(Math.round((localPlayer.getVideoLoadedFraction?.() ?? 0) * 100))
+            }
             if (e.data === window.YT.PlayerState.ENDED) advanceToWinner()
           },
           onError(e) {
@@ -364,12 +401,14 @@ export default function App() {
     }
 
     if (window.YT?.Player) {
+      // Fast path: API already ready (cached / index.html script beat us here)
       createPlayer()
     } else {
+      // Slow path: set callback and ensure the script is in the document
       window.onYouTubeIframeAPIReady = createPlayer
       if (!document.querySelector('script[src*="iframe_api"]')) {
-        const s    = document.createElement('script')
-        s.src      = 'https://www.youtube.com/iframe_api'
+        const s = document.createElement('script')
+        s.src   = 'https://www.youtube.com/iframe_api'
         document.head.appendChild(s)
       }
     }
@@ -378,9 +417,12 @@ export default function App() {
       alive                  = false
       playerReadyRef.current = false
       playerRef.current      = null
+      clearInterval(loadProgressInterval.current)
+      setYtPlayerState(-1)
+      setLoadProgress(0)
       try { localPlayer?.destroy() } catch (err) { console.warn('Player cleanup failed', err) }
     }
-  }, [isOwner]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isOwner, authReady]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // When Firestore state changes → play new song on owner's device
   useEffect(() => {
@@ -398,6 +440,10 @@ export default function App() {
     const shuffled = [...playlist.songs].sort(() => Math.random() - 0.5)
     const first    = shuffled[0]
     const cands    = shuffled.slice(1, 4)
+
+    // Call within user gesture context to satisfy browser autoplay policy
+    prevSongIdRef.current = first.id
+    playVideo(first.ytId)
 
     await setDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), {
       isPlaying:        true,
@@ -536,11 +582,18 @@ export default function App() {
         <div className="header-inner">
           <span className="header-icon">🎵</span>
           <h1>JUKEBOX</h1>
-          {!isOwner && <span className="visitor-badge">Tryb gościa</span>}
+          {!showOwnerUI && <span className="visitor-badge">{isOwner ? 'Podgląd gościa' : 'Tryb gościa'}</span>}
         </div>
-        <button className="btn-share" onClick={copyLink}>
-          {copied ? '✓ Link skopiowany!' : '🔗 Udostępnij pokój'}
-        </button>
+        <div className="header-actions">
+          {isOwner && (
+            <button className="btn-view-toggle" onClick={() => setViewAsGuest(v => !v)}>
+              {viewAsGuest ? '⚙ Widok admina' : '👁 Widok gościa'}
+            </button>
+          )}
+          <button className="btn-share" onClick={copyLink}>
+            {copied ? '✓ Link skopiowany!' : '🔗 Udostępnij pokój'}
+          </button>
+        </div>
       </header>
 
       <main className="main">
@@ -553,7 +606,7 @@ export default function App() {
             <div className="playlist-list">
               {playlists.length === 0 && (
                 <p className="empty-hint">
-                  {isOwner ? 'Utwórz pierwszą playlistę poniżej' : 'Brak playlist'}
+                  {showOwnerUI ? 'Utwórz pierwszą playlistę poniżej' : 'Brak playlist'}
                 </p>
               )}
               {playlists.map(pl => {
@@ -580,7 +633,7 @@ export default function App() {
                       <span className="count">{pl.songs.length}</span>
                     </button>
                   )}
-                  {isOwner && (
+                  {showOwnerUI && (
                     <div className="playlist-actions">
                       <button
                         className="btn-icon play"
@@ -597,7 +650,7 @@ export default function App() {
               })}
             </div>
 
-            {isOwner && (
+            {showOwnerUI && (
               <div className="add-row">
                 <input
                   value={newPlaylist}
@@ -617,7 +670,7 @@ export default function App() {
               <div className="song-list">
                 {activePlaylist.songs.length === 0 && (
                   <p className="empty-hint">
-                    {isOwner ? 'Dodaj pierwszą piosenkę poniżej' : 'Brak piosenek'}
+                    {showOwnerUI ? 'Dodaj pierwszą piosenkę poniżej' : 'Brak piosenek'}
                   </p>
                 )}
                 {activePlaylist.songs.map(s => (
@@ -628,7 +681,7 @@ export default function App() {
                       className="song-thumb"
                     />
                     <span className="song-title">{s.title}</span>
-                    {isOwner && (
+                    {showOwnerUI && (
                       <>
                         <button className="btn-icon play" onClick={() => playSongNow(s)} title="Puść teraz">▶</button>
                         <button className="btn-icon danger" onClick={() => deleteSong(s.id)} title="Usuń">✕</button>
@@ -638,7 +691,7 @@ export default function App() {
                 ))}
               </div>
 
-              {isOwner && (
+              {showOwnerUI && (
                 <>
                   <div className="add-song-form">
                     <input
@@ -687,7 +740,7 @@ export default function App() {
         <div className="player-area">
 
           {isOwner && (
-            <div className="player-card">
+            <div className="player-card" style={showOwnerUI ? undefined : { position: 'fixed', top: '-9999px', left: '-9999px', pointerEvents: 'none' }}>
               <div className="yt-wrapper">
                 <div ref={playerDivRef} />
                 {!isPlaying && (
@@ -696,11 +749,22 @@ export default function App() {
                     <p>Wybierz playlistę i naciśnij START</p>
                   </div>
                 )}
+                {isPlaying && ytPlayerState !== -1 && ytPlayerState !== 1 && ytPlayerState !== 3 && (
+                  <div className="player-overlay player-overlay--activate" onClick={() => playerRef.current?.playVideo()}>
+                    <span className="vinyl-icon">▶</span>
+                    <p>Kliknij aby odtworzyć</p>
+                  </div>
+                )}
               </div>
 
               {isPlaying && currentSong && (
                 <div className="now-playing">
-                  <span className="now-label">TERAZ GRA</span>
+                  <span className="now-label">
+                    TERAZ GRA
+                    {ytPlayerState === 3 && loadProgress < 100 && (
+                      <span className="load-pct"> · {loadProgress}%</span>
+                    )}
+                  </span>
                   <span className="now-title">{currentSong.title}</span>
                 </div>
               )}
@@ -717,7 +781,7 @@ export default function App() {
           {isPlaying && candidates.length > 0 && (
             <div className="voting-card">
               <h2 className="section-title voting-title">
-                {isOwner ? 'Wyniki głosowania' : 'Zagłosuj na następną piosenkę'}
+                {showOwnerUI ? 'Wyniki głosowania' : 'Zagłosuj na następną piosenkę'}
               </h2>
               <div className="candidates">
                 {candidates.map(c => {
@@ -738,7 +802,7 @@ export default function App() {
                       <span className="candidate-title">{c.title}</span>
                       <div className="candidate-footer">
                         <span className="vote-count">{votes}</span>
-                        {isOwner ? (
+                        {showOwnerUI ? (
                           <button className="btn-vote" onClick={() => playSongNow(c)}>
                             ▶ Puść teraz
                           </button>
@@ -764,7 +828,7 @@ export default function App() {
             </div>
           )}
 
-          {!isPlaying && !isOwner && (
+          {!isPlaying && !showOwnerUI && (
             <div className="voting-card">
               <p className="empty-hint">Właściciel pokoju jeszcze nie uruchomił jukeboxu…</p>
             </div>
