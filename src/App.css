@@ -1012,3 +1012,108 @@ input.input-error { border-color: var(--accent); }
   object-fit: cover;
   display: block;
 }
+
+/* ─── Options voting panel ───────────────────────────────────────────────────── */
+.options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.vote-option {
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+
+.vote-option.winning {
+  border-color: var(--gold);
+}
+
+.vote-option.voted {
+  border-color: var(--accent);
+}
+
+.vote-option-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--surface3);
+  border-bottom: 1px solid var(--border);
+}
+
+.vote-option.winning .vote-option-header {
+  background: rgba(245, 166, 35, 0.10);
+}
+
+.vote-option.voted .vote-option-header {
+  background: rgba(232, 65, 90, 0.10);
+}
+
+.vote-option-label {
+  font-weight: 700;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-dim);
+  flex: 1;
+}
+
+.vote-option-count {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.btn-vote-option {
+  padding: 0.25rem 0.7rem;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.btn-vote-option:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn-vote-option.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.option-songs {
+  display: flex;
+  flex-direction: column;
+}
+
+.option-song-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.option-song-item:last-child {
+  border-bottom: none;
+}
+
+.option-song-pos {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  width: 1rem;
+  text-align: center;
+  flex-shrink: 0;
+}

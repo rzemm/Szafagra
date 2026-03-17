@@ -69,20 +69,40 @@ function resolveWinner(candidates, voterMap, voteMode) {
   return winners[Math.floor(Math.random() * winners.length)]
 }
 
-// Generate N voting slots (each with 3 candidates) for the next batch.
-// nextCands is stored as an object { '0': [...], '1': [...] } because
-// Firestore does not support arrays-of-arrays.
-function generateNextBatch(playlist, n, exclude = []) {
-  const nextCands = {}
-  const nextVotes = {}
+// Generate 3 voting options, each being an ordered sequence of n songs.
+// Stored as object { '0': [song,...], '1': [...], '2': [...] } — Firestore
+// does not support arrays-of-arrays, so we use string keys.
+function generateNextOptions(playlist, n, exclude = []) {
+  const nextOptions = {}
   const used = [...exclude]
-  for (let i = 0; i < n; i++) {
-    const cands = pickRandom(playlist?.songs ?? [], 3, used)
-    nextCands[String(i)] = cands
-    nextVotes[String(i)]  = {}
-    used.push(...cands)
+  for (let i = 0; i < 3; i++) {
+    const songs = pickRandom(playlist?.songs ?? [], n, used)
+    nextOptions[String(i)] = songs
+    used.push(...songs)
   }
-  return { nextCands, nextVotes }
+  return { nextOptions, nextVotes: {} }
+}
+
+// Resolve which option key wins (votes = { uid: optionKey })
+function resolveOption(keys, votes, voteMode) {
+  if (!keys.length) return null
+  const counts = Object.fromEntries(keys.map(k => [k, 0]))
+  for (const v of Object.values(votes)) {
+    if (v in counts) counts[v]++
+  }
+  if (voteMode === 'weighted') {
+    const weights = keys.map(k => counts[k] + 1)
+    const total   = weights.reduce((a, b) => a + b, 0)
+    let rng = Math.random() * total
+    for (let i = 0; i < keys.length; i++) {
+      rng -= weights[i]
+      if (rng <= 0) return keys[i]
+    }
+    return keys[keys.length - 1]
+  }
+  const max     = Math.max(...keys.map(k => counts[k]))
+  const winners = keys.filter(k => counts[k] === max)
+  return winners[Math.floor(Math.random() * winners.length)]
 }
 
 function formatTime(sec) {
@@ -160,10 +180,10 @@ export default function App() {
   const voteMode      = roomSettings?.voteMode      ?? 'highest'
   const skipThreshold = roomSettings?.skipThreshold ?? 0
 
-  // Multi-slot voting for the next batch (object, NOT array — Firestore forbids nested arrays)
-  const nextCands  = jbState?.nextCands  ?? {}   // { '0': [song,...], '1': [...] }
-  const nextVotes  = jbState?.nextVotes  ?? {}   // { '0': {uid: cid}, ... }
-  const nextSlotKeys = Object.keys(nextCands).sort()
+  // Single-vote options (object, NOT array — Firestore forbids nested arrays)
+  const nextOptions    = jbState?.nextOptions ?? {}   // { '0': [song,...], '1': [...], '2': [...] }
+  const nextVotesData  = jbState?.nextVotes   ?? {}   // { uid: optionKey }
+  const nextOptionKeys = Object.keys(nextOptions).sort()
 
   const skipVoters = jbState?.skipVoters ?? {}
   const skipCount  = Object.keys(skipVoters).length
@@ -190,17 +210,19 @@ export default function App() {
     return () => clearInterval(id)
   }, [isPlaying, jbState?.syncAt, jbState?.syncPos, jbState?.duration])
 
-  // Auto-generate nextCands when missing (old Firestore state or after settings change)
+  // Auto-generate nextOptions when queue ≤ 1 and no options exist yet
   useEffect(() => {
     if (!isOwner || !isPlaying || !jbState || !roomId) return
-    if (nextSlotKeys.length > 0) return
+    const queue = jbState.queue ?? []
+    if (queue.length > 1) return             // still enough songs, no voting needed
+    if (nextOptionKeys.length > 0) return    // options already exist
     const { activePlaylistId } = jbState
     const playlist = playlists.find(p => p.id === activePlaylistId)
     if (!playlist?.songs.length) return
-    const used = [currentSong, ...(jbState.queue ?? [])].filter(Boolean)
-    const { nextCands: nc, nextVotes: nv } = generateNextBatch(playlist, queueSize, used)
-    updateDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), { nextCands: nc, nextVotes: nv }).catch(() => {})
-  }, [isPlaying, isOwner, nextSlotKeys.length, queueSize, roomId]) // eslint-disable-line react-hooks/exhaustive-deps
+    const used = [currentSong, ...queue].filter(Boolean)
+    const { nextOptions: no, nextVotes: nv } = generateNextOptions(playlist, queueSize, used)
+    updateDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), { nextOptions: no, nextVotes: nv }).catch(() => {})
+  }, [isPlaying, isOwner, nextOptionKeys.length, (jbState?.queue ?? []).length, queueSize, roomId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-advance when skip vote threshold is reached (owner only)
   useEffect(() => {
@@ -233,11 +255,9 @@ export default function App() {
 
     const { activePlaylistId } = jbState
     const voteMode  = roomSettings?.voteMode  ?? 'highest'
-    const queueSize = Math.max(1, roomSettings?.queueSize ?? 1)
-    const playlist  = playlists.find(p => p.id === activePlaylistId)
     const skippedIds  = skippedSongIdsRef.current
 
-    // Current batch: if songs remain in queue, just advance (voting stays open)
+    // If songs remain in queue, just advance (keep existing options)
     const queue = jbState.queue ?? []
     const validQueue = queue.filter(s => !skippedIds.has(s.id))
 
@@ -249,7 +269,7 @@ export default function App() {
       await setDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), {
         isPlaying: true, activePlaylistId, currentSong: nextSong,
         queue: newQueue,
-        nextCands: jbState.nextCands ?? {},
+        nextOptions: jbState.nextOptions ?? {},
         nextVotes: jbState.nextVotes ?? {},
         skipVoters: {},
         syncAt: serverTimestamp(), syncPos: 0, duration: null, updatedAt: serverTimestamp(),
@@ -257,34 +277,27 @@ export default function App() {
       return
     }
 
-    // Batch exhausted → tally all slot votes, start new batch
-    const slotCands = jbState.nextCands ?? {}
-    const slotVotes = jbState.nextVotes ?? {}
-    const slotKeys  = Object.keys(slotCands).sort()
-    if (!slotKeys.length) return
+    // Queue exhausted → pick winning option, queue its songs
+    const options = jbState.nextOptions ?? {}
+    const votes   = jbState.nextVotes   ?? {}
+    const keys    = Object.keys(options).sort()
+    if (!keys.length) return
 
-    const winners = slotKeys.map(key => {
-      const cands    = slotCands[key] ?? []
-      const filtered = cands.filter(c => !skippedIds.has(c.id))
-      const pool     = filtered.length ? filtered : cands
-      return resolveWinner(pool, slotVotes[key] ?? {}, voteMode)
-    }).filter(Boolean)
+    const winKey   = resolveOption(keys, votes, voteMode)
+    const winSongs = (options[winKey] ?? []).filter(s => !skippedIds.has(s.id))
+    if (!winSongs.length) return
 
-    if (!winners.length) return
-
-    const [first, ...rest] = winners
+    const [first, ...rest] = winSongs
     prevSongIdRef.current = first.id
     playVideo(first.ytId)
 
-    const usedSongs = [...winners, ...[...skippedIds].map(id => ({ id }))]
-    const { nextCands: newNextCands, nextVotes: newNextVotes } =
-      generateNextBatch(playlist, queueSize, usedSongs)
-
+    // Clear options — auto-effect will generate new ones when queue drops to ≤ 1
+    const usedSongs = [...winSongs, ...[...skippedIds].map(id => ({ id }))]
     await setDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), {
       isPlaying: true, activePlaylistId, currentSong: first,
       queue: rest,
-      nextCands: newNextCands,
-      nextVotes: newNextVotes,
+      nextOptions: {},
+      nextVotes: {},
       skipVoters: {},
       syncAt: serverTimestamp(), syncPos: 0, duration: null, updatedAt: serverTimestamp(),
     })
@@ -298,13 +311,12 @@ export default function App() {
     prevSongIdRef.current = song.id
     playVideo(song.ytId)
 
-    // Current batch: just this song (no pre-queued songs when manually picking)
-    // Voting for the NEXT batch starts immediately
-    const { nextCands: nc, nextVotes: nv } = generateNextBatch(playlist, queueSize, [song])
+    // Queue empty → generate options immediately so voting is ready
+    const { nextOptions: no, nextVotes: nv } = generateNextOptions(playlist, queueSize, [song])
     await setDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), {
       isPlaying: true, activePlaylistId: pid, currentSong: song,
       queue: [],
-      nextCands: nc, nextVotes: nv,
+      nextOptions: no, nextVotes: nv,
       skipVoters: {},
       syncAt: serverTimestamp(), syncPos: 0, duration: null, updatedAt: serverTimestamp(),
     })
@@ -534,12 +546,16 @@ export default function App() {
     playVideo(first.ytId)
 
     const batchSongs = [first, ...initialQueue]
-    const { nextCands: nc, nextVotes: nv } = generateNextBatch(playlist, queueSize, batchSongs)
+    // Pre-generate options if queue is short enough to show voting immediately
+    const genOpts = initialQueue.length <= 1
+    const { nextOptions: nc, nextVotes: nv } = genOpts
+      ? generateNextOptions(playlist, queueSize, batchSongs)
+      : { nextOptions: {}, nextVotes: {} }
 
     await setDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), {
       isPlaying: true, activePlaylistId: pid, currentSong: first,
       queue: initialQueue,
-      nextCands: nc, nextVotes: nv,
+      nextOptions: nc, nextVotes: nv,
       skipVoters: {},
       syncAt: serverTimestamp(), syncPos: 0, duration: null, updatedAt: serverTimestamp(),
     })
@@ -564,15 +580,15 @@ export default function App() {
   // Voting
   // ──────────────────────────────────────────────────────────────────────────
 
-  async function vote(slotIndex, cid) {
+  async function vote(optionKey) {
     if (!user || !roomId || !jbState) return
     const uid = user.uid
     const ref = doc(db, 'rooms', roomId, 'state', STATE_ID)
-    const currentVote = (jbState.nextVotes?.[String(slotIndex)] ?? {})[uid]
-    if (currentVote === cid) {
-      await updateDoc(ref, { [`nextVotes.${slotIndex}.${uid}`]: deleteField() })
+    const currentVote = (jbState.nextVotes ?? {})[uid]
+    if (currentVote === optionKey) {
+      await updateDoc(ref, { [`nextVotes.${uid}`]: deleteField() })
     } else {
-      await updateDoc(ref, { [`nextVotes.${slotIndex}.${uid}`]: cid })
+      await updateDoc(ref, { [`nextVotes.${uid}`]: optionKey })
     }
   }
 
@@ -1029,52 +1045,60 @@ export default function App() {
             </div>
           )}
 
-          {/* Multi-slot voting panels */}
-          {isPlaying && nextSlotKeys.map((key) => {
-            const slotIndex    = parseInt(key)
-            const cands        = nextCands[key] ?? []
-            const slotVoterMap = nextVotes[key] ?? {}
-            const myVoteHere   = slotVoterMap[user?.uid] ?? null
-            const counts       = Object.fromEntries(
-              cands.map(c => [c.id, Object.values(slotVoterMap).filter(v => v === c.id).length])
-            )
-            const maxV = cands.length ? Math.max(...Object.values(counts)) : 0
-            return (
-              <div key={key} className="voting-card">
-                <h2 className="section-title voting-title">
-                  {nextSlotKeys.length > 1 ? `Piosenka ${slotIndex + 1}` : 'Następna piosenka'}
-                </h2>
-                <div className="slot-cands">
-                  {cands.map(c => {
-                    const votes     = counts[c.id] ?? 0
-                    const isWinning = votes > 0 && votes === maxV
-                    const isVoted   = myVoteHere === c.id
-                    return (
-                      <div key={c.id} className={`slot-cand${isWinning ? ' winning' : ''}${isVoted ? ' voted' : ''}`}>
-                        <img
-                          src={`https://img.youtube.com/vi/${c.ytId}/default.jpg`}
-                          alt=""
-                          className="slot-thumb"
-                        />
-                        <span className="slot-title">{c.title}</span>
-                        <span className="slot-votes">{votes > 0 ? votes : ''}</span>
-                        {showOwnerUI ? (
-                          <button className="btn-icon play" onClick={() => playSongNow(c)} title="Puść teraz">▶</button>
-                        ) : (
+          {/* Single voting panel — 3 options, each = N-song sequence */}
+          {isPlaying && (jbState?.queue ?? []).length <= 1 && nextOptionKeys.length > 0 && (
+            <div className="voting-card">
+              <h2 className="section-title voting-title">Zagłosuj na następne piosenki</h2>
+              <div className="options-list">
+                {nextOptionKeys.map(key => {
+                  const songs      = nextOptions[key] ?? []
+                  const myVote     = nextVotesData[user?.uid] ?? null
+                  const isVoted    = myVote === key
+                  const voteCount  = Object.values(nextVotesData).filter(v => v === key).length
+                  const maxOptVotes = Math.max(0, ...nextOptionKeys.map(k =>
+                    Object.values(nextVotesData).filter(v => v === k).length
+                  ))
+                  const isWinning  = voteCount > 0 && voteCount === maxOptVotes
+                  return (
+                    <div key={key} className={`vote-option${isVoted ? ' voted' : ''}${isWinning ? ' winning' : ''}`}>
+                      <div className="vote-option-header">
+                        <span className="vote-option-label">Opcja {parseInt(key) + 1}</span>
+                        {voteCount > 0 && (
+                          <span className="vote-option-count">
+                            {voteCount} głos{voteCount === 1 ? '' : voteCount < 5 ? 'y' : 'ów'}
+                          </span>
+                        )}
+                        {!showOwnerUI && (
                           <button
-                            className={`btn-vote-sm${isVoted ? ' active' : ''}`}
-                            onClick={() => vote(slotIndex, c.id)}
+                            className={`btn-vote-option${isVoted ? ' active' : ''}`}
+                            onClick={() => vote(key)}
                           >
-                            {isVoted ? '✓' : '▲'}
+                            {isVoted ? '✓ Zagłosowano' : '▲ Głosuj'}
                           </button>
                         )}
                       </div>
-                    )
-                  })}
-                </div>
+                      <div className="option-songs">
+                        {songs.map((s, i) => (
+                          <div key={s.id} className="option-song-item">
+                            <span className="option-song-pos">{i + 1}</span>
+                            <img
+                              src={`https://img.youtube.com/vi/${s.ytId}/default.jpg`}
+                              alt=""
+                              className="slot-thumb"
+                            />
+                            <span className="slot-title">{s.title}</span>
+                            {showOwnerUI && (
+                              <button className="btn-icon play" onClick={() => playSongNow(s)} title="Puść teraz">▶</button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
-            )
-          })}
+            </div>
+          )}
 
           {/* Skip panel */}
           {isPlaying && skipThreshold > 0 && (
@@ -1093,7 +1117,7 @@ export default function App() {
             </div>
           )}
 
-          {isPlaying && nextSlotKeys.length === 0 && (
+          {isPlaying && (jbState?.queue ?? []).length <= 1 && nextOptionKeys.length === 0 && (
             <div className="voting-card">
               <p className="empty-hint">Za mało piosenek na głosowanie (dodaj więcej do playlisty).</p>
             </div>
