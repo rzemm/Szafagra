@@ -15,9 +15,31 @@ function genId() {
   return Math.random().toString(36).slice(2, 9) + Date.now().toString(36)
 }
 
+const YT_ID_RE = /^[a-zA-Z0-9_-]{11}$/
+
 function extractYtId(url) {
-  const m = url.match(/(?:[?&]v=|youtu\.be\/|\/embed\/)([^&?#\s]+)/)
-  return m ? m[1] : null
+  try {
+    const u = new URL(url)
+    const host = u.hostname.toLowerCase()
+
+    let ytId = null
+
+    if (host === 'youtu.be') {
+      ytId = u.pathname.split('/').filter(Boolean)[0] ?? null
+    } else if (['youtube.com', 'www.youtube.com', 'm.youtube.com', 'music.youtube.com'].includes(host)) {
+      if (u.pathname === '/watch') {
+        ytId = u.searchParams.get('v')
+      } else if (u.pathname.startsWith('/embed/')) {
+        ytId = u.pathname.split('/')[2] ?? null
+      } else if (u.pathname.startsWith('/shorts/')) {
+        ytId = u.pathname.split('/')[2] ?? null
+      }
+    }
+
+    return ytId && YT_ID_RE.test(ytId) ? ytId : null
+  } catch {
+    return null
+  }
 }
 
 function pickRandom(pool, count, exclude = []) {
@@ -445,7 +467,11 @@ export default function App() {
     const url = newUrl.trim()
     if (!url || newTitle.trim()) return
     const ytId = extractYtId(url)
-    if (!ytId) return
+    if (!ytId) {
+      setUrlErr('Nieprawidłowy link YouTube')
+      return
+    }
+    setUrlErr('')
     setFetchingTitle(true)
     const title = await fetchYtTitle(url)
     if (title) setNewTitle(title)
