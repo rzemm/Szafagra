@@ -73,10 +73,11 @@ export default function App() {
   const pendingRef     = useRef(null)
   const playerDivRef   = useRef(null)
   const prevSongIdRef  = useRef(null)
+  const errorGuardRef  = useRef({ lastSongId: null, lastAt: 0 })
+  const skippedSongIdsRef = useRef(new Set())
 
   // Stable ref — always holds the latest state for callbacks that can't re-close
   const liveRef = useRef({})
-  liveRef.current = { jbState, roomId, user, playlists }
 
   // ── Derived ────────────────────────────────────────────────────────────────
   const activePlaylist = playlists.find(p => p.id === activePid) ?? null
@@ -90,6 +91,119 @@ export default function App() {
     candidates.map(c => [c.id, Object.values(voterMap).filter(v => v === c.id).length])
   )
   const maxVotes = candidates.length ? Math.max(...Object.values(voteCounts)) : 0
+
+  useEffect(() => {
+    liveRef.current = { jbState, roomId, user, playlists }
+  }, [jbState, roomId, user, playlists])
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Playback helpers
+  // ──────────────────────────────────────────────────────────────────────────
+
+  function playVideo(ytId) {
+    if (playerReadyRef.current && playerRef.current) {
+      playerRef.current.loadVideoById(ytId)
+    } else {
+      pendingRef.current = ytId
+    }
+  }
+
+  // Called by YouTube onStateChange → reads live state via ref (no stale closure)
+  async function advanceToWinner() {
+    const { jbState, roomId, playlists } = liveRef.current
+    if (!jbState || !roomId) return
+
+    const { candidates = [], voterMap = {}, activePlaylistId } = jbState
+    if (!candidates.length) return
+
+    const skippedSongIds = skippedSongIdsRef.current
+    const eligibleCandidates = candidates.filter(c => !skippedSongIds.has(c.id))
+    const pool = eligibleCandidates.length ? eligibleCandidates : candidates
+
+    const counts   = Object.fromEntries(
+      pool.map(c => [c.id, Object.values(voterMap).filter(v => v === c.id).length])
+    )
+    const maxV     = Math.max(...Object.values(counts))
+    const winners  = pool.filter(c => counts[c.id] === maxV)
+    const winner   = winners[Math.floor(Math.random() * winners.length)]
+
+    const playlist      = playlists.find(p => p.id === activePlaylistId)
+    const skippedAsSongs = [...skippedSongIds].map(id => ({ id }))
+    const nextCandidates = playlist
+      ? pickRandom(playlist.songs, 3, [winner, ...skippedAsSongs])
+      : []
+
+    await setDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), {
+      isPlaying:        true,
+      activePlaylistId,
+      currentSong:      winner,
+      candidates:       nextCandidates,
+      roundId:          genId(),
+      voterMap:         {},
+      updatedAt:        serverTimestamp(),
+    })
+  }
+
+  async function playSongNow(song) {
+    if (!roomId) return
+    const pid      = activePid ?? jbState?.activePlaylistId
+    const playlist = playlists.find(p => p.id === pid)
+    const nextCandidates = playlist ? pickRandom(playlist.songs, 3, [song]) : []
+    await setDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), {
+      isPlaying:        true,
+      activePlaylistId: pid,
+      currentSong:      song,
+      candidates:       nextCandidates,
+      roundId:          genId(),
+      voterMap:         {},
+      updatedAt:        serverTimestamp(),
+    })
+  }
+
+  async function skipBrokenSongAndAdvance(song) {
+    if (!song?.id) {
+      await advanceToWinner()
+      return
+    }
+
+    const { jbState, roomId, playlists } = liveRef.current
+    if (!jbState || !roomId) return
+
+    skippedSongIdsRef.current.add(song.id)
+
+    const { candidates = [], activePlaylistId } = jbState
+    const playlist = playlists.find(p => p.id === activePlaylistId)
+    const skippedAsSongs = [...skippedSongIdsRef.current].map(id => ({ id }))
+
+    const candidateFallback = candidates.find(
+      c => c.id !== song.id && !skippedSongIdsRef.current.has(c.id)
+    )
+
+    const randomFallback = playlist
+      ? pickRandom(playlist.songs, 1, [song, ...skippedAsSongs])[0]
+      : null
+
+    const nextSong = candidateFallback ?? randomFallback
+    if (!nextSong) {
+      await advanceToWinner()
+      return
+    }
+
+    const nextCandidates = playlist
+      ? pickRandom(playlist.songs, 3, [nextSong, song, ...skippedAsSongs])
+      : []
+
+    await setDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), {
+      isPlaying: true,
+      activePlaylistId,
+      currentSong: nextSong,
+      candidates: nextCandidates,
+      roundId: genId(),
+      voterMap: {},
+      updatedAt: serverTimestamp(),
+    })
+  }
+
 
   // ──────────────────────────────────────────────────────────────────────────
   // Auth + room setup
@@ -174,7 +288,7 @@ export default function App() {
         playerVars: { rel: 0, modestbranding: 1 },
         events: {
           onReady() {
-            if (!alive) { try { localPlayer.destroy() } catch {} return }
+            if (!alive) { try { localPlayer.destroy() } catch (err) { console.warn('Player destroy failed', err) } return }
             playerRef.current      = localPlayer
             playerReadyRef.current = true
             // load pending OR fall back to whatever Firestore says is playing
@@ -190,6 +304,38 @@ export default function App() {
           onStateChange(e) {
             if (!alive) return
             if (e.data === window.YT.PlayerState.ENDED) advanceToWinner()
+          },
+          onError(e) {
+            if (!alive) return
+            const code = e?.data
+            const { currentSong } = liveRef.current.jbState ?? {}
+            console.warn('[YT:onError] playback failure', {
+              code,
+              songId: currentSong?.id ?? null,
+              ytId: currentSong?.ytId ?? null,
+            })
+
+            if (![2, 5, 100, 101, 150].includes(code)) return
+
+            const now = Date.now()
+            if (
+              currentSong?.id &&
+              errorGuardRef.current.lastSongId === currentSong.id &&
+              now - errorGuardRef.current.lastAt < 3000
+            ) {
+              console.warn('[YT:onError] loop guard active, ignoring duplicate error', {
+                songId: currentSong.id,
+                code,
+              })
+              return
+            }
+
+            errorGuardRef.current = {
+              lastSongId: currentSong?.id ?? null,
+              lastAt: now,
+            }
+
+            skipBrokenSongAndAdvance(currentSong)
           },
         },
       })
@@ -210,7 +356,7 @@ export default function App() {
       alive                  = false
       playerReadyRef.current = false
       playerRef.current      = null
-      try { localPlayer?.destroy() } catch {}
+      try { localPlayer?.destroy() } catch (err) { console.warn('Player cleanup failed', err) }
     }
   }, [isOwner]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -222,63 +368,6 @@ export default function App() {
     prevSongIdRef.current = id
     playVideo(ytId)
   }, [jbState?.currentSong?.id, jbState?.isPlaying, isOwner]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ──────────────────────────────────────────────────────────────────────────
-  // Playback helpers
-  // ──────────────────────────────────────────────────────────────────────────
-
-  function playVideo(ytId) {
-    if (playerReadyRef.current && playerRef.current) {
-      playerRef.current.loadVideoById(ytId)
-    } else {
-      pendingRef.current = ytId
-    }
-  }
-
-  // Called by YouTube onStateChange → reads live state via ref (no stale closure)
-  async function advanceToWinner() {
-    const { jbState, roomId, playlists } = liveRef.current
-    if (!jbState || !roomId) return
-
-    const { candidates = [], voterMap = {}, activePlaylistId } = jbState
-    if (!candidates.length) return
-
-    const counts   = Object.fromEntries(
-      candidates.map(c => [c.id, Object.values(voterMap).filter(v => v === c.id).length])
-    )
-    const maxV     = Math.max(...Object.values(counts))
-    const winners  = candidates.filter(c => counts[c.id] === maxV)
-    const winner   = winners[Math.floor(Math.random() * winners.length)]
-
-    const playlist      = playlists.find(p => p.id === activePlaylistId)
-    const nextCandidates = playlist ? pickRandom(playlist.songs, 3, [winner]) : []
-
-    await setDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), {
-      isPlaying:        true,
-      activePlaylistId,
-      currentSong:      winner,
-      candidates:       nextCandidates,
-      roundId:          genId(),
-      voterMap:         {},
-      updatedAt:        serverTimestamp(),
-    })
-  }
-
-  async function playSongNow(song) {
-    if (!roomId) return
-    const pid      = activePid ?? jbState?.activePlaylistId
-    const playlist = playlists.find(p => p.id === pid)
-    const nextCandidates = playlist ? pickRandom(playlist.songs, 3, [song]) : []
-    await setDoc(doc(db, 'rooms', roomId, 'state', STATE_ID), {
-      isPlaying:        true,
-      activePlaylistId: pid,
-      currentSong:      song,
-      candidates:       nextCandidates,
-      roundId:          genId(),
-      voterMap:         {},
-      updatedAt:        serverTimestamp(),
-    })
-  }
 
   async function startJukeboxWith(pid) {
     const playlist = playlists.find(p => p.id === pid)
@@ -306,7 +395,7 @@ export default function App() {
       updatedAt: serverTimestamp(),
     })
     prevSongIdRef.current = null
-    try { playerRef.current?.stopVideo() } catch {}
+    try { playerRef.current?.stopVideo() } catch (err) { console.warn('Player stop failed', err) }
   }
 
   // ──────────────────────────────────────────────────────────────────────────
