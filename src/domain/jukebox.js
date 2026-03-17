@@ -1,3 +1,5 @@
+import { resolveVoting } from '../lib/voting'
+
 function pickRandom(pool, count, exclude = []) {
   const excludedIds = new Set(exclude.map(song => song.id))
   return [...pool.filter(song => !excludedIds.has(song.id))]
@@ -6,26 +8,7 @@ function pickRandom(pool, count, exclude = []) {
 }
 
 export function chooseWinningOption(keys, votes, voteMode) {
-  if (!keys.length) return null
-  const counts = Object.fromEntries(keys.map(k => [k, 0]))
-  for (const vote of Object.values(votes)) {
-    if (vote in counts) counts[vote]++
-  }
-
-  if (voteMode === 'weighted') {
-    const weights = keys.map(k => counts[k] + 1)
-    const total = weights.reduce((acc, value) => acc + value, 0)
-    let rng = Math.random() * total
-    for (let i = 0; i < keys.length; i++) {
-      rng -= weights[i]
-      if (rng <= 0) return keys[i]
-    }
-    return keys[keys.length - 1]
-  }
-
-  const max = Math.max(...keys.map(k => counts[k]))
-  const winners = keys.filter(k => counts[k] === max)
-  return winners[Math.floor(Math.random() * winners.length)]
+  return resolveVoting(keys, votes, voteMode).winnerKey
 }
 
 export function generateVotingOptions(playlist, groupSize, exclude = []) {
