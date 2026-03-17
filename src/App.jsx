@@ -1,6 +1,4 @@
 import { useState } from 'react'
-import { addDoc, collection, deleteDoc, deleteField, doc, serverTimestamp, updateDoc } from 'firebase/firestore'
-import { db } from './firebase'
 import { RoomHeader } from './components/RoomHeader'
 import { PlaylistSidebar } from './components/PlaylistSidebar'
 import { VotingPanel } from './components/VotingPanel'
@@ -11,9 +9,8 @@ import { useRoomSubscriptions } from './hooks/useRoomSubscriptions'
 import { useJukeboxPlayback } from './hooks/useJukeboxPlayback'
 import { genId } from './lib/jukebox'
 import { extractYtId, fetchYtTitle } from './lib/youtube'
+import { createPlaylist, removePlaylist, renamePlaylist, replacePlaylistSongs, saveRoomSetting, toggleSkipVote, voteNextOption } from './services/jukeboxService'
 import './App.css'
-
-const STATE_ID = 'main'
 
 export default function App() {
   const [activePlaylistId, setActivePlaylistId] = useState(() => new URLSearchParams(window.location.search).get('playlist'))
@@ -29,6 +26,7 @@ export default function App() {
   const [viewAsGuest, setViewAsGuest] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [collapsed, setCollapsed] = useState({})
+  const [uiError, setUiError] = useState('')
 
   const { user, roomId, isOwner, authReady } = useRoomAuth()
   const { playlists, jukeboxState, settings } = useRoomSubscriptions(roomId, setActivePlaylistId)
@@ -59,43 +57,56 @@ export default function App() {
 
   const toggleSection = key => setCollapsed(s => ({ ...s, [key]: !s[key] }))
 
+  const executeAction = async (action, errorMessage) => {
+    setUiError('')
+    try {
+      return await action()
+    } catch (err) {
+      console.error(err)
+      setUiError(errorMessage)
+      return null
+    }
+  }
+
   const saveSettings = async (key, value) => {
     if (!roomId || !isOwner) return
-    await updateDoc(doc(db, 'rooms', roomId), { [`settings.${key}`]: value })
+    await executeAction(() => saveRoomSetting(roomId, key, value), 'Nie udało się zapisać ustawień.')
   }
 
   const vote = async optionKey => {
     if (!user || !roomId || !jukeboxState) return
     const uid = user.uid
-    const ref = doc(db, 'rooms', roomId, 'state', STATE_ID)
     const currentVote = (jukeboxState.nextVotes ?? {})[uid]
-    await updateDoc(ref, currentVote === optionKey ? { [`nextVotes.${uid}`]: deleteField() } : { [`nextVotes.${uid}`]: optionKey })
+    await executeAction(() => voteNextOption(roomId, uid, optionKey, currentVote), 'Nie udało się zapisać głosu.')
   }
 
   const voteSkip = async () => {
     if (!user || !roomId || !isPlaying) return
     const uid = user.uid
-    const ref = doc(db, 'rooms', roomId, 'state', STATE_ID)
-    await updateDoc(ref, skipVoters[uid] ? { [`skipVoters.${uid}`]: deleteField() } : { [`skipVoters.${uid}`]: true })
+    await executeAction(() => toggleSkipVote(roomId, uid, skipVoters[uid]), 'Nie udało się zapisać głosu pominięcia.')
   }
 
   const addPlaylist = async () => {
     const name = newPlaylistName.trim()
     if (!name || !roomId) return
-    const ref = await addDoc(collection(db, 'rooms', roomId, 'playlists'), { name, songs: [], createdAt: serverTimestamp() })
+    const ref = await executeAction(() => createPlaylist(roomId, name), 'Nie udało się utworzyć playlisty.')
+    if (!ref) return
     setActivePlaylistId(ref.id)
     setNewPlaylistName('')
   }
 
   const deletePlaylist = async id => {
     if (!roomId) return
-    await deleteDoc(doc(db, 'rooms', roomId, 'playlists', id))
+    const done = await executeAction(() => removePlaylist(roomId, id), 'Nie udało się usunąć playlisty.')
+    if (done === null) return
     if (activePlaylistId === id) setActivePlaylistId(null)
   }
 
   const saveEditPlaylist = async () => {
     const name = editingName.trim()
-    if (name && editingId && roomId) await updateDoc(doc(db, 'rooms', roomId, 'playlists', editingId), { name })
+    if (name && editingId && roomId) {
+      await executeAction(() => renamePlaylist(roomId, editingId, name), 'Nie udało się zmienić nazwy playlisty.')
+    }
     setEditingId(null)
     setEditingName('')
   }
@@ -107,7 +118,7 @@ export default function App() {
     if (!ytId) return setUrlErr('Nieprawidłowy link YouTube')
     setUrlErr('')
     setFetchingTitle(true)
-    const title = await fetchYtTitle(url)
+    const title = await executeAction(() => fetchYtTitle(url), 'Nie udało się pobrać tytułu utworu.')
     if (title) setNewSongTitle(title)
     setFetchingTitle(false)
   }
@@ -120,7 +131,11 @@ export default function App() {
     if (!ytId) return setUrlErr('Nieprawidłowy link YouTube')
     const cleanUrl = `https://youtu.be/${ytId}`
     const song = { id: genId(), url: cleanUrl, title: title || cleanUrl, ytId }
-    await updateDoc(doc(db, 'rooms', roomId, 'playlists', activePlaylistId), { songs: [...(activePlaylist?.songs ?? []), song] })
+    const done = await executeAction(
+      () => replacePlaylistSongs(roomId, activePlaylistId, [...(activePlaylist?.songs ?? []), song]),
+      'Nie udało się dodać utworu.',
+    )
+    if (done === null) return
     setNewSongUrl('')
     setNewSongTitle('')
     setUrlErr('')
@@ -128,7 +143,10 @@ export default function App() {
 
   const deleteSong = async sid => {
     if (!activePlaylist || !roomId) return
-    await updateDoc(doc(db, 'rooms', roomId, 'playlists', activePlaylistId), { songs: activePlaylist.songs.filter(s => s.id !== sid) })
+    await executeAction(
+      () => replacePlaylistSongs(roomId, activePlaylistId, activePlaylist.songs.filter(s => s.id !== sid)),
+      'Nie udało się usunąć utworu.',
+    )
   }
 
   const copyLink = () => navigator.clipboard.writeText(window.location.href).then(() => {
@@ -150,6 +168,7 @@ export default function App() {
 
   return (
     <div className="app">
+      {uiError && <div className="error-banner">{uiError}</div>}
       <RoomHeader showOwnerUI={showOwnerUI} isOwner={isOwner} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} viewAsGuest={viewAsGuest} setViewAsGuest={setViewAsGuest} copied={copied} copyLink={copyLink} />
       <main className="main">
         <PlaylistSidebar
