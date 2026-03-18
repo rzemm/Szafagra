@@ -84,7 +84,7 @@ export function PlaylistSidebar(props) {
               </div>
 
               <div className="setting-row">
-                <span className="setting-label">Próg głosowania</span>
+                <span className="setting-label">Min. zakolejkowanych</span>
                 <div className="note-picker">
                   {[0, 1, 2, 3, 4].map((count) => (
                     <button key={count} className={`note-btn${voteThreshold === count ? ' active' : ''}`} onClick={() => saveSettings('voteThreshold', count)}>
@@ -195,22 +195,7 @@ export function PlaylistSidebar(props) {
           </div>
 
           {!collapsed.songs && (
-            <>
-              <div className="song-list">
-                {activePlaylist.songs.map((song) => (
-                  <div key={song.id} className={`song-item${currentSong?.id === song.id && isPlaying ? ' song-playing' : ''}`}>
-                    <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="song-thumb" />
-                    <span className="song-title">{song.title}</span>
-                    {showOwnerUI && (
-                      <>
-                        <button className="btn-icon play" onClick={() => playSongNow(song)}>▶</button>
-                        <button className="btn-icon danger" onClick={() => { if (window.confirm(`Usunąć "${song.title}"?`)) deleteSong(song.id) }}>✕</button>
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
-
+            <div className="songs-content">
               {showOwnerUI && (
                 <div className="add-song-form">
                   <input
@@ -238,7 +223,23 @@ export function PlaylistSidebar(props) {
                   )}
                 </div>
               )}
-            </>
+
+              <div className="song-list">
+                {activePlaylist.songs.map((song) => (
+                  <div
+                    key={song.id}
+                    className={`song-item${currentSong?.id === song.id && isPlaying ? ' song-playing' : ''}${showOwnerUI ? ' song-item-clickable' : ''}`}
+                    onClick={showOwnerUI ? () => playSongNow(song) : undefined}
+                  >
+                    <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="song-thumb" />
+                    <span className="song-title">{song.title}</span>
+                    {showOwnerUI && (
+                      <button className="btn-icon danger" onClick={(e) => { e.stopPropagation(); if (window.confirm(`Usunąć "${song.title}"?`)) deleteSong(song.id) }}>🗑</button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </div>
       )}

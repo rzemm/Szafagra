@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer } from 'react'
+import { useCallback, useEffect, useReducer, useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import { RoomHeader } from './components/RoomHeader'
 import { PlaylistSidebar } from './components/PlaylistSidebar'
@@ -144,6 +144,9 @@ export default function App() {
   const userId = user?.uid ?? null
   const mySkipVote = userId ? (skipVoters[userId] ?? false) : false
   const showOwnerUI = isOwner && !uiState.viewAsGuest
+
+  const [panelOpen, setPanelOpen] = useState({ queue: true, qr: true, voting: true })
+  const togglePanel = (key) => setPanelOpen(p => ({ ...p, [key]: !p[key] }))
 
   useEffect(() => {
     if (!uiState.copied) return
@@ -408,15 +411,9 @@ export default function App() {
         isOwner={isOwner}
         sidebarOpen={uiState.sidebarOpen}
         toggleSidebar={toggleSidebar}
-        viewAsGuest={uiState.viewAsGuest}
-        toggleViewAsGuest={toggleViewAsGuest}
         copied={uiState.copied}
         copyAdminLink={copyAdminLink}
         copyVoterLink={copyVoterLink}
-        voterUrl={voterUrl}
-        joinUrl={uiState.joinUrl}
-        setJoinUrl={(value) => setField('joinUrl', value)}
-        handleJoinRoom={handleJoinRoom}
       />
 
       <main className="main">
@@ -472,24 +469,36 @@ export default function App() {
                   <div className="admin-queue-qr">
                     {isPlaying && (
                       <div className="voting-card">
-                        <h2 className="section-title voting-title">Zaraz zagra</h2>
-                        <ol className="queue-list">
-                          {queue.map((song, index) => (
-                            <li key={song.id} className="queue-item">
-                              <span className="queue-pos">{index + 1}</span>
-                              <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="queue-thumb" />
-                              <span className="queue-title">{song.title}</span>
-                              <button className="btn-icon play" onClick={() => playback.playSongNow(song)}>▶</button>
-                            </li>
-                          ))}
-                        </ol>
+                        <div className="panel-title-row" onClick={() => togglePanel('queue')}>
+                          <h2 className="section-title voting-title">Zaraz zagra</h2>
+                          <span className="section-arrow">{panelOpen.queue ? '▼' : '▶'}</span>
+                        </div>
+                        {panelOpen.queue && (
+                          <ol className="queue-list">
+                            {queue.map((song, index) => (
+                              <li key={song.id} className="queue-item">
+                                <span className="queue-pos">{index + 1}</span>
+                                <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="queue-thumb" />
+                                <span className="queue-title">{song.title}</span>
+                                <button className="btn-icon play" onClick={() => playback.playSongNow(song)}>▶</button>
+                              </li>
+                            ))}
+                          </ol>
+                        )}
                       </div>
                     )}
                     {voterUrl && (
                       <div className="admin-qr-panel">
-                        <h2 className="section-title">Dołącz</h2>
-                        <QRCodeSVG value={voterUrl} size={150} bgColor="#000000" fgColor="#ffffff" />
-                        <p className="qr-url">{voterUrl}</p>
+                        <div className="panel-title-row" onClick={() => togglePanel('qr')}>
+                          <h2 className="section-title">Dołącz</h2>
+                          <span className="section-arrow">{panelOpen.qr ? '▼' : '▶'}</span>
+                        </div>
+                        {panelOpen.qr && (
+                          <>
+                            <QRCodeSVG value={voterUrl} size={150} bgColor="#000000" fgColor="#ffffff" />
+                            <p className="qr-url">{voterUrl}</p>
+                          </>
+                        )}
                       </div>
                     )}
                   </div>
@@ -515,17 +524,23 @@ export default function App() {
 
               {isPlaying && nextOptionKeys.length > 0 && (
                 <div className="voting-panel-bottom">
-                <VotingPanel
-                  nextOptionKeys={nextOptionKeys}
-                  nextOptions={nextOptions}
-                  nextVotesData={nextVotesData}
-                  userId={userId}
-                  onVote={vote}
-                  showPlayNow
-                  onPlayNow={playback.playSongNow}
-                  columns
-                  onChooseOption={playback.advanceToOption}
-                />
+                  <div className="panel-title-row" onClick={() => togglePanel('voting')}>
+                    <h2 className="section-title">Zagłosuj na następne</h2>
+                    <span className="section-arrow">{panelOpen.voting ? '▼' : '▶'}</span>
+                  </div>
+                  {panelOpen.voting && (
+                    <VotingPanel
+                      nextOptionKeys={nextOptionKeys}
+                      nextOptions={nextOptions}
+                      nextVotesData={nextVotesData}
+                      userId={userId}
+                      onVote={vote}
+                      showPlayNow
+                      onPlayNow={playback.playSongNow}
+                      columns
+                      onChooseOption={playback.advanceToOption}
+                    />
+                  )}
                 </div>
               )}
             </>

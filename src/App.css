@@ -23,7 +23,8 @@
 .app {
   display: flex;
   flex-direction: column;
-  min-height: 100svh;
+  height: 100svh;
+  overflow: hidden;
   background: var(--bg);
   color: var(--text);
   font-family: 'Segoe UI', system-ui, sans-serif;
@@ -102,6 +103,15 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+}
+
+.songs-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0 1.2rem 1.2rem;
 }
 
 .section-title-row {
@@ -142,6 +152,30 @@
 
 .section-title-row:hover .section-arrow {
   color: var(--accent);
+}
+
+.panel-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+  padding: 0.2rem 0.4rem;
+  margin: -0.2rem -0.4rem 0;
+  border-radius: 6px;
+  transition: background 0.12s;
+}
+
+.panel-title-row:hover {
+  background: rgba(255,255,255,0.06);
+}
+
+.panel-title-row:hover .section-arrow {
+  color: var(--accent);
+}
+
+.panel-title-row + * {
+  margin-top: 0.6rem;
 }
 
 /* ─── Playlist list ─────────────────────────────────────────────────────────── */
@@ -488,9 +522,8 @@ input.input-error { border-color: var(--accent); }
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  max-height: 220px;
+  flex: 1;
   overflow-y: auto;
-  margin-bottom: 0.8rem;
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
 }
@@ -507,6 +540,15 @@ input.input-error { border-color: var(--accent); }
 
 .song-item.song-playing {
   border-color: var(--gold);
+}
+
+.song-item-clickable {
+  cursor: pointer;
+}
+
+.song-item-clickable:hover {
+  border-color: var(--accent);
+  background: var(--surface3);
 }
 
 .song-thumb {
@@ -606,6 +648,10 @@ input.input-error { border-color: var(--accent); }
 }
 
 body.disco-mode .player-area-admin {
+  padding-bottom: 4rem;
+}
+
+body.disco-mode .sidebar {
   padding-bottom: 4rem;
 }
 
