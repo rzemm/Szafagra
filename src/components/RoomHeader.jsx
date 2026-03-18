@@ -19,14 +19,14 @@ export function RoomHeader({ showOwnerUI, isOwner, sidebarOpen, toggleSidebar, c
           </button>
         )}
         <span className="header-icon">🎵</span>
-        <h1>JUKEBOX</h1>
+        <h1>szafi.fi</h1>
       </div>
 
       <div className="header-actions">
         {showOwnerUI ? (
           <>
             <button className="btn-share" disabled title="Wkrótce">✉ Wyślij opinię</button>
-            <button className="btn-share" disabled title="Wkrótce">☕ Postaw kawę</button>
+            <a className="btn-share" href="https://buycoffee.to/szafifi" target="_blank" rel="noreferrer">☕ Postaw kawę</a>
             <button className="btn-share btn-share-admin" onClick={copyAdminLink} title="Kopiuj link admina">
               {copied === 'admin' ? '✓' : '⚙'} Admin
             </button>

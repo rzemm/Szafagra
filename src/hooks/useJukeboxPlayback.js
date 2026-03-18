@@ -19,10 +19,6 @@ export function useJukeboxPlayback({ authReady, isOwner, roomId, playlists, sett
   const voteMode = settings?.voteMode ?? 'highest'
   const nextOptions = jukeboxState?.nextOptions ?? {}
   const nextOptionKeys = Object.keys(nextOptions).sort()
-  const nowMs = timerTick || jukeboxState?.syncAt?.toMillis?.() || 0
-  const remaining = isPlaying && jukeboxState?.syncAt && jukeboxState?.duration
-    ? Math.max(0, jukeboxState.duration - (jukeboxState.syncPos ?? 0) - ((nowMs - jukeboxState.syncAt.toMillis()) / 1000))
-    : null
 
   useEffect(() => {
     liveRef.current = { jukeboxState, roomId, playlists, settings }
@@ -70,6 +66,11 @@ export function useJukeboxPlayback({ authReady, isOwner, roomId, playlists, sett
     onEnded: handlePlayerEnded,
     onRecoverableError: handlePlayerError,
   })
+
+  const nowMs = timerTick || jukeboxState?.syncAt?.toMillis?.() || 0
+  const remaining = isPlaying && jukeboxState?.syncAt && jukeboxState?.duration
+    ? Math.max(0, jukeboxState.duration - (jukeboxState.syncPos ?? 0) - ((nowMs - jukeboxState.syncAt.toMillis()) / 1000))
+    : null
 
   const advanceToWinner = useCallback(async () => {
     const { jukeboxState: state, roomId: rid, settings: roomSettings, playlists: pls } = liveRef.current
@@ -134,7 +135,7 @@ export function useJukeboxPlayback({ authReady, isOwner, roomId, playlists, sett
   }, [advanceToWinner])
 
   useEffect(() => {
-    if (!isPlaying || !jukeboxState?.syncAt || !jukeboxState?.duration) return
+    if (!isPlaying || ytPlayerState === 2 || !jukeboxState?.syncAt || !jukeboxState?.duration) return
     const timeoutId = setTimeout(() => {
       setTimerTick(Date.now())
     }, 0)
@@ -145,7 +146,7 @@ export function useJukeboxPlayback({ authReady, isOwner, roomId, playlists, sett
       clearTimeout(timeoutId)
       clearInterval(intervalId)
     }
-  }, [isPlaying, jukeboxState?.syncAt, jukeboxState?.duration])
+  }, [isPlaying, ytPlayerState, jukeboxState?.syncAt, jukeboxState?.duration])
 
   const playSongNow = useCallback(async (song) => {
     if (!roomId) return

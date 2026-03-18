@@ -8,6 +8,7 @@ export function PlaylistSidebar(props) {
     queueSize,
     voteThreshold,
     skipThreshold,
+    allowSuggestions,
     saveSettings,
     isPlaying,
     playlists,
@@ -41,6 +42,9 @@ export function PlaylistSidebar(props) {
     ytPlaylistId,
     importingYtPlaylist,
     importFromYouTube,
+    suggestions,
+    approveSuggestion,
+    rejectSuggestion,
   } = props
 
   const handleImportChange = async (event) => {
@@ -102,6 +106,18 @@ export function PlaylistSidebar(props) {
                       {count === 0 ? 'off' : count}
                     </button>
                   ))}
+                </div>
+              </div>
+
+              <div className="setting-row">
+                <span className="setting-label">Propozycje gości</span>
+                <div className="setting-toggle-group">
+                  <button className={`btn-setting${!allowSuggestions ? ' active' : ''}`} onClick={() => saveSettings('allowSuggestions', false)}>
+                    Wyłączone
+                  </button>
+                  <button className={`btn-setting${allowSuggestions ? ' active' : ''}`} onClick={() => saveSettings('allowSuggestions', true)}>
+                    Włączone
+                  </button>
                 </div>
               </div>
 
@@ -239,6 +255,29 @@ export function PlaylistSidebar(props) {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+        </div>
+      )}
+      {suggestions?.length > 0 && (
+        <div className="section">
+          <div className="section-title-row" onClick={() => toggleSection('suggestions')}>
+            <h2 className="section-title">Propozycje <span className="count">{suggestions.length}</span></h2>
+            <span className="section-arrow">{collapsed.suggestions ? '▶' : '▼'}</span>
+          </div>
+
+          {!collapsed.suggestions && (
+            <div className="suggestions-list">
+              {suggestions.map(s => (
+                <div key={s.id} className="suggestion-item">
+                  <img src={`https://img.youtube.com/vi/${s.ytId}/default.jpg`} alt="" className="song-thumb" />
+                  <span className="song-title">{s.title}</span>
+                  <div className="suggestion-actions">
+                    <button className="btn-icon play" onClick={() => approveSuggestion(s)} title="Dodaj do playlisty">✓</button>
+                    <button className="btn-icon danger" onClick={() => rejectSuggestion(s.id)} title="Odrzuć">✕</button>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>

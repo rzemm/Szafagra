@@ -7,6 +7,8 @@ const roomRef = roomId => doc(db, 'rooms', roomId)
 const mainStateRef = roomId => doc(db, 'rooms', roomId, 'state', STATE_ID)
 const playlistsRef = roomId => collection(db, 'rooms', roomId, 'playlists')
 const playlistRef = (roomId, playlistId) => doc(db, 'rooms', roomId, 'playlists', playlistId)
+const suggestionsRef = roomId => collection(db, 'rooms', roomId, 'suggestions')
+const suggestionRef = (roomId, id) => doc(db, 'rooms', roomId, 'suggestions', id)
 
 export function saveRoomSetting(roomId, key, value) {
   return updateDoc(roomRef(roomId), { [`settings.${key}`]: value })
@@ -66,4 +68,12 @@ export function renamePlaylist(roomId, playlistId, name) {
 
 export function replacePlaylistSongs(roomId, playlistId, songs) {
   return updateDoc(playlistRef(roomId, playlistId), { songs })
+}
+
+export function addSuggestion(roomId, userId, { title, ytId, url }) {
+  return addDoc(suggestionsRef(roomId), { userId, title, ytId, url, createdAt: serverTimestamp() })
+}
+
+export function deleteSuggestion(roomId, suggestionId) {
+  return deleteDoc(suggestionRef(roomId, suggestionId))
 }

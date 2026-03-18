@@ -10,7 +10,7 @@ import { useRoomSubscriptions } from './hooks/useRoomSubscriptions'
 import { useJukeboxPlayback } from './hooks/useJukeboxPlayback'
 import { genId } from './lib/jukebox'
 import { extractYtId, extractYtPlaylistId, fetchYtTitle, fetchYtPlaylistItems } from './lib/youtube'
-import { createPlaylist, createPlaylistWithSongs, removePlaylist, renamePlaylist, replacePlaylistSongs, saveRoomSetting, toggleSkipVote, voteNextOption } from './services/jukeboxService'
+import { addSuggestion, createPlaylist, createPlaylistWithSongs, deleteSuggestion, removePlaylist, renamePlaylist, replacePlaylistSongs, saveRoomSetting, toggleSkipVote, voteNextOption } from './services/jukeboxService'
 import './App.css'
 
 const initialUiState = {
@@ -28,7 +28,7 @@ const initialUiState = {
   joinUrl: '',
   viewAsGuest: false,
   sidebarOpen: true,
-  collapsed: { settings: true, playlists: false, songs: true },
+  collapsed: { settings: true, playlists: false, songs: true, suggestions: false },
   uiError: '',
 }
 
@@ -48,7 +48,7 @@ function uiReducer(state, action) {
       return { ...state, [action.field]: !state[action.field] }
     case 'toggleSection': {
       const isCurrentlyOpen = !state.collapsed[action.key]
-      const allClosed = { settings: true, playlists: true, songs: true }
+      const allClosed = { settings: true, playlists: true, songs: true, suggestions: true }
       return {
         ...state,
         collapsed: isCurrentlyOpen
@@ -109,7 +109,7 @@ export default function App() {
     dispatch({ type: 'initActivePlaylist', payload: updater })
   }, [])
 
-  const { playlists, jukeboxState, settings, guestToken } = useRoomSubscriptions(roomId, setInitialActivePlaylist)
+  const { playlists, jukeboxState, settings, guestToken, suggestions } = useRoomSubscriptions(roomId, setInitialActivePlaylist)
 
   const selectPlaylist = useCallback((playlistId) => {
     dispatch({ type: 'setActivePlaylist', payload: playlistId })
@@ -139,6 +139,7 @@ export default function App() {
   const nextOptionKeys = Object.keys(nextOptions).sort()
   const voteThreshold = settings?.voteThreshold ?? 1
   const skipThreshold = settings?.skipThreshold ?? 0
+  const allowSuggestions = settings?.allowSuggestions ?? false
   const skipVoters = jukeboxState?.skipVoters ?? {}
   const skipCount = Object.keys(skipVoters).length
   const userId = user?.uid ?? null
@@ -214,6 +215,29 @@ export default function App() {
     if (!userId || !roomId || !isPlaying) return
     await executeAction(() => toggleSkipVote(roomId, userId, mySkipVote), 'Nie udało się zapisać głosu pominięcia.')
   }, [executeAction, isPlaying, mySkipVote, roomId, userId])
+
+  const submitSuggestion = useCallback(async ({ title, ytId, url }) => {
+    if (!roomId || !userId) return false
+    const done = await executeAction(
+      () => addSuggestion(roomId, userId, { title, ytId, url }),
+      'Nie udało się wysłać propozycji.'
+    )
+    return done !== null
+  }, [executeAction, roomId, userId])
+
+  const approveSuggestion = useCallback(async (suggestion) => {
+    if (!roomId || !activePlaylist) return
+    const song = { id: genId(), title: suggestion.title, ytId: suggestion.ytId, url: suggestion.url }
+    await executeAction(async () => {
+      await replacePlaylistSongs(roomId, activePlaylist.id, [...(activePlaylist.songs ?? []), song])
+      await deleteSuggestion(roomId, suggestion.id)
+    }, 'Nie udało się zatwierdzić propozycji.')
+  }, [activePlaylist, executeAction, roomId])
+
+  const rejectSuggestion = useCallback(async (suggestionId) => {
+    if (!roomId) return
+    await executeAction(() => deleteSuggestion(roomId, suggestionId), 'Nie udało się odrzucić propozycji.')
+  }, [executeAction, roomId])
 
   const addPlaylist = useCallback(async () => {
     const name = uiState.newPlaylistName.trim()
@@ -459,6 +483,10 @@ export default function App() {
           ytPlaylistId={uiState.ytPlaylistId}
           importingYtPlaylist={uiState.importingYtPlaylist}
           importFromYouTube={importFromYouTube}
+          allowSuggestions={allowSuggestions}
+          suggestions={suggestions}
+          approveSuggestion={approveSuggestion}
+          rejectSuggestion={rejectSuggestion}
         />}
 
         <div className={`player-area${showOwnerUI ? ' player-area-admin' : ''}`}>
@@ -560,6 +588,8 @@ export default function App() {
               skipThreshold={skipThreshold}
               mySkipVote={mySkipVote}
               voteSkip={voteSkip}
+              allowSuggestions={allowSuggestions}
+              submitSuggestion={submitSuggestion}
             />
           )}
         </div>

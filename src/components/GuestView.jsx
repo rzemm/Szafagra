@@ -1,8 +1,44 @@
 import { useMemo, useState } from 'react'
 import { formatTime } from '../lib/jukebox'
+import { extractYtId, fetchYtTitle } from '../lib/youtube'
 
-export function GuestView({ isOwner, playerDivRef, isPlaying, currentSong, remaining, queue, nextOptionKeys, nextOptions, nextVotesData, userId, vote, skipThreshold, mySkipVote, voteSkip }) {
+export function GuestView({ isOwner, playerDivRef, isPlaying, currentSong, remaining, queue, nextOptionKeys, nextOptions, nextVotesData, userId, vote, skipThreshold, mySkipVote, voteSkip, allowSuggestions, submitSuggestion }) {
   const [queueOpen, setQueueOpen] = useState(false)
+  const [suggestUrl, setSuggestUrl] = useState('')
+  const [suggestTitle, setSuggestTitle] = useState('')
+  const [suggestErr, setSuggestErr] = useState('')
+  const [fetchingTitle, setFetchingTitle] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
+
+  const handleSuggestBlur = async () => {
+    const url = suggestUrl.trim()
+    if (!url) return
+    const ytId = extractYtId(url)
+    if (!ytId) { setSuggestErr('Nieprawidłowy link YouTube'); return }
+    setSuggestErr('')
+    setFetchingTitle(true)
+    const title = await fetchYtTitle(url)
+    setFetchingTitle(false)
+    if (title) setSuggestTitle(title)
+    else setSuggestErr('Nie udało się pobrać tytułu')
+  }
+
+  const handleSubmitSuggestion = async () => {
+    const url = suggestUrl.trim()
+    const ytId = extractYtId(url)
+    if (!ytId || !suggestTitle) return
+    setSubmitting(true)
+    const ok = await submitSuggestion({ title: suggestTitle, ytId, url: `https://youtu.be/${ytId}` })
+    setSubmitting(false)
+    if (ok) {
+      setSuggestUrl('')
+      setSuggestTitle('')
+      setSuggestErr('')
+      setSubmitted(true)
+      setTimeout(() => setSubmitted(false), 3000)
+    }
+  }
 
   const myVote = nextVotesData[userId] ?? null
 
@@ -92,8 +128,37 @@ export function GuestView({ isOwner, playerDivRef, isPlaying, currentSong, remai
         </div>
       )}
 
+      {allowSuggestions && (
+        <div className="guest-suggest">
+          <p className="guest-suggest-label">Zaproponuj utwór</p>
+          {submitted ? (
+            <p className="guest-suggest-ok">✓ Propozycja wysłana!</p>
+          ) : (
+            <>
+              <input
+                className="guest-suggest-input"
+                value={suggestUrl}
+                onChange={e => { setSuggestUrl(e.target.value); setSuggestTitle(''); setSuggestErr('') }}
+                onBlur={handleSuggestBlur}
+                placeholder="Link YouTube..."
+              />
+              {fetchingTitle && <p className="guest-suggest-hint">Pobieranie tytułu…</p>}
+              {suggestTitle && <p className="guest-suggest-hint">🎵 {suggestTitle}</p>}
+              {suggestErr && <p className="guest-suggest-err">{suggestErr}</p>}
+              <button
+                className="guest-suggest-btn"
+                onClick={handleSubmitSuggestion}
+                disabled={!suggestTitle || submitting}
+              >
+                {submitting ? '…' : '+ Zaproponuj'}
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
       <div className="guest-footer">
-        <button className="guest-footer-btn" disabled>☕ Postaw kawę</button>
+        <a className="guest-footer-btn" href="https://buycoffee.to/szafifi" target="_blank" rel="noreferrer">☕ Postaw kawę</a>
         <button className="guest-footer-btn" disabled>✉ Napisz wiadomość</button>
       </div>
     </div>

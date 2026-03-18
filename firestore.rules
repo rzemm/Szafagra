@@ -75,6 +75,12 @@ service cloud.firestore {
         allow write: if isRoomOwner(roomId);
         allow update: if stateId == 'main' && !isRoomOwner(roomId) && guestCanUpdateState();
       }
+
+      match /suggestions/{suggestionId} {
+        allow read: if signedIn();
+        allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+        allow delete: if isRoomOwner(roomId);
+      }
     }
   }
 }

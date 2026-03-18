@@ -9,6 +9,7 @@ export function useRoomSubscriptions(roomId, setActivePlaylistId) {
   const [jukeboxState, setJukeboxState] = useState(null)
   const [settings, setSettings] = useState({})
   const [guestToken, setGuestToken] = useState(null)
+  const [suggestions, setSuggestions] = useState([])
 
   useEffect(() => {
     if (!roomId) return
@@ -32,12 +33,21 @@ export function useRoomSubscriptions(roomId, setActivePlaylistId) {
       }
     })
 
+    const unsubSuggestions = onSnapshot(collection(db, 'rooms', roomId, 'suggestions'), snap => {
+      setSuggestions(
+        snap.docs
+          .map(d => ({ id: d.id, ...d.data() }))
+          .sort((a, b) => (a.createdAt?.toMillis() ?? 0) - (b.createdAt?.toMillis() ?? 0))
+      )
+    })
+
     return () => {
       unsubPlaylists()
       unsubState()
       unsubRoom()
+      unsubSuggestions()
     }
   }, [roomId, setActivePlaylistId])
 
-  return { playlists, jukeboxState, settings, guestToken }
+  return { playlists, jukeboxState, settings, guestToken, suggestions }
 }
