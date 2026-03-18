@@ -25,7 +25,7 @@ const initialUiState = {
   joinUrl: '',
   viewAsGuest: false,
   sidebarOpen: true,
-  collapsed: {},
+  collapsed: { settings: true, playlists: false, songs: true },
   uiError: '',
 }
 
@@ -43,14 +43,16 @@ function uiReducer(state, action) {
       return { ...state, [action.field]: action.value }
     case 'toggleField':
       return { ...state, [action.field]: !state[action.field] }
-    case 'toggleSection':
+    case 'toggleSection': {
+      const isCurrentlyOpen = !state.collapsed[action.key]
+      const allClosed = { settings: true, playlists: true, songs: true }
       return {
         ...state,
-        collapsed: {
-          ...state.collapsed,
-          [action.key]: !state.collapsed[action.key],
-        },
+        collapsed: isCurrentlyOpen
+          ? allClosed
+          : { ...allClosed, [action.key]: false },
       }
+    }
     case 'startPlaylistEdit':
       return { ...state, editingId: action.playlistId, editingName: action.name }
     case 'cancelPlaylistEdit':

@@ -92,7 +92,7 @@ export function PlaylistSidebar(props) {
                 <div className="note-picker">
                   {[0, 1, 2, 3, 4].map((count) => (
                     <button key={count} className={`note-btn${voteThreshold === count ? ' active' : ''}`} onClick={() => saveSettings('voteThreshold', count)}>
-                      {count === 0 ? 'off' : count}
+                      {count}
                     </button>
                   ))}
                 </div>
@@ -172,7 +172,7 @@ export function PlaylistSidebar(props) {
                       <div className="playlist-actions">
                         <button className="btn-icon play" onClick={() => startJukeboxWith(playlist.id)} disabled={playlist.songs.length === 0}>▶</button>
                         <button className="btn-icon" onClick={() => startEditPlaylist(playlist.id, playlist.name)}>✎</button>
-                        <button className="btn-icon danger" onClick={() => deletePlaylist(playlist.id)}>✕</button>
+                        <button className="btn-icon danger" onClick={() => { if (window.confirm(`Usunąć playlistę "${playlist.name}"?`)) deletePlaylist(playlist.id) }}>✕</button>
                       </div>
                     )}
                   </div>
@@ -226,7 +226,7 @@ export function PlaylistSidebar(props) {
                     {showOwnerUI && (
                       <>
                         <button className="btn-icon play" onClick={() => playSongNow(song)}>▶</button>
-                        <button className="btn-icon danger" onClick={() => deleteSong(song.id)}>✕</button>
+                        <button className="btn-icon danger" onClick={() => { if (window.confirm(`Usunąć "${song.title}"?`)) deleteSong(song.id) }}>✕</button>
                       </>
                     )}
                   </div>

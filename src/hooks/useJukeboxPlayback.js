@@ -79,6 +79,9 @@ export function useJukeboxPlayback({ authReady, isOwner, roomId, playlists, sett
     const threshold = roomSettings?.voteThreshold ?? 1
     const queueSz = Math.max(1, roomSettings?.queueSize ?? 1)
 
+    // Capture queue length BEFORE advance — this is what the user sees in "Zaraz zagra"
+    const queueLengthBeforeAdvance = (state.queue ?? []).length
+
     const nextState = moveToNextTrack({
       state,
       voteMode: vMode,
@@ -91,7 +94,8 @@ export function useJukeboxPlayback({ authReady, isOwner, roomId, playlists, sett
     let newVotes = nextState.nextVotes ?? {}
 
     // Proactively resolve voting when queue gets short enough
-    if (newQueue.length <= threshold && Object.keys(newOptions).length > 0) {
+    // Compare against pre-advance length so threshold matches what user sees in "Zaraz zagra"
+    if (queueLengthBeforeAdvance <= threshold && Object.keys(newOptions).length > 0) {
       const keys = Object.keys(newOptions).sort()
       const winnerKey = chooseWinningOption(keys, newVotes, vMode)
       const winnerSongs = (newOptions[winnerKey] ?? []).filter(song => !skippedSongIdsRef.current.has(song.id))
