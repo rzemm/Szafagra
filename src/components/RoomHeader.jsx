@@ -1,4 +1,15 @@
+import { useState } from 'react'
+
 export function RoomHeader({ showOwnerUI, isOwner, sidebarOpen, toggleSidebar, copied, copyAdminLink, copyVoterLink }) {
+  const [guestCopied, setGuestCopied] = useState(false)
+
+  const copyGuestLink = () => {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      setGuestCopied(true)
+      setTimeout(() => setGuestCopied(false), 2500)
+    })
+  }
+
   return (
     <header className="header">
       <div className="header-inner">
@@ -9,22 +20,25 @@ export function RoomHeader({ showOwnerUI, isOwner, sidebarOpen, toggleSidebar, c
         )}
         <span className="header-icon">🎵</span>
         <h1>JUKEBOX</h1>
-        {!showOwnerUI && !isOwner && <span className="visitor-badge">Tryb gościa</span>}
       </div>
 
       <div className="header-actions">
-        {showOwnerUI && (
+        {showOwnerUI ? (
           <>
             <button className="btn-share" disabled title="Wkrótce">✉ Wyślij opinię</button>
             <button className="btn-share" disabled title="Wkrótce">☕ Postaw kawę</button>
             <button className="btn-share btn-share-admin" onClick={copyAdminLink} title="Kopiuj link admina">
               {copied === 'admin' ? '✓' : '⚙'} Admin
             </button>
+            <button className="btn-share btn-share-voter" onClick={copyVoterLink} title="Kopiuj link dla głosujących">
+              {copied === 'voter' ? '✓' : '🔗'} Głosujący
+            </button>
           </>
+        ) : (
+          <button className="btn-header-share" onClick={copyGuestLink} title="Udostępnij link">
+            {guestCopied ? '✓' : '⎋'}
+          </button>
         )}
-        <button className="btn-share btn-share-voter" onClick={copyVoterLink} title="Kopiuj link dla głosujących">
-          {copied === 'voter' ? '✓' : '🔗'} Głosujący
-        </button>
       </div>
     </header>
   )

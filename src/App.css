@@ -1053,31 +1053,310 @@ body.disco-mode .sidebar {
   letter-spacing: 0.05em;
 }
 
-.now-playing-guest {
+/* ─── Guest view (mobile-first) ─────────────────────────────────────────────── */
+.guest-view {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  max-width: 540px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.guest-now-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 1.1rem 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
+  padding: 0.75rem 1rem;
 }
 
-.now-playing-guest .now-label {
+.guest-now-info {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.guest-now-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--gold);
   flex-shrink: 0;
 }
 
-.now-playing-guest .now-title {
-  flex: 1;
-  font-size: 1rem;
-  text-align: left;
+.guest-now-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.now-playing-guest .now-timer {
+.guest-now-right {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
   flex-shrink: 0;
+}
+
+.guest-now-timer {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.guest-queue-toggle {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.guest-queue-toggle:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.guest-queue {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.guest-queue-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.8rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.guest-queue-item:last-child {
+  border-bottom: none;
+}
+
+.guest-queue-pos {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  width: 1rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.guest-queue-thumb {
+  width: 40px;
+  height: 30px;
+  object-fit: cover;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.guest-queue-title {
+  font-size: 0.8rem;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.guest-voting {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.guest-voting-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.guest-vote-card {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+
+.guest-vote-card.winning {
+  border-color: var(--gold);
+}
+
+.guest-vote-card.voted {
+  border-color: var(--accent);
+}
+
+.guest-vote-songs {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.guest-vote-song {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.guest-vote-thumb {
+  width: 48px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.guest-vote-title {
+  font-size: 0.85rem;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.guest-vote-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.85rem 1rem;
+  background: var(--surface2);
+  border: none;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.guest-vote-btn:hover {
+  background: var(--surface3);
+  color: var(--text);
+}
+
+.guest-vote-btn.active {
+  background: rgba(99, 179, 237, 0.15);
+  color: var(--accent);
+}
+
+.guest-vote-card.winning .guest-vote-btn {
+  background: rgba(245, 166, 35, 0.1);
+}
+
+.guest-vote-count {
+  font-size: 0.75rem;
+  background: var(--surface3);
+  border-radius: 10px;
+  padding: 0.1rem 0.45rem;
+  color: var(--text-dim);
+}
+
+.guest-vote-btn.active .guest-vote-count {
+  background: rgba(99, 179, 237, 0.2);
+  color: var(--accent);
+}
+
+.guest-skip-row {
+  display: flex;
+  justify-content: center;
+  padding-top: 0.25rem;
+}
+
+.guest-skip-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  padding: 0.5rem 1.2rem;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.guest-skip-btn:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.guest-skip-btn.active {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: rgba(245, 166, 35, 0.1);
+}
+
+.guest-waiting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 3rem 1rem;
+  color: var(--text-dim);
+  text-align: center;
+}
+
+.guest-waiting-icon {
+  font-size: 2.5rem;
+}
+
+.guest-waiting p {
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.guest-footer {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: center;
+  padding: 1rem 0 0.5rem;
+  margin-top: auto;
+}
+
+.guest-footer-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 20px;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.btn-header-share {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  border-radius: 8px;
+  padding: 0.3rem 0.65rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.btn-header-share:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 /* ─── Settings panel ────────────────────────────────────────────────────────── */
