@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react'
 import { formatTime } from '../lib/jukebox'
 import { extractYtId, fetchYtTitle } from '../lib/youtube'
 
-export function GuestView({ isOwner, playerDivRef, isPlaying, currentSong, remaining, queue, nextOptionKeys, nextOptions, nextVotesData, userId, vote, skipThreshold, mySkipVote, voteSkip, allowSuggestions, submitSuggestion }) {
+export function GuestView({ isOwner, playerDivRef, isPlaying, currentSong, remaining, queue, nextOptionKeys, nextOptions, nextVotesData, userId, vote, skipThreshold, mySkipVote, voteSkip, allowSuggestions, submitSuggestion, myRating, onRate, showThumbnails = true }) {
   const [queueOpen, setQueueOpen] = useState(false)
+  const [hoverStar, setHoverStar] = useState(0)
   const [suggestUrl, setSuggestUrl] = useState('')
   const [suggestTitle, setSuggestTitle] = useState('')
   const [suggestErr, setSuggestErr] = useState('')
@@ -78,7 +79,7 @@ export function GuestView({ isOwner, playerDivRef, isPlaying, currentSong, remai
           {queue.map((song, i) => (
             <div key={song.id} className="guest-queue-item">
               <span className="guest-queue-pos">{i + 1}</span>
-              <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="guest-queue-thumb" />
+              {showThumbnails && <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="guest-queue-thumb" />}
               <span className="guest-queue-title">{song.title}</span>
             </div>
           ))}
@@ -87,7 +88,6 @@ export function GuestView({ isOwner, playerDivRef, isPlaying, currentSong, remai
 
       {isPlaying && nextOptionKeys.length > 0 && (
         <div className="guest-voting">
-          <p className="guest-voting-label">Zagłosuj na następne</p>
           {nextOptionKeys.map(key => {
             const songs = nextOptions[key] ?? []
             const isVoted = myVote === key
@@ -98,7 +98,7 @@ export function GuestView({ isOwner, playerDivRef, isPlaying, currentSong, remai
                 <div className="guest-vote-songs">
                   {songs.map(song => (
                     <div key={song.id} className="guest-vote-song">
-                      <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="guest-vote-thumb" />
+                      {showThumbnails && <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="guest-vote-thumb" />}
                       <span className="guest-vote-title">{song.title}</span>
                     </div>
                   ))}
@@ -125,6 +125,25 @@ export function GuestView({ isOwner, playerDivRef, isPlaying, currentSong, remai
         <div className="guest-waiting">
           <span className="guest-waiting-icon">🎵</span>
           <p>Właściciel pokoju jeszcze nie uruchomił jukeboxu…</p>
+        </div>
+      )}
+
+      {isPlaying && userId && myRating === 0 && (
+        <div className="guest-rating">
+          <p className="guest-rating-label">Oceń tę playlistę</p>
+          <div className="guest-rating-stars">
+            {[1, 2, 3, 4, 5].map(star => (
+              <button
+                key={star}
+                className={`rating-star${(hoverStar ? hoverStar >= star : myRating >= star) ? ' active' : ''}`}
+                onClick={() => onRate(myRating === star ? 0 : star)}
+                onMouseEnter={() => setHoverStar(star)}
+                onMouseLeave={() => setHoverStar(0)}
+                title={`${star}/5`}
+              >★</button>
+            ))}
+          </div>
+          {myRating > 0 && <span className="guest-rating-value">Twoja ocena: {myRating}/5</span>}
         </div>
       )}
 

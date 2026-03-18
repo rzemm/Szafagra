@@ -1,4 +1,4 @@
-import { addDoc, collection, deleteDoc, deleteField, doc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
+import { addDoc, collection, deleteDoc, deleteField, doc, increment, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
 import { db } from '../firebase'
 
 const STATE_ID = 'main'
@@ -76,4 +76,16 @@ export function addSuggestion(roomId, userId, { title, ytId, url }) {
 
 export function deleteSuggestion(roomId, suggestionId) {
   return deleteDoc(suggestionRef(roomId, suggestionId))
+}
+
+export function ratePlaylist(roomId, playlistId, userId, score) {
+  return updateDoc(playlistRef(roomId, playlistId), { [`ratings.${userId}`]: score })
+}
+
+export function incrementPlaylistPlays(roomId, playlistId) {
+  return updateDoc(playlistRef(roomId, playlistId), { totalPlays: increment(1) })
+}
+
+export function incrementPlaylistVotes(roomId, playlistId) {
+  return updateDoc(playlistRef(roomId, playlistId), { totalVotes: increment(1) })
 }

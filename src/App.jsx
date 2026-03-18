@@ -1,17 +1,37 @@
 import { useCallback, useEffect, useReducer, useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
-import { RoomHeader } from './components/RoomHeader'
-import { PlaylistSidebar } from './components/PlaylistSidebar'
-import { VotingPanel } from './components/VotingPanel'
 import { GuestView } from './components/GuestView'
 import { NowPlayingPanel } from './components/NowPlayingPanel'
+import { PlaylistSidebar } from './components/PlaylistSidebar'
+import { RoomHeader } from './components/RoomHeader'
+import { VotingPanel } from './components/VotingPanel'
+import { useJukeboxPlayback } from './hooks/useJukeboxPlayback'
+import { usePlaylistActions } from './hooks/usePlaylistActions'
 import { useRoomAuth } from './hooks/useRoomAuth'
 import { useRoomSubscriptions } from './hooks/useRoomSubscriptions'
-import { useJukeboxPlayback } from './hooks/useJukeboxPlayback'
+import { useShareLinks } from './hooks/useShareLinks'
+import { useSongActions } from './hooks/useSongActions'
 import { genId } from './lib/jukebox'
-import { extractYtId, extractYtPlaylistId, fetchYtTitle, fetchYtPlaylistItems } from './lib/youtube'
-import { addSuggestion, createPlaylist, createPlaylistWithSongs, deleteSuggestion, removePlaylist, renamePlaylist, replacePlaylistSongs, saveRoomSetting, toggleSkipVote, voteNextOption } from './services/jukeboxService'
+import { addSuggestion, deleteSuggestion, incrementPlaylistVotes, ratePlaylist, replacePlaylistSongs, saveRoomSetting, toggleSkipVote, voteNextOption } from './services/jukeboxService'
 import './App.css'
+
+function NotePicker({ value, onChange }) {
+  const [hover, setHover] = useState(0)
+  return (
+    <div className="note-picker-notes">
+      {[1, 2, 3, 4, 5].map(n => (
+        <button
+          key={n}
+          className={`note-icon-btn${(hover ? hover >= n : value >= n) ? ' active' : ''}`}
+          onClick={() => onChange(n)}
+          onMouseEnter={() => setHover(n)}
+          onMouseLeave={() => setHover(0)}
+          title={`${n} utwór${n === 1 ? '' : n < 5 ? 'y' : 'ów'} w grupie`}
+        >♪</button>
+      ))}
+    </div>
+  )
+}
 
 const initialUiState = {
   activePlaylistId: new URLSearchParams(window.location.search).get('playlist'),
@@ -25,8 +45,6 @@ const initialUiState = {
   editingId: null,
   editingName: '',
   copied: null,
-  joinUrl: '',
-  viewAsGuest: false,
   sidebarOpen: true,
   collapsed: { settings: true, playlists: false, songs: true, suggestions: false },
   uiError: '',
@@ -79,31 +97,10 @@ function uiReducer(state, action) {
   }
 }
 
-function sanitizeImportedSongs(songs) {
-  if (!Array.isArray(songs)) return []
-
-  return songs
-    .map((song) => {
-      const title = typeof song?.title === 'string' ? song.title.trim() : ''
-      const ytId = typeof song?.ytId === 'string' ? song.ytId.trim() : ''
-      const sourceUrl = typeof song?.url === 'string' ? song.url.trim() : ''
-      const url = sourceUrl || (ytId ? `https://youtu.be/${ytId}` : '')
-
-      if (!title || !ytId || !url) return null
-
-      return {
-        id: typeof song?.id === 'string' && song.id.trim() ? song.id.trim() : genId(),
-        title,
-        ytId,
-        url,
-      }
-    })
-    .filter(Boolean)
-}
-
 export default function App() {
   const [uiState, dispatch] = useReducer(uiReducer, initialUiState)
-  const { user, roomId, isOwner, authReady } = useRoomAuth()
+  const [panelOpen, setPanelOpen] = useState({ queue: true, qr: true, voting: true })
+  const { user, roomId, isOwner, authReady, needsLogin, signInWithGoogle } = useRoomAuth()
 
   const setInitialActivePlaylist = useCallback((updater) => {
     dispatch({ type: 'initActivePlaylist', payload: updater })
@@ -130,7 +127,22 @@ export default function App() {
     selectPlaylist,
   })
 
-  const activePlaylist = playlists.find(playlist => playlist.id === uiState.activePlaylistId) ?? null
+  const {
+    playerDivRef,
+    playerRef,
+    ytPlayerState,
+    loadProgress,
+    remaining,
+    playSongNow,
+    advanceToWinner,
+    advanceToOption,
+    resizeVotingOptions,
+    startJukeboxWith,
+    stopJukebox,
+    voteMode,
+  } = playback
+
+  const activePlaylist = playlists.find((playlist) => playlist.id === uiState.activePlaylistId) ?? null
   const isPlaying = jukeboxState?.isPlaying ?? false
   const currentSong = jukeboxState?.currentSong ?? null
   const queue = jukeboxState?.queue ?? []
@@ -140,14 +152,12 @@ export default function App() {
   const voteThreshold = settings?.voteThreshold ?? 1
   const skipThreshold = settings?.skipThreshold ?? 0
   const allowSuggestions = settings?.allowSuggestions ?? false
+  const showThumbnails = settings?.showThumbnails ?? true
   const skipVoters = jukeboxState?.skipVoters ?? {}
   const skipCount = Object.keys(skipVoters).length
   const userId = user?.uid ?? null
   const mySkipVote = userId ? (skipVoters[userId] ?? false) : false
-  const showOwnerUI = isOwner && !uiState.viewAsGuest
-
-  const [panelOpen, setPanelOpen] = useState({ queue: true, qr: true, voting: true })
-  const togglePanel = (key) => setPanelOpen(p => ({ ...p, [key]: !p[key] }))
+  const showOwnerUI = isOwner
 
   useEffect(() => {
     if (!uiState.copied) return
@@ -167,10 +177,6 @@ export default function App() {
 
   const toggleSidebar = useCallback(() => {
     dispatch({ type: 'toggleField', field: 'sidebarOpen' })
-  }, [])
-
-  const toggleViewAsGuest = useCallback(() => {
-    dispatch({ type: 'toggleField', field: 'viewAsGuest' })
   }, [])
 
   const startEditPlaylist = useCallback((playlistId, name) => {
@@ -200,14 +206,18 @@ export default function App() {
     if (!roomId || !isOwner) return
     await executeAction(() => saveRoomSetting(roomId, key, value), 'Nie udało się zapisać ustawień.')
     if (key === 'queueSize') {
-      await executeAction(() => playback.resizeVotingOptions(value), 'Nie udało się zaktualizować opcji głosowania.')
+      await executeAction(() => resizeVotingOptions(value), 'Nie udało się zaktualizować opcji głosowania.')
     }
-  }, [executeAction, isOwner, playback.resizeVotingOptions, roomId])
+  }, [executeAction, isOwner, resizeVotingOptions, roomId])
 
   const vote = useCallback(async (optionKey) => {
     if (!user || !roomId || !jukeboxState) return
     const uid = user.uid
     const currentVote = (jukeboxState.nextVotes ?? {})[uid]
+    if (currentVote !== optionKey) {
+      const pid = jukeboxState.activePlaylistId
+      if (pid) incrementPlaylistVotes(roomId, pid).catch(() => {})
+    }
     await executeAction(() => voteNextOption(roomId, uid, optionKey, currentVote), 'Nie udało się zapisać głosu.')
   }, [executeAction, jukeboxState, roomId, user])
 
@@ -215,6 +225,15 @@ export default function App() {
     if (!userId || !roomId || !isPlaying) return
     await executeAction(() => toggleSkipVote(roomId, userId, mySkipVote), 'Nie udało się zapisać głosu pominięcia.')
   }, [executeAction, isPlaying, mySkipVote, roomId, userId])
+
+  const playingPlaylistId = jukeboxState?.activePlaylistId ?? null
+  const playingPlaylist = playlists.find(p => p.id === playingPlaylistId) ?? null
+  const myRating = (playingPlaylist?.ratings ?? {})[userId] ?? 0
+
+  const rateActivePlaylist = useCallback(async (score) => {
+    if (!userId || !roomId || !playingPlaylistId) return
+    await ratePlaylist(roomId, playingPlaylistId, userId, score)
+  }, [userId, roomId, playingPlaylistId])
 
   const submitSuggestion = useCallback(async ({ title, ytId, url }) => {
     if (!roomId || !userId) return false
@@ -239,346 +258,234 @@ export default function App() {
     await executeAction(() => deleteSuggestion(roomId, suggestionId), 'Nie udało się odrzucić propozycji.')
   }, [executeAction, roomId])
 
-  const addPlaylist = useCallback(async () => {
-    const name = uiState.newPlaylistName.trim()
-    if (!name || !roomId) return
-    const ref = await executeAction(() => createPlaylist(roomId, name), 'Nie udało się utworzyć playlisty.')
-    if (!ref) return
-    dispatch({ type: 'playlistAdded', playlistId: ref.id })
-    selectPlaylist(ref.id)
-  }, [executeAction, roomId, selectPlaylist, uiState.newPlaylistName])
+  const playlistActions = usePlaylistActions({
+    roomId,
+    activePlaylist,
+    activePlaylistId: uiState.activePlaylistId,
+    newPlaylistName: uiState.newPlaylistName,
+    editingId: uiState.editingId,
+    editingName: uiState.editingName,
+    executeAction,
+    selectPlaylist,
+    dispatch,
+    genId,
+  })
 
-  const exportPlaylist = useCallback(() => {
-    if (!activePlaylist) return
+  const songActions = useSongActions({
+    roomId,
+    activePlaylist,
+    activePlaylistId: uiState.activePlaylistId,
+    newSongUrl: uiState.newSongUrl,
+    newSongTitle: uiState.newSongTitle,
+    ytPlaylistId: uiState.ytPlaylistId,
+    executeAction,
+    dispatch,
+    genId,
+  })
 
-    const payload = {
-      version: 1,
-      exportedAt: new Date().toISOString(),
-      playlist: {
-        name: activePlaylist.name,
-        songs: activePlaylist.songs ?? [],
-      },
-    }
+  const shareLinks = useShareLinks({
+    roomId,
+    guestToken,
+    onCopied: (value) => dispatch({ type: 'setCopied', value }),
+  })
 
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    const safeName = (activePlaylist.name || 'playlist')
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '') || 'playlist'
-
-    link.href = url
-    link.download = `${safeName}.json`
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
-    URL.revokeObjectURL(url)
-  }, [activePlaylist])
-
-  const importPlaylist = useCallback(async (file) => {
-    if (!file || !roomId) return
-
-    const done = await executeAction(async () => {
-      const raw = await file.text()
-      const parsed = JSON.parse(raw)
-      const playlistData = parsed?.playlist ?? parsed
-      const name = typeof playlistData?.name === 'string' ? playlistData.name.trim() : ''
-      const songs = sanitizeImportedSongs(playlistData?.songs)
-
-      if (!name) {
-        throw new Error('Imported playlist is missing a valid name.')
-      }
-
-      if (songs.length === 0) {
-        throw new Error('Imported playlist does not contain valid songs.')
-      }
-
-      return createPlaylistWithSongs(roomId, name, songs)
-    }, 'Nie udało się zaimportować playlisty z pliku JSON.')
-
-    if (!done) return
-
-    dispatch({ type: 'playlistAdded', playlistId: done.id })
-    selectPlaylist(done.id)
-  }, [executeAction, roomId, selectPlaylist])
-
-  const deletePlaylist = useCallback(async (playlistId) => {
-    if (!roomId) return
-    const done = await executeAction(() => removePlaylist(roomId, playlistId), 'Nie udało się usunąć playlisty.')
-    if (done === null) return
-    if (uiState.activePlaylistId === playlistId) selectPlaylist(null)
-  }, [executeAction, roomId, selectPlaylist, uiState.activePlaylistId])
-
-  const saveEditPlaylist = useCallback(async () => {
-    const name = uiState.editingName.trim()
-    if (name && uiState.editingId && roomId) {
-      await executeAction(() => renamePlaylist(roomId, uiState.editingId, name), 'Nie udało się zmienić nazwy playlisty.')
-    }
-    dispatch({ type: 'cancelPlaylistEdit' })
-  }, [executeAction, roomId, uiState.editingId, uiState.editingName])
-
-  const handleUrlBlur = useCallback(async () => {
-    const url = uiState.newSongUrl.trim()
-    if (!url) return
-
-    // Check for playlist URL first
-    const playlistId = extractYtPlaylistId(url)
-    if (playlistId) {
-      dispatch({ type: 'setField', field: 'ytPlaylistId', value: playlistId })
-      return
-    }
-
-    dispatch({ type: 'setField', field: 'ytPlaylistId', value: null })
-    if (uiState.newSongTitle.trim()) return
-
-    const ytId = extractYtId(url)
-    if (!ytId) {
-      dispatch({ type: 'setField', field: 'urlErr', value: 'Nieprawidłowy link YouTube' })
-      return
-    }
-
-    dispatch({ type: 'songTitleFetchStart' })
-    const title = await executeAction(() => fetchYtTitle(url), 'Nie udało się pobrać tytułu utworu.')
-    if (title) dispatch({ type: 'setField', field: 'newSongTitle', value: title })
-    dispatch({ type: 'songTitleFetchEnd' })
-  }, [executeAction, uiState.newSongTitle, uiState.newSongUrl])
-
-  const importFromYouTube = useCallback(async () => {
-    const { ytPlaylistId, activePlaylistId: plId } = uiState
-    if (!ytPlaylistId || !plId || !roomId) return
-
-    dispatch({ type: 'setField', field: 'importingYtPlaylist', value: true })
-    const done = await executeAction(async () => {
-      const fetched = await fetchYtPlaylistItems(ytPlaylistId)
-      if (fetched.length === 0) throw new Error('Playlista pusta lub niedostępna przez API')
-      const newSongs = fetched.map(s => ({ id: genId(), ...s }))
-      const existing = activePlaylist?.songs ?? []
-      return replacePlaylistSongs(roomId, plId, [...existing, ...newSongs])
-    }, 'Nie udało się zaimportować playlisty YouTube.')
-    dispatch({ type: 'setField', field: 'importingYtPlaylist', value: false })
-
-    if (done !== null) {
-      dispatch({ type: 'setField', field: 'newSongUrl', value: '' })
-      dispatch({ type: 'setField', field: 'ytPlaylistId', value: null })
-    }
-  }, [activePlaylist, executeAction, roomId, uiState])
-
-  const addSong = useCallback(async () => {
-    const url = uiState.newSongUrl.trim()
-    const title = uiState.newSongTitle.trim()
-    if (!url || !uiState.activePlaylistId || !roomId) return
-
-    const ytId = extractYtId(url)
-    if (!ytId) {
-      dispatch({ type: 'setField', field: 'urlErr', value: 'Nieprawidłowy link YouTube' })
-      return
-    }
-
-    const cleanUrl = `https://youtu.be/${ytId}`
-    const song = { id: genId(), url: cleanUrl, title: title || cleanUrl, ytId }
-    const done = await executeAction(
-      () => replacePlaylistSongs(roomId, uiState.activePlaylistId, [...(activePlaylist?.songs ?? []), song]),
-      'Nie udało się dodać utworu.',
-    )
-    if (done === null) return
-    dispatch({ type: 'songAdded' })
-  }, [activePlaylist, executeAction, roomId, uiState.activePlaylistId, uiState.newSongTitle, uiState.newSongUrl])
-
-  const deleteSong = useCallback(async (songId) => {
-    if (!activePlaylist || !roomId) return
-    await executeAction(
-      () => replacePlaylistSongs(roomId, uiState.activePlaylistId, activePlaylist.songs.filter(song => song.id !== songId)),
-      'Nie udało się usunąć utworu.',
-    )
-  }, [activePlaylist, executeAction, roomId, uiState.activePlaylistId])
-
-  const copyAdminLink = useCallback(() => {
-    const url = new URL(window.location.origin + window.location.pathname)
-    url.searchParams.set('room', roomId ?? '')
-    navigator.clipboard.writeText(url.toString()).then(() => dispatch({ type: 'setCopied', value: 'admin' }))
-  }, [roomId])
-
-  const voterUrl = guestToken
-    ? (() => { const u = new URL(window.location.origin + window.location.pathname); u.searchParams.set('room', guestToken); return u.toString() })()
-    : null
-
-  const copyVoterLink = useCallback(() => {
-    if (!voterUrl) return
-    navigator.clipboard.writeText(voterUrl).then(() => dispatch({ type: 'setCopied', value: 'voter' }))
-  }, [voterUrl])
-
-  const handleJoinRoom = useCallback(() => {
-    const input = uiState.joinUrl.trim()
-    if (!input) return
-
-    let targetRoomId = input
-    try {
-      const url = new URL(input)
-      if (url.searchParams.get('room')) targetRoomId = url.searchParams.get('room')
-    } catch (error) {
-      void error
-    }
-
-    const destination = new URL(window.location.origin + window.location.pathname)
-    destination.searchParams.set('room', targetRoomId)
-    window.location.href = destination.toString()
-  }, [uiState.joinUrl])
+  const togglePanel = useCallback((key) => {
+    setPanelOpen((current) => ({ ...current, [key]: !current[key] }))
+  }, [])
 
   if (!authReady) return <div className="splash"><div className="splash-icon">🎵</div><p>Łączenie...</p></div>
+
+  if (needsLogin) return (
+    <div className="splash">
+      <div className="splash-icon">🎵</div>
+      <h1 className="login-title">Szafagra</h1>
+      <p className="login-subtitle">Zaloguj się, aby zarządzać swoim jukeboxem</p>
+      <button className="btn-google-login" onClick={signInWithGoogle}>
+        <svg className="google-icon" viewBox="0 0 48 48" width="20" height="20">
+          <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.3 5.5-4.9 7.2v6h7.9c4.6-4.2 7.3-10.5 7.3-17.2z"/>
+          <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.8-5.8l-7.9-6c-2.1 1.4-4.8 2.3-7.9 2.3-6.1 0-11.2-4.1-13-9.6H2.8v6.2C6.7 42.6 14.8 48 24 48z"/>
+          <path fill="#FBBC05" d="M11 28.9c-.5-1.4-.7-2.9-.7-4.4s.3-3 .7-4.4v-6.2H2.8C1 17.6 0 20.7 0 24s1 6.4 2.8 9.1l8.2-4.2z"/>
+          <path fill="#EA4335" d="M24 9.5c3.4 0 6.5 1.2 8.9 3.5l6.6-6.6C35.9 2.5 30.5 0 24 0 14.8 0 6.7 5.4 2.8 13.3l8.2 4.2C12.8 13.6 17.9 9.5 24 9.5z"/>
+        </svg>
+        Zaloguj się przez Google
+      </button>
+    </div>
+  )
 
   return (
     <div className="app">
       {uiState.uiError && <div className="error-banner">{uiState.uiError}</div>}
       <RoomHeader
         showOwnerUI={showOwnerUI}
-        isOwner={isOwner}
         sidebarOpen={uiState.sidebarOpen}
         toggleSidebar={toggleSidebar}
         copied={uiState.copied}
-        copyAdminLink={copyAdminLink}
-        copyVoterLink={copyVoterLink}
+        copyAdminLink={shareLinks.copyAdminLink}
+        newSongUrl={uiState.newSongUrl}
+        setNewSongUrl={handleSongUrlChange}
+        handleUrlBlur={songActions.handleUrlBlur}
+        addSong={songActions.addSong}
+        newSongTitle={uiState.newSongTitle}
+        fetchingTitle={uiState.fetchingTitle}
+        urlErr={uiState.urlErr}
+        activePlaylist={activePlaylist}
       />
 
       <main className="main">
-        {showOwnerUI && <PlaylistSidebar
-          sidebarOpen={uiState.sidebarOpen}
-          showOwnerUI={showOwnerUI}
-          collapsed={uiState.collapsed}
-          toggleSection={toggleSection}
-          voteMode={playback.voteMode}
-          queueSize={Math.max(1, settings?.queueSize ?? 1)}
-          voteThreshold={voteThreshold}
-          skipThreshold={skipThreshold}
-          saveSettings={saveSettings}
-          isPlaying={isPlaying}
-          playlists={playlists}
-          activePlaylist={activePlaylist}
-          activePlaylistId={uiState.activePlaylistId}
-          editingId={uiState.editingId}
-          editingName={uiState.editingName}
-          startEditPlaylist={startEditPlaylist}
-          cancelEditPlaylist={cancelEditPlaylist}
-          setEditingName={(value) => setField('editingName', value)}
-          saveEditPlaylist={saveEditPlaylist}
-          selectPlaylist={selectPlaylist}
-          startJukeboxWith={playback.startJukeboxWith}
-          deletePlaylist={deletePlaylist}
-          newPlaylistName={uiState.newPlaylistName}
-          setNewPlaylistName={(value) => setField('newPlaylistName', value)}
-          addPlaylist={addPlaylist}
-          exportPlaylist={exportPlaylist}
-          importPlaylist={importPlaylist}
-          currentSong={currentSong}
-          playSongNow={playback.playSongNow}
-          deleteSong={deleteSong}
-          newSongUrl={uiState.newSongUrl}
-          setNewSongUrl={handleSongUrlChange}
-          newSongTitle={uiState.newSongTitle}
-          setNewSongTitle={(value) => setField('newSongTitle', value)}
-          urlErr={uiState.urlErr}
-          fetchingTitle={uiState.fetchingTitle}
-          handleUrlBlur={handleUrlBlur}
-          addSong={addSong}
-          ytPlaylistId={uiState.ytPlaylistId}
-          importingYtPlaylist={uiState.importingYtPlaylist}
-          importFromYouTube={importFromYouTube}
-          allowSuggestions={allowSuggestions}
-          suggestions={suggestions}
-          approveSuggestion={approveSuggestion}
-          rejectSuggestion={rejectSuggestion}
-        />}
+        {showOwnerUI && (
+          <PlaylistSidebar
+            sidebarOpen={uiState.sidebarOpen}
+            showOwnerUI={showOwnerUI}
+            collapsed={uiState.collapsed}
+            toggleSection={toggleSection}
+            voteMode={voteMode}
+            skipThreshold={skipThreshold}
+            saveSettings={saveSettings}
+            isPlaying={isPlaying}
+            playlists={playlists}
+            activePlaylist={activePlaylist}
+            activePlaylistId={uiState.activePlaylistId}
+            editingId={uiState.editingId}
+            editingName={uiState.editingName}
+            startEditPlaylist={startEditPlaylist}
+            cancelEditPlaylist={cancelEditPlaylist}
+            setEditingName={(value) => setField('editingName', value)}
+            saveEditPlaylist={playlistActions.saveEditPlaylist}
+            selectPlaylist={selectPlaylist}
+            startJukeboxWith={startJukeboxWith}
+            deletePlaylist={playlistActions.deletePlaylist}
+            newPlaylistName={uiState.newPlaylistName}
+            setNewPlaylistName={(value) => setField('newPlaylistName', value)}
+            addPlaylist={playlistActions.addPlaylist}
+            exportPlaylist={playlistActions.exportPlaylist}
+            importPlaylist={playlistActions.importPlaylist}
+            currentSong={currentSong}
+            playSongNow={playSongNow}
+            deleteSong={songActions.deleteSong}
+            ytPlaylistId={uiState.ytPlaylistId}
+            importingYtPlaylist={uiState.importingYtPlaylist}
+            importFromYouTube={songActions.importFromYouTube}
+            allowSuggestions={allowSuggestions}
+            suggestions={suggestions}
+            approveSuggestion={approveSuggestion}
+            rejectSuggestion={rejectSuggestion}
+            showThumbnails={showThumbnails}
+          />
+        )}
 
         <div className={`player-area${showOwnerUI ? ' player-area-admin' : ''}`}>
           {showOwnerUI ? (
             <>
-              <div className="admin-top-row">
-                <div className="admin-col">
-                  <div className="admin-queue-qr">
-                    {isPlaying && (
+              <div className="admin-scroll-area">
+                <div className="admin-top-row">
+                  <div className="admin-col">
+                    <div className="admin-queue-qr">
                       <div className="voting-card">
                         <div className="panel-title-row" onClick={() => togglePanel('queue')}>
-                          <h2 className="section-title voting-title">Zaraz zagra</h2>
+                          <h2 className="section-title voting-title">Kolejka</h2>
+                          {panelOpen.queue && (
+                            <div className="panel-header-setting" onClick={(e) => e.stopPropagation()}>
+                              <span className="panel-header-label">Min. zakolejkowanych:</span>
+                              <div className="note-picker note-picker-sm">
+                                {[0, 1, 2, 3, 4].map((count) => (
+                                  <button key={count} className={`note-btn${voteThreshold === count ? ' active' : ''}`} onClick={() => saveSettings('voteThreshold', count)}>
+                                    {count}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                           <span className="section-arrow">{panelOpen.queue ? '▼' : '▶'}</span>
                         </div>
-                        {panelOpen.queue && (
+                        {isPlaying && panelOpen.queue && queue.length > 0 && (
                           <ol className="queue-list">
                             {queue.map((song, index) => (
                               <li key={song.id} className="queue-item">
                                 <span className="queue-pos">{index + 1}</span>
-                                <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="queue-thumb" />
+                                {showThumbnails && <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="queue-thumb" />}
                                 <span className="queue-title">{song.title}</span>
-                                <button className="btn-icon play" onClick={() => playback.playSongNow(song)}>▶</button>
+                                <button className="btn-icon play" onClick={() => playSongNow(song)}>▶</button>
                               </li>
                             ))}
                           </ol>
                         )}
                       </div>
-                    )}
-                    {voterUrl && (
-                      <div className="admin-qr-panel">
-                        <div className="panel-title-row" onClick={() => togglePanel('qr')}>
-                          <h2 className="section-title">Dołącz</h2>
-                          <span className="section-arrow">{panelOpen.qr ? '▼' : '▶'}</span>
+                      {shareLinks.voterUrl && (
+                        <div className="admin-qr-panel">
+                          <div className="panel-title-row" onClick={() => togglePanel('qr')}>
+                            <h2 className="section-title">Zeskanuj kod i zagłosuj na następny utwór</h2>
+                            <span className="section-arrow">{panelOpen.qr ? '▼' : '▶'}</span>
+                          </div>
+                          {panelOpen.qr && (
+                            <>
+                              <div className="qr-clickable" onClick={shareLinks.copyVoterLink} title="Kliknij aby skopiować link">
+                                <QRCodeSVG value={shareLinks.voterUrl} size={150} bgColor="#000000" fgColor="#ffffff" />
+                                {uiState.copied === 'voter' && <div className="qr-copied-overlay">✓ Skopiowano</div>}
+                              </div>
+                              <p className="qr-hint">Kliknij na QR code aby skopiować linka</p>
+                            </>
+                          )}
                         </div>
-                        {panelOpen.qr && (
-                          <>
-                            <QRCodeSVG value={voterUrl} size={150} bgColor="#000000" fgColor="#ffffff" />
-                            <p className="qr-url">{voterUrl}</p>
-                          </>
-                        )}
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                <NowPlayingPanel
-                  isPlaying={isPlaying}
-                  currentSong={currentSong}
-                  remaining={playback.remaining}
-                  ytPlayerState={playback.ytPlayerState}
-                  loadProgress={playback.loadProgress}
-                  playerRef={playback.playerRef}
-                  playerDivRef={playback.playerDivRef}
-                  advanceToWinner={playback.advanceToWinner}
-                  skipThreshold={skipThreshold}
-                  skipCount={skipCount}
-                  startJukeboxWith={playback.startJukeboxWith}
-                  stopJukebox={playback.stopJukebox}
-                  activePlaylistId={uiState.activePlaylistId}
-                  activePlaylist={activePlaylist}
-                />
+                  <NowPlayingPanel
+                    isPlaying={isPlaying}
+                    currentSong={currentSong}
+                    remaining={remaining}
+                    ytPlayerState={ytPlayerState}
+                    loadProgress={loadProgress}
+                    playerRef={playerRef}
+                    playerDivRef={playerDivRef}
+                    advanceToWinner={advanceToWinner}
+                    skipThreshold={skipThreshold}
+                    skipCount={skipCount}
+                    startJukeboxWith={startJukeboxWith}
+                    stopJukebox={stopJukebox}
+                    activePlaylistId={uiState.activePlaylistId}
+                    activePlaylist={activePlaylist}
+                  />
+                </div>
               </div>
 
-              {isPlaying && nextOptionKeys.length > 0 && (
-                <div className="voting-panel-bottom">
-                  <div className="panel-title-row" onClick={() => togglePanel('voting')}>
-                    <h2 className="section-title">Zagłosuj na następne</h2>
-                    <span className="section-arrow">{panelOpen.voting ? '▼' : '▶'}</span>
-                  </div>
-                  {panelOpen.voting && (
-                    <VotingPanel
-                      nextOptionKeys={nextOptionKeys}
-                      nextOptions={nextOptions}
-                      nextVotesData={nextVotesData}
-                      userId={userId}
-                      onVote={vote}
-                      showPlayNow
-                      onPlayNow={playback.playSongNow}
-                      columns
-                      onChooseOption={playback.advanceToOption}
-                    />
-                  )}
+              <div className="voting-panel-bottom">
+                {/* column-reverse: pierwszy element = wizualnie na dole (pasek tytułu) */}
+                <div className="voting-bottom-bar" onClick={() => togglePanel('voting')}>
+                  <h2 className="section-title">Głosowanie</h2>
+                  <span className="section-arrow">{panelOpen.voting ? '▼' : '▲'}</span>
                 </div>
-              )}
+                {panelOpen.voting && (
+                  <div className="voting-bottom-content">
+                    {isPlaying && nextOptionKeys.length > 0 && (
+                      <VotingPanel
+                        nextOptionKeys={nextOptionKeys}
+                        nextOptions={nextOptions}
+                        nextVotesData={nextVotesData}
+                        userId={userId}
+                        onVote={vote}
+                        showPlayNow
+                        onPlayNow={playSongNow}
+                        columns
+                        onChooseOption={advanceToOption}
+                        showThumbnails={showThumbnails}
+                      />
+                    )}
+                    <div className="queue-size-row">
+                      <span className="queue-size-label">Utworów w grupie:</span>
+                      <NotePicker value={Math.max(1, settings?.queueSize ?? 1)} onChange={(n) => saveSettings('queueSize', n)} />
+                    </div>
+                  </div>
+                )}
+              </div>
             </>
           ) : (
             <GuestView
               isOwner={isOwner}
-              playerDivRef={playback.playerDivRef}
+              playerDivRef={playerDivRef}
               isPlaying={isPlaying}
               currentSong={currentSong}
-              remaining={playback.remaining}
+              remaining={remaining}
               queue={queue}
               nextOptionKeys={nextOptionKeys}
               nextOptions={nextOptions}
@@ -590,6 +497,9 @@ export default function App() {
               voteSkip={voteSkip}
               allowSuggestions={allowSuggestions}
               submitSuggestion={submitSuggestion}
+              myRating={myRating}
+              onRate={rateActivePlaylist}
+              showThumbnails={showThumbnails}
             />
           )}
         </div>

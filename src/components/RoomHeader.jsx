@@ -1,6 +1,20 @@
 import { useState } from 'react'
 
-export function RoomHeader({ showOwnerUI, isOwner, sidebarOpen, toggleSidebar, copied, copyAdminLink, copyVoterLink }) {
+export function RoomHeader({
+  showOwnerUI,
+  sidebarOpen,
+  toggleSidebar,
+  copied,
+  copyAdminLink,
+  newSongUrl,
+  setNewSongUrl,
+  handleUrlBlur,
+  addSong,
+  newSongTitle,
+  fetchingTitle,
+  urlErr,
+  activePlaylist,
+}) {
   const [guestCopied, setGuestCopied] = useState(false)
 
   const copyGuestLink = () => {
@@ -19,19 +33,32 @@ export function RoomHeader({ showOwnerUI, isOwner, sidebarOpen, toggleSidebar, c
           </button>
         )}
         <span className="header-icon">🎵</span>
-        <h1>szafi.fi</h1>
+        <a href="/" className="header-logo">szafi.fi</a>
       </div>
+
+      {showOwnerUI && (
+        <div className="header-add-song">
+          <input
+            className="header-song-input"
+            value={newSongUrl}
+            onChange={(event) => setNewSongUrl(event.target.value)}
+            onBlur={handleUrlBlur}
+            onKeyDown={(event) => event.key === 'Enter' && addSong()}
+            placeholder={fetchingTitle ? 'Pobieranie tytułu…' : newSongTitle ? `🎵 ${newSongTitle}` : 'Dodaj piosenkę - wklej link YouTube…'}
+            title={urlErr || undefined}
+            style={urlErr ? { borderColor: 'var(--accent)' } : undefined}
+            disabled={!activePlaylist}
+          />
+          <button className="btn-header-add" onClick={addSong} disabled={!newSongUrl.trim() || !activePlaylist}>+</button>
+        </div>
+      )}
 
       <div className="header-actions">
         {showOwnerUI ? (
           <>
-            <button className="btn-share" disabled title="Wkrótce">✉ Wyślij opinię</button>
             <a className="btn-share" href="https://buycoffee.to/szafifi" target="_blank" rel="noreferrer">☕ Postaw kawę</a>
             <button className="btn-share btn-share-admin" onClick={copyAdminLink} title="Kopiuj link admina">
-              {copied === 'admin' ? '✓' : '⚙'} Admin
-            </button>
-            <button className="btn-share btn-share-voter" onClick={copyVoterLink} title="Kopiuj link dla głosujących">
-              {copied === 'voter' ? '✓' : '🔗'} Głosujący
+              {copied === 'admin' ? '✓ Skopiowano' : '⚙ Skopiuj link dla admina'}
             </button>
           </>
         ) : (

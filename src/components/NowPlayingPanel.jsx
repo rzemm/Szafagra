@@ -64,10 +64,10 @@ export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerSta
                 </button>
               ) : (
                 <>
-                  <button className="btn-ctrl" onClick={playPauseClick}>
+                  <button className="btn-ctrl btn-ctrl-play" onClick={playPauseClick}>
                     {ytPlayerState === 1 ? '⏸' : '▶'}
                   </button>
-                  <button className="btn-ctrl" onClick={advanceToWinner}>⏭</button>
+                  <button className="btn-ctrl btn-ctrl-skip" onClick={advanceToWinner}>⏭</button>
                   <button className="btn-ctrl btn-ctrl-stop" onClick={stopJukebox}>■ STOP</button>
                 </>
               )}
@@ -95,6 +95,7 @@ export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerSta
               <span className="volume-icon">🔊</span>
             </div>
           )}
+
         </div>
 
         {!discoMode && isPlaying && skipThreshold > 0 && (
@@ -130,10 +131,10 @@ export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerSta
               </button>
             ) : (
               <>
-                <button className="btn-ctrl" onClick={playPauseClick}>
+                <button className="btn-ctrl btn-ctrl-play" onClick={playPauseClick}>
                   {ytPlayerState === 1 ? '⏸' : '▶'}
                 </button>
-                <button className="btn-ctrl" onClick={advanceToWinner}>⏭</button>
+                <button className="btn-ctrl btn-ctrl-skip" onClick={advanceToWinner}>⏭</button>
                 <button className="btn-ctrl btn-ctrl-stop" onClick={stopJukebox}>■ STOP</button>
               </>
             )}

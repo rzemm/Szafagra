@@ -4,7 +4,8 @@
       "Bash(npm run:*)",
       "Bash(npx vite:*)",
       "Bash(firebase deploy:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(find c:/Piu/Witryny/Szafagra -maxdepth 2 -type f -name *.json -o -name *.env*)"
     ]
   }
 }

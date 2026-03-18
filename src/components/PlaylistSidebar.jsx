@@ -5,8 +5,6 @@ export function PlaylistSidebar(props) {
     collapsed,
     toggleSection,
     voteMode,
-    queueSize,
-    voteThreshold,
     skipThreshold,
     allowSuggestions,
     saveSettings,
@@ -31,20 +29,13 @@ export function PlaylistSidebar(props) {
     currentSong,
     playSongNow,
     deleteSong,
-    newSongUrl,
-    setNewSongUrl,
-    newSongTitle,
-    setNewSongTitle,
-    urlErr,
-    fetchingTitle,
-    handleUrlBlur,
-    addSong,
     ytPlaylistId,
     importingYtPlaylist,
     importFromYouTube,
     suggestions,
     approveSuggestion,
     rejectSuggestion,
+    showThumbnails,
   } = props
 
   const handleImportChange = async (event) => {
@@ -52,6 +43,15 @@ export function PlaylistSidebar(props) {
     if (file) await importPlaylist(file)
     event.target.value = ''
   }
+
+  const ratings = activePlaylist?.ratings ?? {}
+  const ratingValues = Object.values(ratings).filter(v => v > 0)
+  const ratingAvg = ratingValues.length > 0
+    ? (ratingValues.reduce((sum, v) => sum + v, 0) / ratingValues.length).toFixed(1)
+    : null
+  const ratingCount = ratingValues.length
+  const totalPlays = activePlaylist?.totalPlays ?? 0
+  const totalVotes = activePlaylist?.totalVotes ?? 0
 
   return (
     <aside className={`sidebar${sidebarOpen ? '' : ' sidebar-hidden'}`}>
@@ -77,29 +77,7 @@ export function PlaylistSidebar(props) {
               </div>
 
               <div className="setting-row">
-                <span className="setting-label">Utworów w grupie</span>
-                <div className="note-picker">
-                  {[1, 2, 3, 4, 5].map((count) => (
-                    <button key={count} className={`note-btn${queueSize === count ? ' active' : ''}`} onClick={() => saveSettings('queueSize', count)}>
-                      {count}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="setting-row">
-                <span className="setting-label">Min. zakolejkowanych</span>
-                <div className="note-picker">
-                  {[0, 1, 2, 3, 4].map((count) => (
-                    <button key={count} className={`note-btn${voteThreshold === count ? ' active' : ''}`} onClick={() => saveSettings('voteThreshold', count)}>
-                      {count}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="setting-row">
-                <span className="setting-label">Skip (goście)</span>
+                <span className="setting-label">Głosów do pominięcia utworu</span>
                 <div className="note-picker">
                   {[0, 1, 2, 3, 4].map((count) => (
                     <button key={count} className={`note-btn${skipThreshold === count ? ' active' : ''}`} onClick={() => saveSettings('skipThreshold', count)}>
@@ -121,6 +99,31 @@ export function PlaylistSidebar(props) {
                 </div>
               </div>
 
+              <div className="setting-row">
+                <span className="setting-label">Miniaturki filmów</span>
+                <div className="setting-toggle-group">
+                  <button className={`btn-setting${showThumbnails ? ' active' : ''}`} onClick={() => saveSettings('showThumbnails', true)}>
+                    Włączone
+                  </button>
+                  <button className={`btn-setting${!showThumbnails ? ' active' : ''}`} onClick={() => saveSettings('showThumbnails', false)}>
+                    Wyłączone
+                  </button>
+                </div>
+              </div>
+
+              {activePlaylist && (
+                <div className="sidebar-stats">
+                  <p className="sidebar-stats-title">Statystyki: {activePlaylist.name}</p>
+                  <div className="sidebar-stats-row">
+                    {ratingAvg !== null
+                      ? <span className="sidebar-stat">⭐ {ratingAvg} <span className="sidebar-stat-sub">({ratingCount} {ratingCount === 1 ? 'ocena' : ratingCount < 5 ? 'oceny' : 'ocen'})</span></span>
+                      : <span className="sidebar-stat sidebar-stat-dim">⭐ brak ocen</span>
+                    }
+                    <span className="sidebar-stat">▶ {totalPlays} <span className="sidebar-stat-sub">odtworzeń</span></span>
+                    <span className="sidebar-stat">▲ {totalVotes} <span className="sidebar-stat-sub">głosów</span></span>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
@@ -168,7 +171,7 @@ export function PlaylistSidebar(props) {
                       <div className="playlist-actions">
                         <button className="btn-icon play" onClick={() => startJukeboxWith(playlist.id)} disabled={playlist.songs.length === 0}>▶</button>
                         <button className="btn-icon" onClick={() => startEditPlaylist(playlist.id, playlist.name)}>✎</button>
-                        <button className="btn-icon danger" onClick={() => { if (window.confirm(`Usunąć playlistę "${playlist.name}"?`)) deletePlaylist(playlist.id) }}>✕</button>
+                        <button className="btn-icon danger" onClick={() => { if (window.confirm(`Usuń playlistę "${playlist.name}"?`)) deletePlaylist(playlist.id) }}>✕</button>
                       </div>
                     )}
                   </div>
@@ -212,31 +215,11 @@ export function PlaylistSidebar(props) {
 
           {!collapsed.songs && (
             <div className="songs-content">
-              {showOwnerUI && (
+              {showOwnerUI && ytPlaylistId && (
                 <div className="add-song-form">
-                  <input
-                    value={newSongUrl}
-                    onChange={(event) => setNewSongUrl(event.target.value)}
-                    onBlur={handleUrlBlur}
-                    onKeyDown={(event) => event.key === 'Enter' && addSong()}
-                    placeholder="Link YouTube..."
-                    className={urlErr ? 'input-error' : ''}
-                  />
-                  <input
-                    value={newSongTitle}
-                    onChange={(event) => setNewSongTitle(event.target.value)}
-                    onKeyDown={(event) => event.key === 'Enter' && addSong()}
-                    placeholder={fetchingTitle ? 'Pobieranie tytułu...' : 'Tytuł (pobierany auto)'}
-                    disabled={fetchingTitle}
-                  />
-                  {urlErr && <p className="error-msg">{urlErr}</p>}
-                  {ytPlaylistId ? (
-                    <button className="btn-primary" onClick={importFromYouTube} disabled={importingYtPlaylist}>
-                      {importingYtPlaylist ? 'Importowanie...' : '+ Importuj całą playlistę YT'}
-                    </button>
-                  ) : (
-                    <button className="btn-primary" onClick={addSong}>+ Dodaj piosenkę</button>
-                  )}
+                  <button className="btn-primary" onClick={importFromYouTube} disabled={importingYtPlaylist}>
+                    {importingYtPlaylist ? 'Importowanie...' : '+ Importuj całą playlistę YT'}
+                  </button>
                 </div>
               )}
 
@@ -247,10 +230,10 @@ export function PlaylistSidebar(props) {
                     className={`song-item${currentSong?.id === song.id && isPlaying ? ' song-playing' : ''}${showOwnerUI ? ' song-item-clickable' : ''}`}
                     onClick={showOwnerUI ? () => playSongNow(song) : undefined}
                   >
-                    <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="song-thumb" />
+                    {showThumbnails && <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="song-thumb" />}
                     <span className="song-title">{song.title}</span>
                     {showOwnerUI && (
-                      <button className="btn-icon danger" onClick={(e) => { e.stopPropagation(); if (window.confirm(`Usunąć "${song.title}"?`)) deleteSong(song.id) }}>🗑</button>
+                      <button className="btn-icon danger" onClick={(event) => { event.stopPropagation(); if (window.confirm(`Usuń "${song.title}"?`)) deleteSong(song.id) }}>🗑</button>
                     )}
                   </div>
                 ))}
@@ -259,6 +242,7 @@ export function PlaylistSidebar(props) {
           )}
         </div>
       )}
+
       {suggestions?.length > 0 && (
         <div className="section">
           <div className="section-title-row" onClick={() => toggleSection('suggestions')}>
@@ -268,13 +252,13 @@ export function PlaylistSidebar(props) {
 
           {!collapsed.suggestions && (
             <div className="suggestions-list">
-              {suggestions.map(s => (
-                <div key={s.id} className="suggestion-item">
-                  <img src={`https://img.youtube.com/vi/${s.ytId}/default.jpg`} alt="" className="song-thumb" />
-                  <span className="song-title">{s.title}</span>
+              {suggestions.map((suggestion) => (
+                <div key={suggestion.id} className="suggestion-item">
+                  {showThumbnails && <img src={`https://img.youtube.com/vi/${suggestion.ytId}/default.jpg`} alt="" className="song-thumb" />}
+                  <span className="song-title">{suggestion.title}</span>
                   <div className="suggestion-actions">
-                    <button className="btn-icon play" onClick={() => approveSuggestion(s)} title="Dodaj do playlisty">✓</button>
-                    <button className="btn-icon danger" onClick={() => rejectSuggestion(s.id)} title="Odrzuć">✕</button>
+                    <button className="btn-icon play" onClick={() => approveSuggestion(suggestion)} title="Dodaj do playlisty">✓</button>
+                    <button className="btn-icon danger" onClick={() => rejectSuggestion(suggestion.id)} title="Odrzuć">✕</button>
                   </div>
                 </div>
               ))}

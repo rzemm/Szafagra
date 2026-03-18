@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 
-export function VotingPanel({ nextOptionKeys, nextOptions, nextVotesData, userId, onVote, showPlayNow = false, onPlayNow, columns = false, onChooseOption }) {
+export function VotingPanel({ nextOptionKeys, nextOptions, nextVotesData, userId, onVote, showPlayNow = false, onPlayNow, columns = false, onChooseOption, showThumbnails = true }) {
   const myVote = nextVotesData[userId] ?? null
   const countsByOption = useMemo(() => {
     const counts = Object.fromEntries(nextOptionKeys.map(key => [key, 0]))
@@ -35,7 +35,7 @@ export function VotingPanel({ nextOptionKeys, nextOptions, nextVotesData, userId
                 {songs.map((song, i) => (
                   <div key={song.id} className="option-song-item">
                     <span className="option-song-pos">{i + 1}</span>
-                    <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="slot-thumb" />
+                    {showThumbnails && <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="slot-thumb" />}
                     <span className="slot-title">{song.title}</span>
                     {showPlayNow && <button className="btn-icon play" onClick={() => onPlayNow(song)} title="Puść teraz">▶</button>}
                   </div>

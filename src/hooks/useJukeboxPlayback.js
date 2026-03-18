@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { chooseWinningOption, generateVotingOptions, moveToNextTrack } from '../domain/jukebox'
-import { patchMainState, setMainState, updatePlaybackSync } from '../services/jukeboxService'
+import { incrementPlaylistPlays, patchMainState, setMainState, updatePlaybackSync } from '../services/jukeboxService'
 import { useYouTubePlayer } from './useYouTubePlayer'
 
 export function useJukeboxPlayback({ authReady, isOwner, roomId, playlists, settings, jukeboxState, activePlaylistId, selectPlaylist }) {
@@ -116,6 +116,7 @@ export function useJukeboxPlayback({ authReady, isOwner, roomId, playlists, sett
 
     prevSongIdRef.current = nextState.currentSong.id
     loadVideoById(nextState.currentSong.ytId)
+    incrementPlaylistPlays(rid, nextState.activePlaylistId).catch(() => {})
 
     await setMainState(rid, {
       isPlaying: true,
@@ -155,6 +156,7 @@ export function useJukeboxPlayback({ authReady, isOwner, roomId, playlists, sett
 
     prevSongIdRef.current = song.id
     loadVideoById(song.ytId)
+    incrementPlaylistPlays(roomId, pid).catch(() => {})
 
     const { nextOptions: no, nextVotes: nv } = generateVotingOptions(playlist, queueSize, [song])
     await setMainState(roomId, {
@@ -212,6 +214,7 @@ export function useJukeboxPlayback({ authReady, isOwner, roomId, playlists, sett
 
     prevSongIdRef.current = first.id
     loadVideoById(first.ytId)
+    incrementPlaylistPlays(roomId, pid).catch(() => {})
 
     const { nextOptions: no, nextVotes: nv } = generateVotingOptions(playlist, queueSize, [first, ...initialQueue])
 

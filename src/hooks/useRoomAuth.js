@@ -1,24 +1,43 @@
 import { useEffect, useState } from 'react'
-import { signInAnonymously, onAuthStateChanged } from 'firebase/auth'
+import { signInAnonymously, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from 'firebase/auth'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { auth, db } from '../firebase'
 import { genId } from '../lib/jukebox'
+
+const googleProvider = new GoogleAuthProvider()
 
 export function useRoomAuth() {
   const [user, setUser] = useState(null)
   const [roomId, setRoomId] = useState(null)
   const [isOwner, setIsOwner] = useState(false)
   const [authReady, setAuthReady] = useState(false)
+  const [needsLogin, setNeedsLogin] = useState(false)
+
+  const signInWithGoogle = async () => {
+    try {
+      await signInWithPopup(auth, googleProvider)
+    } catch (err) {
+      console.error('Google sign-in failed', err)
+    }
+  }
 
   useEffect(() => {
     const roomParam = new URLSearchParams(window.location.search).get('room')
+    const isGuestPath = !!roomParam
 
     const unsub = onAuthStateChanged(auth, async currentUser => {
       if (!currentUser) {
-        await signInAnonymously(auth)
+        if (isGuestPath) {
+          await signInAnonymously(auth)
+        } else {
+          // Owner path — show login screen
+          setNeedsLogin(true)
+          setAuthReady(true)
+        }
         return
       }
 
+      setNeedsLogin(false)
       setUser(currentUser)
 
       if (!roomParam || roomParam === currentUser.uid) {
@@ -55,5 +74,5 @@ export function useRoomAuth() {
     return () => unsub()
   }, [])
 
-  return { user, roomId, isOwner, authReady }
+  return { user, roomId, isOwner, authReady, needsLogin, signInWithGoogle }
 }

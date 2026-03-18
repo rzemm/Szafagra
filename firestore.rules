@@ -43,6 +43,14 @@ service cloud.firestore {
         );
     }
 
+    function onlyOwnRatingChanged() {
+      let keys = request.resource.data.diff(resource.data).affectedKeys();
+      return keys.hasOnly(['ratings']) &&
+        request.resource.data.ratings.diff(
+          resource.data.get('ratings', {})
+        ).affectedKeys().hasOnly([request.auth.uid]);
+    }
+
     function guestCanUpdateState() {
       return signedIn() &&
         onlyGuestWritableStateFieldsChanged() &&
@@ -68,6 +76,7 @@ service cloud.firestore {
       match /playlists/{playlistId} {
         allow read: if signedIn();
         allow write: if isRoomOwner(roomId);
+        allow update: if signedIn() && onlyOwnRatingChanged();
       }
 
       match /state/{stateId} {
