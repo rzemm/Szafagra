@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useReducer } from 'react'
+import { QRCodeSVG } from 'qrcode.react'
 import { RoomHeader } from './components/RoomHeader'
 import { PlaylistSidebar } from './components/PlaylistSidebar'
 import { VotingPanel } from './components/VotingPanel'
@@ -371,12 +372,14 @@ export default function App() {
     navigator.clipboard.writeText(url.toString()).then(() => dispatch({ type: 'setCopied', value: 'admin' }))
   }, [roomId])
 
+  const voterUrl = guestToken
+    ? (() => { const u = new URL(window.location.origin + window.location.pathname); u.searchParams.set('room', guestToken); return u.toString() })()
+    : null
+
   const copyVoterLink = useCallback(() => {
-    if (!guestToken) return
-    const url = new URL(window.location.origin + window.location.pathname)
-    url.searchParams.set('room', guestToken)
-    navigator.clipboard.writeText(url.toString()).then(() => dispatch({ type: 'setCopied', value: 'voter' }))
-  }, [guestToken])
+    if (!voterUrl) return
+    navigator.clipboard.writeText(voterUrl).then(() => dispatch({ type: 'setCopied', value: 'voter' }))
+  }, [voterUrl])
 
   const handleJoinRoom = useCallback(() => {
     const input = uiState.joinUrl.trim()
@@ -410,6 +413,7 @@ export default function App() {
         copied={uiState.copied}
         copyAdminLink={copyAdminLink}
         copyVoterLink={copyVoterLink}
+        voterUrl={voterUrl}
         joinUrl={uiState.joinUrl}
         setJoinUrl={(value) => setField('joinUrl', value)}
         handleJoinRoom={handleJoinRoom}
@@ -465,21 +469,30 @@ export default function App() {
             <>
               <div className="admin-top-row">
                 <div className="admin-col">
-                  {isPlaying && (
-                    <div className="voting-card">
-                      <h2 className="section-title voting-title">Zaraz zagra</h2>
-                      <ol className="queue-list">
-                        {queue.map((song, index) => (
-                          <li key={song.id} className="queue-item">
-                            <span className="queue-pos">{index + 1}</span>
-                            <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="queue-thumb" />
-                            <span className="queue-title">{song.title}</span>
-                            <button className="btn-icon play" onClick={() => playback.playSongNow(song)}>▶</button>
-                          </li>
-                        ))}
-                      </ol>
-                    </div>
-                  )}
+                  <div className="admin-queue-qr">
+                    {isPlaying && (
+                      <div className="voting-card">
+                        <h2 className="section-title voting-title">Zaraz zagra</h2>
+                        <ol className="queue-list">
+                          {queue.map((song, index) => (
+                            <li key={song.id} className="queue-item">
+                              <span className="queue-pos">{index + 1}</span>
+                              <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="queue-thumb" />
+                              <span className="queue-title">{song.title}</span>
+                              <button className="btn-icon play" onClick={() => playback.playSongNow(song)}>▶</button>
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                    )}
+                    {voterUrl && (
+                      <div className="admin-qr-panel">
+                        <h2 className="section-title">Dołącz</h2>
+                        <QRCodeSVG value={voterUrl} size={150} bgColor="#000000" fgColor="#ffffff" />
+                        <p className="qr-url">{voterUrl}</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <NowPlayingPanel
@@ -501,6 +514,7 @@ export default function App() {
               </div>
 
               {isPlaying && nextOptionKeys.length > 0 && (
+                <div className="voting-panel-bottom">
                 <VotingPanel
                   nextOptionKeys={nextOptionKeys}
                   nextOptions={nextOptions}
@@ -512,6 +526,7 @@ export default function App() {
                   columns
                   onChooseOption={playback.advanceToOption}
                 />
+                </div>
               )}
             </>
           ) : (

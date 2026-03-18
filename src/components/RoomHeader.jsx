@@ -1,4 +1,9 @@
-export function RoomHeader({ showOwnerUI, isOwner, sidebarOpen, toggleSidebar, viewAsGuest, toggleViewAsGuest, copied, copyAdminLink, copyVoterLink, joinUrl, setJoinUrl, handleJoinRoom }) {
+import { useState } from 'react'
+import { QRCodeSVG } from 'qrcode.react'
+
+export function RoomHeader({ showOwnerUI, isOwner, sidebarOpen, toggleSidebar, viewAsGuest, toggleViewAsGuest, copied, copyAdminLink, copyVoterLink, voterUrl, joinUrl, setJoinUrl, handleJoinRoom }) {
+  const [showQr, setShowQr] = useState(false)
+
   return (
     <header className="header">
       <div className="header-inner">
@@ -38,7 +43,26 @@ export function RoomHeader({ showOwnerUI, isOwner, sidebarOpen, toggleSidebar, v
         <button className="btn-share btn-share-voter" onClick={copyVoterLink} title="Kopiuj link dla głosujących">
           {copied === 'voter' ? '✓' : '🔗'} Głosujący
         </button>
+        {showOwnerUI && voterUrl && (
+          <button className="btn-share btn-share-qr" onClick={() => setShowQr(true)} title="Pokaż QR code dla gości">
+            ▦ QR
+          </button>
+        )}
       </div>
+
+      {showQr && (
+        <div className="qr-overlay" onClick={() => setShowQr(false)}>
+          <div className="qr-modal" onClick={(e) => e.stopPropagation()}>
+            <h2>Dołącz jako gość</h2>
+            <QRCodeSVG value={voterUrl} size={220} />
+            <p className="qr-url">{voterUrl}</p>
+            <button className="btn-share btn-share-voter" onClick={() => { copyVoterLink(); setShowQr(false) }}>
+              {copied === 'voter' ? '✓ Skopiowano' : '🔗 Kopiuj link'}
+            </button>
+            <button className="qr-close" onClick={() => setShowQr(false)}>✕</button>
+          </div>
+        </div>
+      )}
     </header>
   )
 }
