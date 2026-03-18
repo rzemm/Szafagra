@@ -38,11 +38,9 @@ export function PlaylistSidebar(props) {
     fetchingTitle,
     handleUrlBlur,
     addSong,
-    copied,
-    copyLink,
-    joinUrl,
-    setJoinUrl,
-    handleJoinRoom,
+    ytPlaylistId,
+    importingYtPlaylist,
+    importFromYouTube,
   } = props
 
   const handleImportChange = async (event) => {
@@ -55,11 +53,9 @@ export function PlaylistSidebar(props) {
     <aside className={`sidebar${sidebarOpen ? '' : ' sidebar-hidden'}`}>
       {showOwnerUI && (
         <div className="section">
-          <div className="section-title-row">
+          <div className="section-title-row" onClick={() => toggleSection('settings')}>
             <h2 className="section-title">Ustawienia pokoju</h2>
-            <button className="btn-collapse" onClick={() => toggleSection('settings')}>
-              {collapsed.settings ? '▶' : '▼'}
-            </button>
+            <span className="section-arrow">{collapsed.settings ? '▶' : '▼'}</span>
           </div>
 
           {!collapsed.settings && (
@@ -109,31 +105,15 @@ export function PlaylistSidebar(props) {
                 </div>
               </div>
 
-              <div className="share-row">
-                <input value={new URLSearchParams(window.location.search).get('room') ?? ''} readOnly />
-                <button className="btn-share-mini" onClick={copyLink}>{copied ? '✓' : '🔗'}</button>
-              </div>
-
-              <div className="add-row" style={{ marginTop: '0.5rem' }}>
-                <input
-                  value={joinUrl}
-                  onChange={(event) => setJoinUrl(event.target.value)}
-                  onKeyDown={(event) => event.key === 'Enter' && handleJoinRoom()}
-                  placeholder="ID pokoju..."
-                />
-                <button className="btn-accent" onClick={handleJoinRoom}>→</button>
-              </div>
             </>
           )}
         </div>
       )}
 
       <div className="section">
-        <div className="section-title-row">
+        <div className="section-title-row" onClick={() => toggleSection('playlists')}>
           <h2 className="section-title">Playlisty</h2>
-          <button className="btn-collapse" onClick={() => toggleSection('playlists')}>
-            {collapsed.playlists ? '▶' : '▼'}
-          </button>
+          <span className="section-arrow">{collapsed.playlists ? '▶' : '▼'}</span>
         </div>
 
         {!collapsed.playlists && (
@@ -209,11 +189,9 @@ export function PlaylistSidebar(props) {
 
       {activePlaylist && (
         <div className="section songs-section">
-          <div className="section-title-row">
+          <div className="section-title-row" onClick={() => toggleSection('songs')}>
             <h2 className="section-title">{activePlaylist.name}</h2>
-            <button className="btn-collapse" onClick={() => toggleSection('songs')}>
-              {collapsed.songs ? '▶' : '▼'}
-            </button>
+            <span className="section-arrow">{collapsed.songs ? '▶' : '▼'}</span>
           </div>
 
           {!collapsed.songs && (
@@ -251,7 +229,13 @@ export function PlaylistSidebar(props) {
                     disabled={fetchingTitle}
                   />
                   {urlErr && <p className="error-msg">{urlErr}</p>}
-                  <button className="btn-primary" onClick={addSong}>+ Dodaj piosenkę</button>
+                  {ytPlaylistId ? (
+                    <button className="btn-primary" onClick={importFromYouTube} disabled={importingYtPlaylist}>
+                      {importingYtPlaylist ? 'Importowanie...' : '+ Importuj całą playlistę YT'}
+                    </button>
+                  ) : (
+                    <button className="btn-primary" onClick={addSong}>+ Dodaj piosenkę</button>
+                  )}
                 </div>
               )}
             </>

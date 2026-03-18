@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { signInAnonymously, onAuthStateChanged } from 'firebase/auth'
-import { doc, setDoc } from 'firebase/firestore'
+import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { auth, db } from '../firebase'
+import { genId } from '../lib/jukebox'
 
 export function useRoomAuth() {
   const [user, setUser] = useState(null)
@@ -19,19 +20,33 @@ export function useRoomAuth() {
       }
 
       setUser(currentUser)
-      const nextRoomId = roomParam || currentUser.uid
-      const owner = !roomParam || roomParam === currentUser.uid
 
-      setRoomId(nextRoomId)
-      setIsOwner(owner)
+      if (!roomParam || roomParam === currentUser.uid) {
+        // Owner flow
+        const roomRef = doc(db, 'rooms', currentUser.uid)
+        const roomSnap = await getDoc(roomRef)
+        let guestToken = roomSnap.exists() ? roomSnap.data().guestToken : null
+        if (!guestToken) {
+          guestToken = genId()
+          await setDoc(doc(db, 'tokenIndex', guestToken), { roomId: currentUser.uid })
+        }
+        await setDoc(roomRef, { ownerId: currentUser.uid, guestToken }, { merge: true })
 
-      if (owner) {
         const url = new URL(window.location.href)
         if (!url.searchParams.get('room')) {
           url.searchParams.set('room', currentUser.uid)
           window.history.replaceState({}, '', url.toString())
         }
-        await setDoc(doc(db, 'rooms', currentUser.uid), { ownerId: currentUser.uid }, { merge: true })
+
+        setRoomId(currentUser.uid)
+        setIsOwner(true)
+      } else {
+        // Guest flow — resolve guestToken → real roomId
+        const tokenSnap = await getDoc(doc(db, 'tokenIndex', roomParam))
+        const resolvedRoomId = tokenSnap.exists() ? tokenSnap.data().roomId : roomParam
+
+        setRoomId(resolvedRoomId)
+        setIsOwner(resolvedRoomId === currentUser.uid)
       }
 
       setAuthReady(true)

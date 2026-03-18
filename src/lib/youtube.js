@@ -1,4 +1,5 @@
 const YT_ID_RE = /^[a-zA-Z0-9_-]{11}$/
+const YT_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY ?? null
 
 export function extractYtId(url) {
   try {
@@ -18,6 +19,49 @@ export function extractYtId(url) {
   } catch {
     return null
   }
+}
+
+export function extractYtPlaylistId(url) {
+  try {
+    const u = new URL(url)
+    const host = u.hostname.toLowerCase()
+    if (['youtube.com', 'www.youtube.com', 'm.youtube.com', 'music.youtube.com'].includes(host)) {
+      return u.searchParams.get('list') ?? null
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
+export async function fetchYtPlaylistItems(playlistId) {
+  if (!YT_API_KEY) throw new Error('Brak klucza YouTube API (VITE_YOUTUBE_API_KEY)')
+  const items = []
+  let pageToken = ''
+  do {
+    const endpoint = new URL('https://www.googleapis.com/youtube/v3/playlistItems')
+    endpoint.searchParams.set('part', 'snippet')
+    endpoint.searchParams.set('playlistId', playlistId)
+    endpoint.searchParams.set('maxResults', '50')
+    endpoint.searchParams.set('key', YT_API_KEY)
+    if (pageToken) endpoint.searchParams.set('pageToken', pageToken)
+
+    const res = await fetch(endpoint.toString())
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      throw new Error(err?.error?.message ?? `YouTube API błąd ${res.status}`)
+    }
+    const data = await res.json()
+    for (const item of data.items ?? []) {
+      const videoId = item.snippet?.resourceId?.videoId
+      const title = item.snippet?.title
+      if (videoId && title && title !== 'Deleted video' && title !== 'Private video') {
+        items.push({ ytId: videoId, title, url: `https://youtu.be/${videoId}` })
+      }
+    }
+    pageToken = data.nextPageToken ?? ''
+  } while (pageToken)
+  return items
 }
 
 export async function fetchYtTitle(url) {

@@ -8,6 +8,7 @@ export function useRoomSubscriptions(roomId, setActivePlaylistId) {
   const [playlists, setPlaylists] = useState([])
   const [jukeboxState, setJukeboxState] = useState(null)
   const [settings, setSettings] = useState({})
+  const [guestToken, setGuestToken] = useState(null)
 
   useEffect(() => {
     if (!roomId) return
@@ -25,7 +26,10 @@ export function useRoomSubscriptions(roomId, setActivePlaylistId) {
     })
 
     const unsubRoom = onSnapshot(doc(db, 'rooms', roomId), snap => {
-      if (snap.exists()) setSettings(snap.data().settings ?? {})
+      if (snap.exists()) {
+        setSettings(snap.data().settings ?? {})
+        setGuestToken(snap.data().guestToken ?? null)
+      }
     })
 
     return () => {
@@ -35,5 +39,5 @@ export function useRoomSubscriptions(roomId, setActivePlaylistId) {
     }
   }, [roomId, setActivePlaylistId])
 
-  return { playlists, jukeboxState, settings }
+  return { playlists, jukeboxState, settings, guestToken }
 }

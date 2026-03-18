@@ -8,7 +8,7 @@ import { useRoomAuth } from './hooks/useRoomAuth'
 import { useRoomSubscriptions } from './hooks/useRoomSubscriptions'
 import { useJukeboxPlayback } from './hooks/useJukeboxPlayback'
 import { genId } from './lib/jukebox'
-import { extractYtId, fetchYtTitle } from './lib/youtube'
+import { extractYtId, extractYtPlaylistId, fetchYtTitle, fetchYtPlaylistItems } from './lib/youtube'
 import { createPlaylist, createPlaylistWithSongs, removePlaylist, renamePlaylist, replacePlaylistSongs, saveRoomSetting, toggleSkipVote, voteNextOption } from './services/jukeboxService'
 import './App.css'
 
@@ -19,9 +19,11 @@ const initialUiState = {
   newSongTitle: '',
   urlErr: '',
   fetchingTitle: false,
+  ytPlaylistId: null,
+  importingYtPlaylist: false,
   editingId: null,
   editingName: '',
-  copied: false,
+  copied: null,
   joinUrl: '',
   viewAsGuest: false,
   sidebarOpen: true,
@@ -106,7 +108,7 @@ export default function App() {
     dispatch({ type: 'initActivePlaylist', payload: updater })
   }, [])
 
-  const { playlists, jukeboxState, settings } = useRoomSubscriptions(roomId, setInitialActivePlaylist)
+  const { playlists, jukeboxState, settings, guestToken } = useRoomSubscriptions(roomId, setInitialActivePlaylist)
 
   const selectPlaylist = useCallback((playlistId) => {
     dispatch({ type: 'setActivePlaylist', payload: playlistId })
@@ -145,7 +147,7 @@ export default function App() {
   useEffect(() => {
     if (!uiState.copied) return
     const timeoutId = setTimeout(() => {
-      dispatch({ type: 'setCopied', value: false })
+      dispatch({ type: 'setCopied', value: null })
     }, 2500)
     return () => clearTimeout(timeoutId)
   }, [uiState.copied])
@@ -290,7 +292,17 @@ export default function App() {
 
   const handleUrlBlur = useCallback(async () => {
     const url = uiState.newSongUrl.trim()
-    if (!url || uiState.newSongTitle.trim()) return
+    if (!url) return
+
+    // Check for playlist URL first
+    const playlistId = extractYtPlaylistId(url)
+    if (playlistId) {
+      dispatch({ type: 'setField', field: 'ytPlaylistId', value: playlistId })
+      return
+    }
+
+    dispatch({ type: 'setField', field: 'ytPlaylistId', value: null })
+    if (uiState.newSongTitle.trim()) return
 
     const ytId = extractYtId(url)
     if (!ytId) {
@@ -303,6 +315,26 @@ export default function App() {
     if (title) dispatch({ type: 'setField', field: 'newSongTitle', value: title })
     dispatch({ type: 'songTitleFetchEnd' })
   }, [executeAction, uiState.newSongTitle, uiState.newSongUrl])
+
+  const importFromYouTube = useCallback(async () => {
+    const { ytPlaylistId, activePlaylistId: plId } = uiState
+    if (!ytPlaylistId || !plId || !roomId) return
+
+    dispatch({ type: 'setField', field: 'importingYtPlaylist', value: true })
+    const done = await executeAction(async () => {
+      const fetched = await fetchYtPlaylistItems(ytPlaylistId)
+      if (fetched.length === 0) throw new Error('Playlista pusta lub niedostępna przez API')
+      const newSongs = fetched.map(s => ({ id: genId(), ...s }))
+      const existing = activePlaylist?.songs ?? []
+      return replacePlaylistSongs(roomId, plId, [...existing, ...newSongs])
+    }, 'Nie udało się zaimportować playlisty YouTube.')
+    dispatch({ type: 'setField', field: 'importingYtPlaylist', value: false })
+
+    if (done !== null) {
+      dispatch({ type: 'setField', field: 'newSongUrl', value: '' })
+      dispatch({ type: 'setField', field: 'ytPlaylistId', value: null })
+    }
+  }, [activePlaylist, executeAction, roomId, uiState])
 
   const addSong = useCallback(async () => {
     const url = uiState.newSongUrl.trim()
@@ -333,9 +365,18 @@ export default function App() {
     )
   }, [activePlaylist, executeAction, roomId, uiState.activePlaylistId])
 
-  const copyLink = useCallback(() => navigator.clipboard.writeText(roomId ?? '').then(() => {
-    dispatch({ type: 'setCopied', value: true })
-  }), [roomId])
+  const copyAdminLink = useCallback(() => {
+    const url = new URL(window.location.origin + window.location.pathname)
+    url.searchParams.set('room', roomId ?? '')
+    navigator.clipboard.writeText(url.toString()).then(() => dispatch({ type: 'setCopied', value: 'admin' }))
+  }, [roomId])
+
+  const copyVoterLink = useCallback(() => {
+    if (!guestToken) return
+    const url = new URL(window.location.origin + window.location.pathname)
+    url.searchParams.set('room', guestToken)
+    navigator.clipboard.writeText(url.toString()).then(() => dispatch({ type: 'setCopied', value: 'voter' }))
+  }, [guestToken])
 
   const handleJoinRoom = useCallback(() => {
     const input = uiState.joinUrl.trim()
@@ -367,11 +408,15 @@ export default function App() {
         viewAsGuest={uiState.viewAsGuest}
         toggleViewAsGuest={toggleViewAsGuest}
         copied={uiState.copied}
-        copyLink={copyLink}
+        copyAdminLink={copyAdminLink}
+        copyVoterLink={copyVoterLink}
+        joinUrl={uiState.joinUrl}
+        setJoinUrl={(value) => setField('joinUrl', value)}
+        handleJoinRoom={handleJoinRoom}
       />
 
       <main className="main">
-        <PlaylistSidebar
+        {showOwnerUI && <PlaylistSidebar
           sidebarOpen={uiState.sidebarOpen}
           showOwnerUI={showOwnerUI}
           collapsed={uiState.collapsed}
@@ -410,12 +455,10 @@ export default function App() {
           fetchingTitle={uiState.fetchingTitle}
           handleUrlBlur={handleUrlBlur}
           addSong={addSong}
-          copied={uiState.copied}
-          copyLink={copyLink}
-          joinUrl={uiState.joinUrl}
-          setJoinUrl={(value) => setField('joinUrl', value)}
-          handleJoinRoom={handleJoinRoom}
-        />
+          ytPlaylistId={uiState.ytPlaylistId}
+          importingYtPlaylist={uiState.importingYtPlaylist}
+          importFromYouTube={importFromYouTube}
+        />}
 
         <div className={`player-area${showOwnerUI ? ' player-area-admin' : ''}`}>
           {showOwnerUI ? (

@@ -56,6 +56,11 @@ service cloud.firestore {
         );
     }
 
+    match /tokenIndex/{token} {
+      allow read: if signedIn();
+      allow write: if signedIn() && request.resource.data.roomId == request.auth.uid;
+    }
+
     match /rooms/{roomId} {
       allow read: if signedIn();
       allow write: if isRoomOwner(roomId);

@@ -108,7 +108,20 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.8rem;
+  cursor: pointer;
+  user-select: none;
+  margin: -0.2rem -0.4rem 0;
+  padding: 0.2rem 0.4rem;
+  border-radius: 6px;
+  transition: background 0.12s;
+}
+
+.section-title-row:hover {
+  background: var(--surface2);
+}
+
+.section-title-row + * {
+  margin-top: 0.8rem;
 }
 
 .section-title {
@@ -121,19 +134,15 @@
   line-height: 1;
 }
 
-.btn-collapse {
-  background: none;
-  border: none;
+.section-arrow {
+  font-size: 0.6rem;
   color: var(--text-dim);
-  font-size: 0.65rem;
-  cursor: pointer;
-  padding: 0.15rem 0.3rem;
-  border-radius: 4px;
-  line-height: 1;
   transition: color 0.12s;
 }
 
-.btn-collapse:hover { color: var(--accent); }
+.section-title-row:hover .section-arrow {
+  color: var(--accent);
+}
 
 /* ─── Playlist list ─────────────────────────────────────────────────────────── */
 .playlist-list {
@@ -811,6 +820,8 @@ input.input-error { border-color: var(--accent); }
   background: var(--surface2);
   color: var(--text-dim);
   border: 1px solid var(--border);
+  min-width: 2.2rem;
+  text-align: center;
   border-radius: 20px;
   padding: 0.4rem 0.9rem;
   font-size: 0.8rem;
@@ -823,6 +834,49 @@ input.input-error { border-color: var(--accent); }
 .btn-share:hover {
   border-color: var(--gold);
   color: var(--gold);
+}
+
+.btn-share-voter:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn-sidebar-toggle {
+  background: var(--surface2);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.3rem 0.55rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  margin-right: 0.25rem;
+}
+
+.btn-sidebar-toggle:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.header-join-row {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.header-join-input {
+  width: 130px;
+  padding: 0.3rem 0.6rem;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.8rem;
+}
+
+.header-join-input:focus {
+  outline: none;
+  border-color: var(--accent);
 }
 
 .btn-view-toggle {
