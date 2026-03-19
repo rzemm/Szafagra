@@ -154,7 +154,7 @@ export function PlaylistSidebar(props) {
                 <li key={song.id} className="queue-item">
                   <span className="queue-pos">{index + 1}</span>
                   {showThumbnails && <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="queue-thumb" />}
-                  <span className="queue-title">{song.title}</span>
+                  <span className="queue-title"><span className="scroll-text">{song.title}</span></span>
                   <button className="btn-icon play" onClick={() => playSongNow(song)}>▶</button>
                 </li>
               ))}
