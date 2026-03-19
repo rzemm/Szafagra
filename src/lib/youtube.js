@@ -64,6 +64,14 @@ export async function fetchYtPlaylistItems(playlistId) {
   return items
 }
 
+export function cleanTitle(title) {
+  if (typeof title !== 'string') return title
+  return title
+    .replace(/\s*\([^)]*\)/g, '')
+    .replace(/\s*\[[^\]]*\]/g, '')
+    .trim()
+}
+
 export async function fetchYtTitle(url) {
   try {
     const res = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`)

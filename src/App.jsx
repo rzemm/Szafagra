@@ -211,7 +211,7 @@ function uiReducer(state, action) {
 
 export default function App() {
   const [uiState, dispatch] = useReducer(uiReducer, initialUiState)
-  const [panelOpen, setPanelOpen] = useState({ qr: true, voting: false, showQueue: false })
+  const [panelOpen, setPanelOpen] = useState({ qr: true, voting: false, showQueue: true })
   const [leftPanel, setLeftPanel] = useState('songs')
   const [hasRoomParam] = useState(() => !!new URLSearchParams(window.location.search).get('room'))
   const [creatingRoom, setCreatingRoom] = useState(false)
@@ -319,7 +319,7 @@ export default function App() {
   const nextOptionKeys = Object.keys(nextOptions).sort()
   const voteThreshold = settings?.voteThreshold ?? 1
   const skipThreshold = settings?.skipThreshold ?? 0
-  const allowSuggestions = settings?.allowSuggestions ?? false
+  const allowSuggestions = settings?.allowSuggestions ?? true
   const showThumbnails = settings?.showThumbnails ?? true
   const skipVoters = room?.skipVoters ?? {}
   const skipCount = Object.keys(skipVoters).length

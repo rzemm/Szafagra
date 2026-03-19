@@ -1,4 +1,5 @@
 import { useCallback } from 'react'
+import { cleanTitle } from '../lib/youtube'
 import { renameRoom, replaceRoomSongs } from '../services/jukeboxService'
 
 function sanitizeImportedSongs(songs, genId) {
@@ -6,7 +7,7 @@ function sanitizeImportedSongs(songs, genId) {
 
   return songs
     .map((song) => {
-      const title = typeof song?.title === 'string' ? song.title.trim() : ''
+      const title = typeof song?.title === 'string' ? cleanTitle(song.title.trim()) : ''
       const ytId = typeof song?.ytId === 'string' ? song.ytId.trim() : ''
       const sourceUrl = typeof song?.url === 'string' ? song.url.trim() : ''
       const url = sourceUrl || (ytId ? `https://youtu.be/${ytId}` : '')

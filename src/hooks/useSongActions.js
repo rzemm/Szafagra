@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { extractYtId, extractYtPlaylistId, fetchYtPlaylistItems, fetchYtTitle } from '../lib/youtube'
+import { cleanTitle, extractYtId, extractYtPlaylistId, fetchYtPlaylistItems, fetchYtTitle } from '../lib/youtube'
 import { replaceRoomSongs } from '../services/jukeboxService'
 
 export function useSongActions({
@@ -33,7 +33,7 @@ export function useSongActions({
 
     dispatch({ type: 'songTitleFetchStart' })
     const title = await executeAction(() => fetchYtTitle(url), 'Nie udało się pobrać tytułu utworu.')
-    if (title) dispatch({ type: 'setField', field: 'newSongTitle', value: title })
+    if (title) dispatch({ type: 'setField', field: 'newSongTitle', value: cleanTitle(title) })
     dispatch({ type: 'songTitleFetchEnd' })
   }, [dispatch, executeAction, newSongTitle, newSongUrl])
 
@@ -45,7 +45,7 @@ export function useSongActions({
       const fetched = await fetchYtPlaylistItems(ytPlaylistId)
       if (fetched.length === 0) throw new Error('Playlista pusta lub niedostępna przez API')
 
-      const newSongs = fetched.map((song) => ({ id: genId(), ...song }))
+      const newSongs = fetched.map((song) => ({ id: genId(), ...song, title: cleanTitle(song.title) }))
       const existing = room?.songs ?? []
       return replaceRoomSongs(roomId, [...existing, ...newSongs])
     }, 'Nie udało się zaimportować playlisty YouTube.')
@@ -75,7 +75,7 @@ export function useSongActions({
       dispatch({ type: 'songTitleFetchEnd' })
     }
 
-    const song = { id: genId(), url: cleanUrl, title: title || cleanUrl, ytId }
+    const song = { id: genId(), url: cleanUrl, title: cleanTitle(title) || cleanUrl, ytId }
     const done = await executeAction(
       () => replaceRoomSongs(roomId, [...(room?.songs ?? []), song]),
       'Nie udało się dodać utworu.',

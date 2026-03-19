@@ -116,25 +116,6 @@ export function PlaylistSidebar(props) {
         </div>
       )}
 
-      {leftPanel === 'songs' && suggestions?.length > 0 && (
-        <div className="section">
-          <div className="section-title-row">
-            <h2 className="section-title">Propozycje <span className="count">{suggestions.length}</span></h2>
-          </div>
-          <div className="suggestions-list">
-            {suggestions.map((suggestion) => (
-              <div key={suggestion.id} className="suggestion-item">
-                {showThumbnails && <img src={`https://img.youtube.com/vi/${suggestion.ytId}/default.jpg`} alt="" className="song-thumb" />}
-                <span className="song-title">{suggestion.title}</span>
-                <div className="suggestion-actions">
-                  <button className="btn-icon play" onClick={() => approveSuggestion(suggestion)} title="Dodaj do listy">✓</button>
-                  <button className="btn-icon danger" onClick={() => rejectSuggestion(suggestion.id)} title="Odrzuc">✕</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* ── Kolejka ──────────────────────────────────────── */}
       {leftPanel === 'queue' && (
@@ -175,6 +156,26 @@ export function PlaylistSidebar(props) {
       )}
 
       {/* ── Ustawienia ───────────────────────────────────── */}
+      {leftPanel === 'settings' && suggestions?.length > 0 && (
+        <div className="section">
+          <div className="section-title-row">
+            <h2 className="section-title">Propozycje <span className="count">{suggestions.length}</span></h2>
+          </div>
+          <div className="suggestions-list">
+            {suggestions.map((suggestion) => (
+              <div key={suggestion.id} className="suggestion-item">
+                {showThumbnails && <img src={`https://img.youtube.com/vi/${suggestion.ytId}/default.jpg`} alt="" className="song-thumb" />}
+                <span className="song-title">{suggestion.title}</span>
+                <div className="suggestion-actions">
+                  <button className="btn-icon play" onClick={() => approveSuggestion(suggestion)} title="Dodaj do listy">✓</button>
+                  <button className="btn-icon danger" onClick={() => rejectSuggestion(suggestion.id)} title="Odrzuc">✕</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {leftPanel === 'settings' && (
         <div className="section sidebar-settings-list">
 
