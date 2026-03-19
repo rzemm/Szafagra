@@ -17,6 +17,7 @@ import {
   addSuggestion,
   createPrivateRoom,
   createPublicRoom,
+  deleteRoom,
   deleteSuggestion,
   incrementRoomVotes,
   rateRoom,
@@ -67,7 +68,7 @@ function useOwnedRooms(uid, enabled) {
   return enabled && uid ? rooms : []
 }
 
-function HomePage({ onCreateRoom, creatingRoom, user, onSignIn, onSignOut, ownedRooms }) {
+function HomePage({ onCreateRoom, creatingRoom, user, onSignIn, onSignOut, ownedRooms, onDeleteRoom }) {
   const [roomInput, setRoomInput] = useState('')
   const isLoggedIn = user && !user.isAnonymous
 
@@ -112,11 +113,22 @@ function HomePage({ onCreateRoom, creatingRoom, user, onSignIn, onSignOut, owned
             {isLoggedIn ? (
               ownedRooms.length > 0 ? (
                 ownedRooms.map((ownedRoom) => (
-                  <a key={ownedRoom.id} className={`home-room-card home-room-card--admin${ownedRoom.isPlaying ? ' home-room-card--playing' : ''}`} href={`/?room=${ownedRoom.id}`}>
-                    <span className="home-room-icon">🎛</span>
-                    <span className="home-room-label">{ownedRoom.name || 'Pokoj prywatny'}</span>
-                    {ownedRoom.isPlaying ? <span className="home-room-playing">▶ Gra</span> : <span className="home-room-status">Zatrzymany</span>}
-                  </a>
+                  <div key={ownedRoom.id} className={`home-room-card home-room-card--admin${ownedRoom.isPlaying ? ' home-room-card--playing' : ''}`}>
+                    <a className="home-room-card-link" href={`/?room=${ownedRoom.id}`}>
+                      <span className="home-room-icon">🎛</span>
+                      <span className="home-room-label">{ownedRoom.name || 'Pokoj prywatny'}</span>
+                    </a>
+                    <button
+                      className="home-room-delete"
+                      title="Usun pokoj"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        if (window.confirm(`Czy na pewno chcesz usunac pokoj "${ownedRoom.name || 'Pokoj prywatny'}"?`)) {
+                          onDeleteRoom(ownedRoom.id, ownedRoom.guestToken)
+                        }
+                      }}
+                    >🗑</button>
+                  </div>
                 ))
               ) : (
                 <p className="home-rooms-empty">Nie masz jeszcze zadnych pokojow</p>
@@ -269,6 +281,10 @@ export default function App() {
     await executeAction(() => setMainState(roomId, { name }), 'Nie udalo sie zmienic nazwy pokoju.')
   }, [canEditRoom, executeAction, roomId])
 
+  const handleDeleteRoom = useCallback(async (roomId, guestToken) => {
+    await deleteRoom(roomId, guestToken)
+  }, [])
+
   const handleCreateRoom = useCallback(async () => {
     if (!user) return
     setCreatingRoom(true)
@@ -420,6 +436,7 @@ export default function App() {
         onSignIn={signInWithGoogle}
         onSignOut={signOutUser}
         ownedRooms={ownedRooms}
+        onDeleteRoom={handleDeleteRoom}
       />
     )
   }

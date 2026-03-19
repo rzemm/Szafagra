@@ -227,3 +227,10 @@ export function incrementRoomVotes(roomId) {
     updatedAt: serverTimestamp(),
   })
 }
+
+export async function deleteRoom(roomId, guestToken) {
+  await deleteDoc(roomRef(roomId))
+  if (guestToken) {
+    await deleteDoc(tokenRef(guestToken)).catch(() => {})
+  }
+}
