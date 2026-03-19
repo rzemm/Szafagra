@@ -293,6 +293,8 @@ export default function App() {
     loadProgress,
     remaining,
     playSongNow,
+    queueSong,
+    removeVotingOption,
     advanceToWinner,
     advanceToOption,
     resizeVotingOptions,
@@ -559,8 +561,22 @@ export default function App() {
 
               <div className="voting-panel-bottom">
                 <div className="voting-bottom-bar" onClick={() => togglePanel('voting')}>
-                  <h2 className="section-title">Glosowanie</h2>
-                  <span className="section-arrow">{panelOpen.voting ? '▼' : '▲'}</span>
+                  {isPlaying && nextOptionKeys.length > 0 ? (
+                    nextOptionKeys.map((k) => {
+                      const count = Object.values(nextVotesData).filter(v => v === k).length
+                      const total = Object.values(nextVotesData).length
+                      const pct = total > 0 ? Math.round(count / total * 100) : 0
+                      return (
+                        <div key={k} className="voting-bar-opt">
+                          <span className="vbo-num">{count}</span>
+                          <span className="vbo-pct">{pct}%</span>
+                        </div>
+                      )
+                    })
+                  ) : (
+                    <h2 className="section-title" style={{ flex: 1, padding: '0 1rem' }}>Glosowanie</h2>
+                  )}
+                  <span className="section-arrow" style={{ padding: '0 1rem' }}>{panelOpen.voting ? '▼' : '▲'}</span>
                 </div>
                 {panelOpen.voting && (
                   <div className="voting-bottom-content">
@@ -573,6 +589,8 @@ export default function App() {
                         onVote={vote}
                         showPlayNow
                         onPlayNow={playSongNow}
+                        onQueueSong={queueSong}
+                        onRemoveOption={removeVotingOption}
                         columns
                         onChooseOption={advanceToOption}
                         showThumbnails={showThumbnails}

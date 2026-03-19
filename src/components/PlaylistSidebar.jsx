@@ -36,34 +36,6 @@ export function PlaylistSidebar(props) {
       {room && (
         <div className="section songs-section">
           <div className="songs-content">
-            {showOwnerUI && (
-              <>
-                <div className="playlist-import-export">
-                  <button className="btn-secondary" onClick={() => startEditPlaylist('room', room.name)}>
-                    Zmień nazwę
-                  </button>
-                  <button className="btn-secondary" onClick={exportPlaylist}>
-                    Wyeksportuj listę
-                  </button>
-                  <label className="btn-secondary btn-file">
-                    Zaimportuj listę
-                    <input type="file" accept="application/json,.json" onChange={handleImportChange} />
-                  </label>
-                  <button className="btn-secondary" onClick={startJukebox} disabled={!room.songs?.length || isPlaying}>
-                    Start
-                  </button>
-                </div>
-
-                {ytPlaylistId && (
-                  <div className="add-song-form">
-                    <button className="btn-primary" onClick={importFromYouTube} disabled={importingYtPlaylist}>
-                      {importingYtPlaylist ? 'Importowanie...' : '+ Importuj całą playlistę YT'}
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-
             <div className="song-list">
               {(room.songs ?? []).map((song) => (
                 <div

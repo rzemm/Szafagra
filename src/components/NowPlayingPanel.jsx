@@ -4,7 +4,7 @@ import { formatTime } from '../lib/jukebox'
 
 export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerState, loadProgress, playerRef, playerDivRef, playerReady, advanceToWinner, skipThreshold, skipCount, startJukebox, stopJukebox, room }) {
   const [volume, setVolume] = useState(80)
-  const [discoMode, setDiscoMode] = useState(false)
+  const [discoMode, setDiscoMode] = useState(true)
   const [blurAmount, setBlurAmount] = useState(8)
 
   useEffect(() => {

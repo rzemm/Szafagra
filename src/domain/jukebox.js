@@ -7,6 +7,41 @@ function pickRandom(pool, count, exclude = []) {
     .slice(0, count)
 }
 
+export function replaceSongInOptions(options, removedSong, allSongs, alreadyUsed = []) {
+  const usedIds = new Set([removedSong.id, ...alreadyUsed.map(s => s.id)])
+  const keys = Object.keys(options).sort()
+  const result = {}
+  for (const key of keys) {
+    const songs = (options[key] ?? []).filter(s => s.id !== removedSong.id)
+    if (songs.length < (options[key] ?? []).length) {
+      const inResult = Object.values(result).flat()
+      const pool = allSongs.filter(s =>
+        !usedIds.has(s.id) &&
+        !inResult.some(r => r.id === s.id) &&
+        !songs.some(e => e.id === s.id)
+      )
+      if (pool.length > 0) {
+        const pick = pool[Math.floor(Math.random() * pool.length)]
+        songs.push(pick)
+        usedIds.add(pick.id)
+      }
+    }
+    result[key] = songs
+  }
+  return result
+}
+
+export function replaceVotingOption(options, removedKey, allSongs, alreadyUsed = [], groupSize = 1) {
+  const usedIds = new Set(alreadyUsed.map(s => s.id))
+  const otherSongs = Object.entries(options)
+    .filter(([k]) => k !== removedKey)
+    .flatMap(([, songs]) => songs)
+  const pool = allSongs
+    .filter(s => !usedIds.has(s.id) && !otherSongs.some(o => o.id === s.id))
+    .sort(() => Math.random() - 0.5)
+  return { ...options, [removedKey]: pool.slice(0, groupSize) }
+}
+
 export function chooseWinningOption(keys, votes, voteMode) {
   return resolveVoting(keys, votes, voteMode).winnerKey
 }
