@@ -2,9 +2,9 @@ import { createPortal } from 'react-dom'
 import { useEffect, useState } from 'react'
 import { formatTime } from '../lib/jukebox'
 
-export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerState, loadProgress, playerRef, playerDivRef, advanceToWinner, skipThreshold, skipCount, startJukeboxWith, stopJukebox, activePlaylistId, activePlaylist }) {
+export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerState, loadProgress, playerRef, playerDivRef, playerReady, advanceToWinner, skipThreshold, skipCount, startJukebox, stopJukebox, room }) {
   const [volume, setVolume] = useState(80)
-  const [discoMode, setDiscoMode] = useState(true)
+  const [discoMode, setDiscoMode] = useState(false)
   const [blurAmount, setBlurAmount] = useState(8)
 
   useEffect(() => {
@@ -26,8 +26,6 @@ export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerSta
     <>
       <div className="admin-col admin-col-center">
         <div className={`player-card${discoMode ? ' player-card--disco' : ''}`}>
-
-          {/* YouTube player div — always mounted, class changes for disco */}
           <div
             className={discoMode ? 'yt-player-disco' : 'yt-wrapper'}
             style={discoMode ? { filter: `blur(${blurAmount}px)` } : undefined}
@@ -37,7 +35,7 @@ export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerSta
             {!isPlaying && !discoMode && (
               <div className="player-overlay">
                 <span className="vinyl-icon">🎵</span>
-                <p>Wybierz playlistę i naciśnij START</p>
+                <p>{playerReady ? 'Dodaj utwory i nacisnij START' : 'Ladowanie odtwarzacza YouTube...'}</p>
               </div>
             )}
           </div>
@@ -57,8 +55,8 @@ export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerSta
               {!isPlaying ? (
                 <button
                   className="btn-ctrl btn-ctrl-start"
-                  onClick={() => startJukeboxWith(activePlaylistId)}
-                  disabled={!activePlaylistId || !activePlaylist?.songs.length}
+                  onClick={startJukebox}
+                  disabled={!room?.songs?.length || !playerReady}
                 >
                   ▶ START
                 </button>
@@ -95,7 +93,6 @@ export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerSta
               <span className="volume-icon">🔊</span>
             </div>
           )}
-
         </div>
 
         {!discoMode && isPlaying && skipThreshold > 0 && (
@@ -105,7 +102,6 @@ export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerSta
         )}
       </div>
 
-      {/* Disco bar rendered via portal directly into <body> to avoid grid/stacking issues */}
       {discoMode && createPortal(
         <div className="disco-bar">
           <div className="disco-bar-info">
@@ -124,8 +120,8 @@ export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerSta
             {!isPlaying ? (
               <button
                 className="btn-ctrl btn-ctrl-start"
-                onClick={() => startJukeboxWith(activePlaylistId)}
-                disabled={!activePlaylistId || !activePlaylist?.songs.length}
+                onClick={startJukebox}
+                disabled={!room?.songs?.length || !playerReady}
               >
                 ▶ START
               </button>

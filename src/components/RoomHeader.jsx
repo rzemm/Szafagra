@@ -1,7 +1,17 @@
 import { useState } from 'react'
 
+const GoogleIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true" style={{ flexShrink: 0 }}>
+    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+  </svg>
+)
+
 export function RoomHeader({
   showOwnerUI,
+  roomType,
   sidebarOpen,
   toggleSidebar,
   copied,
@@ -13,7 +23,10 @@ export function RoomHeader({
   newSongTitle,
   fetchingTitle,
   urlErr,
-  activePlaylist,
+  room,
+  user,
+  signInWithGoogle,
+  signOutUser,
 }) {
   const [guestCopied, setGuestCopied] = useState(false)
 
@@ -28,7 +41,7 @@ export function RoomHeader({
     <header className="header">
       <div className="header-inner">
         {showOwnerUI && (
-          <button className="btn-sidebar-toggle" onClick={toggleSidebar} title={sidebarOpen ? 'Ukryj panel' : 'Pokaż panel'}>
+          <button className="btn-sidebar-toggle" onClick={toggleSidebar} title={sidebarOpen ? 'Ukryj panel' : 'Pokaz panel'}>
             {sidebarOpen ? '◀' : '▶'}
           </button>
         )}
@@ -44,25 +57,42 @@ export function RoomHeader({
             onChange={(event) => setNewSongUrl(event.target.value)}
             onBlur={handleUrlBlur}
             onKeyDown={(event) => event.key === 'Enter' && addSong()}
-            placeholder={fetchingTitle ? 'Pobieranie tytułu…' : newSongTitle ? `🎵 ${newSongTitle}` : 'Dodaj piosenkę - wklej link YouTube…'}
+            placeholder={fetchingTitle ? 'Pobieranie tytulu...' : newSongTitle ? `🎵 ${newSongTitle}` : 'Dodaj piosenke - wklej link YouTube...'}
             title={urlErr || undefined}
             style={urlErr ? { borderColor: 'var(--accent)' } : undefined}
-            disabled={!activePlaylist}
+            disabled={!room}
           />
-          <button className="btn-header-add" onClick={addSong} disabled={!newSongUrl.trim() || !activePlaylist}>+</button>
+          <button className="btn-header-add" onClick={addSong} disabled={!newSongUrl.trim() || !room}>+</button>
         </div>
       )}
 
       <div className="header-actions">
+        {user?.isAnonymous ? (
+          <button className="header-google-btn" onClick={signInWithGoogle} title="Zaloguj sie przez Google">
+            <GoogleIcon />
+            <span>Zaloguj</span>
+          </button>
+        ) : user ? (
+          <div className="header-google-user">
+            {user.photoURL && <img src={user.photoURL} alt="" className="header-google-avatar" referrerPolicy="no-referrer" />}
+            <span className="header-google-name">{user.displayName}</span>
+            <button className="header-google-logout" onClick={signOutUser}>Wyloguj</button>
+          </div>
+        ) : null}
+
         {showOwnerUI ? (
           <>
-            <a className="btn-share" href="https://buycoffee.to/szafifi" target="_blank" rel="noreferrer">☕ Postaw kawę</a>
-            <button className="btn-share btn-share-admin" onClick={copyAdminLink} title="Kopiuj link admina">
-              {copied === 'admin' ? '✓ Skopiowano' : '⚙ Skopiuj link dla admina'}
+            <a className="btn-share" href="https://buycoffee.to/szafifi" target="_blank" rel="noreferrer">☕ Postaw kawe</a>
+            <button className="btn-share btn-share-admin" onClick={copyAdminLink} title="Kopiuj link do pokoju">
+              {copied === 'admin'
+                ? '✓ Skopiowano'
+                : roomType === 'public'
+                  ? '⎋ Skopiuj link do pokoju'
+                  : '⚙ Skopiuj link admina'}
             </button>
           </>
         ) : (
-          <button className="btn-header-share" onClick={copyGuestLink} title="Udostępnij link">
+          <button className="btn-header-share" onClick={copyGuestLink} title="Udostepnij link">
             {guestCopied ? '✓' : '⎋'}
           </button>
         )}

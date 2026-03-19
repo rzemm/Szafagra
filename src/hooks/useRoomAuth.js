@@ -1,17 +1,19 @@
 import { useEffect, useState } from 'react'
-import { signInAnonymously, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from 'firebase/auth'
-import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { signInAnonymously, signInWithPopup, signOut, GoogleAuthProvider, onAuthStateChanged } from 'firebase/auth'
+import { doc, getDoc } from 'firebase/firestore'
 import { auth, db } from '../firebase'
-import { genId } from '../lib/jukebox'
+import { ensurePublicRoomAccess, recordGuestVisit } from '../services/jukeboxService'
 
 const googleProvider = new GoogleAuthProvider()
 
 export function useRoomAuth() {
   const [user, setUser] = useState(null)
   const [roomId, setRoomId] = useState(null)
+  const [roomType, setRoomType] = useState(null)
   const [isOwner, setIsOwner] = useState(false)
+  const [canEditRoom, setCanEditRoom] = useState(false)
   const [authReady, setAuthReady] = useState(false)
-  const [needsLogin, setNeedsLogin] = useState(false)
+  const [roomError, setRoomError] = useState('')
 
   const signInWithGoogle = async () => {
     try {
@@ -21,51 +23,78 @@ export function useRoomAuth() {
     }
   }
 
+  const signOutUser = async () => {
+    try {
+      await signOut(auth)
+    } catch (err) {
+      console.error('Sign out failed', err)
+    }
+  }
+
   useEffect(() => {
     const roomParam = new URLSearchParams(window.location.search).get('room')
-    const isGuestPath = !!roomParam
 
     const unsub = onAuthStateChanged(auth, async currentUser => {
+      setRoomError('')
+
       if (!currentUser) {
-        if (isGuestPath) {
+        try {
           await signInAnonymously(auth)
-        } else {
-          // Owner path — show login screen
-          setNeedsLogin(true)
+        } catch (err) {
+          console.error('Anonymous sign-in failed', err)
+          setRoomError('Nie udało się połączyć z pokojem.')
           setAuthReady(true)
         }
         return
       }
 
-      setNeedsLogin(false)
       setUser(currentUser)
 
-      if (!roomParam || roomParam === currentUser.uid) {
-        // Owner flow
-        const roomRef = doc(db, 'rooms', currentUser.uid)
-        const roomSnap = await getDoc(roomRef)
-        let guestToken = roomSnap.exists() ? roomSnap.data().guestToken : null
-        if (!guestToken) {
-          guestToken = genId()
-          await setDoc(doc(db, 'tokenIndex', guestToken), { roomId: currentUser.uid })
-        }
-        await setDoc(roomRef, { ownerId: currentUser.uid, guestToken }, { merge: true })
+      if (!roomParam) {
+        setRoomId(null)
+        setRoomType(null)
+        setIsOwner(false)
+        setCanEditRoom(false)
+        setAuthReady(true)
+        return
+      }
 
-        const url = new URL(window.location.href)
-        if (!url.searchParams.get('room')) {
-          url.searchParams.set('room', currentUser.uid)
-          window.history.replaceState({}, '', url.toString())
-        }
-
-        setRoomId(currentUser.uid)
-        setIsOwner(true)
-      } else {
-        // Guest flow — resolve guestToken → real roomId
+      try {
         const tokenSnap = await getDoc(doc(db, 'tokenIndex', roomParam))
         const resolvedRoomId = tokenSnap.exists() ? tokenSnap.data().roomId : roomParam
+        const roomSnap = await getDoc(doc(db, 'rooms', resolvedRoomId))
+
+        if (!roomSnap.exists()) {
+          setRoomId(null)
+          setRoomType(null)
+          setIsOwner(false)
+          setCanEditRoom(false)
+          setRoomError('Ten pokój nie istnieje albo link jest nieprawidłowy.')
+          setAuthReady(true)
+          return
+        }
+
+        const room = roomSnap.data()
+        const owner = !currentUser.isAnonymous && room.ownerId === currentUser.uid
+        const canEdit = room.type === 'public' ? true : owner
+
+        if (room.type === 'public') {
+          await ensurePublicRoomAccess(currentUser.uid, resolvedRoomId)
+        } else if (!owner && !currentUser.isAnonymous) {
+          recordGuestVisit(currentUser.uid, resolvedRoomId, roomParam).catch(() => {})
+        }
 
         setRoomId(resolvedRoomId)
-        setIsOwner(resolvedRoomId === currentUser.uid)
+        setRoomType(room.type ?? null)
+        setIsOwner(owner)
+        setCanEditRoom(canEdit)
+      } catch (err) {
+        console.error('Room auth failed', err)
+        setRoomError('Nie udało się otworzyć pokoju.')
+        setRoomId(null)
+        setRoomType(null)
+        setIsOwner(false)
+        setCanEditRoom(false)
       }
 
       setAuthReady(true)
@@ -74,5 +103,5 @@ export function useRoomAuth() {
     return () => unsub()
   }, [])
 
-  return { user, roomId, isOwner, authReady, needsLogin, signInWithGoogle }
+  return { user, roomId, roomType, isOwner, canEditRoom, authReady, roomError, signInWithGoogle, signOutUser }
 }

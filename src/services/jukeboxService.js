@@ -1,21 +1,149 @@
-import { addDoc, collection, deleteDoc, deleteField, doc, increment, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
+import {
+  collection,
+  deleteDoc,
+  deleteField,
+  doc,
+  increment,
+  onSnapshot,
+  query,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+  where,
+} from 'firebase/firestore'
 import { db } from '../firebase'
+import { genId } from '../lib/jukebox'
 
-const STATE_ID = 'main'
-
+const roomsRef = collection(db, 'rooms')
 const roomRef = roomId => doc(db, 'rooms', roomId)
-const mainStateRef = roomId => doc(db, 'rooms', roomId, 'state', STATE_ID)
-const playlistsRef = roomId => collection(db, 'rooms', roomId, 'playlists')
-const playlistRef = (roomId, playlistId) => doc(db, 'rooms', roomId, 'playlists', playlistId)
 const suggestionsRef = roomId => collection(db, 'rooms', roomId, 'suggestions')
 const suggestionRef = (roomId, id) => doc(db, 'rooms', roomId, 'suggestions', id)
+const tokenRef = token => doc(db, 'tokenIndex', token)
+const userRoomsRef = uid => doc(db, 'userRooms', uid)
+const publicAccessRef = (uid, roomId) => doc(db, 'publicAccess', uid, 'rooms', roomId)
+
+function defaultSettings() {
+  return {
+    voteMode: 'highest',
+    voteThreshold: 1,
+    skipThreshold: 0,
+    queueSize: 1,
+    allowSuggestions: false,
+    showThumbnails: true,
+  }
+}
+
+function createRoomPayload({ type, name, ownerId, guestToken }) {
+  return {
+    type,
+    name,
+    ownerId,
+    guestToken,
+    songs: [],
+    ratings: {},
+    totalPlays: 0,
+    totalVotes: 0,
+    settings: defaultSettings(),
+    isPlaying: false,
+    currentSong: null,
+    queue: [],
+    nextOptions: {},
+    nextVotes: {},
+    skipVoters: {},
+    syncPos: 0,
+    duration: null,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    syncAt: serverTimestamp(),
+  }
+}
+
+export async function createPrivateRoom(ownerId, name = 'Nowy pokoj prywatny') {
+  const guestToken = genId()
+  const newRoomRef = doc(roomsRef)
+
+  await setDoc(newRoomRef, createRoomPayload({
+    type: 'private',
+    name,
+    ownerId,
+    guestToken,
+  }))
+
+  await setDoc(tokenRef(guestToken), {
+    roomId: newRoomRef.id,
+    type: 'private',
+    createdAt: serverTimestamp(),
+  })
+
+  return newRoomRef
+}
+
+export async function createPublicRoom(name = 'Nowy pokoj publiczny', creatorUid) {
+  const guestToken = genId()
+  const newRoomRef = doc(roomsRef)
+
+  await setDoc(newRoomRef, createRoomPayload({
+    type: 'public',
+    name,
+    ownerId: null,
+    guestToken,
+  }))
+
+  await setDoc(tokenRef(guestToken), {
+    roomId: newRoomRef.id,
+    type: 'public',
+    createdAt: serverTimestamp(),
+  })
+
+  if (creatorUid) {
+    await setDoc(publicAccessRef(creatorUid, newRoomRef.id), {
+      roomId: newRoomRef.id,
+      grantedAt: serverTimestamp(),
+      lastAccessed: serverTimestamp(),
+    })
+  }
+
+  return newRoomRef
+}
+
+export function ensurePublicRoomAccess(uid, roomId) {
+  return setDoc(publicAccessRef(uid, roomId), {
+    roomId,
+    grantedAt: serverTimestamp(),
+    lastAccessed: serverTimestamp(),
+  }, { merge: true })
+}
+
+export function recordGuestVisit(uid, roomId, guestToken) {
+  return setDoc(userRoomsRef(uid), {
+    guestOf: { [roomId]: { guestToken, lastVisited: serverTimestamp() } },
+  }, { merge: true })
+}
+
+export function subscribeOwnedRooms(uid, callback) {
+  const ownedRoomsQuery = query(
+    roomsRef,
+    where('ownerId', '==', uid),
+    where('type', '==', 'private'),
+  )
+
+  return onSnapshot(ownedRoomsQuery, snap => {
+    const rooms = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (b.updatedAt?.toMillis?.() ?? 0) - (a.updatedAt?.toMillis?.() ?? 0))
+    callback(rooms)
+  })
+}
 
 export function saveRoomSetting(roomId, key, value) {
-  return updateDoc(roomRef(roomId), { [`settings.${key}`]: value })
+  return updateDoc(roomRef(roomId), {
+    [`settings.${key}`]: value,
+    updatedAt: serverTimestamp(),
+  })
 }
 
 export function setMainState(roomId, payload) {
-  return setDoc(mainStateRef(roomId), {
+  return updateDoc(roomRef(roomId), {
     ...payload,
     syncAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -23,16 +151,17 @@ export function setMainState(roomId, payload) {
 }
 
 export function patchMainState(roomId, payload) {
-  return updateDoc(mainStateRef(roomId), {
+  return updateDoc(roomRef(roomId), {
     ...payload,
     updatedAt: serverTimestamp(),
   })
 }
 
 export function updatePlaybackSync(roomId, payload) {
-  return updateDoc(mainStateRef(roomId), {
+  return updateDoc(roomRef(roomId), {
     ...payload,
     syncAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
   })
 }
 
@@ -40,52 +169,61 @@ export function voteNextOption(roomId, uid, optionKey, currentVote) {
   const update = currentVote === optionKey
     ? { [`nextVotes.${uid}`]: deleteField() }
     : { [`nextVotes.${uid}`]: optionKey }
-  return updateDoc(mainStateRef(roomId), update)
+  return updateDoc(roomRef(roomId), update)
 }
 
 export function toggleSkipVote(roomId, uid, alreadyVoted) {
   const update = alreadyVoted
     ? { [`skipVoters.${uid}`]: deleteField() }
     : { [`skipVoters.${uid}`]: true }
-  return updateDoc(mainStateRef(roomId), update)
+  return updateDoc(roomRef(roomId), update)
 }
 
-export function createPlaylist(roomId, name) {
-  return addDoc(playlistsRef(roomId), { name, songs: [], createdAt: serverTimestamp() })
+export function renameRoom(roomId, name) {
+  return updateDoc(roomRef(roomId), {
+    name,
+    updatedAt: serverTimestamp(),
+  })
 }
 
-export function createPlaylistWithSongs(roomId, name, songs) {
-  return addDoc(playlistsRef(roomId), { name, songs, createdAt: serverTimestamp() })
-}
-
-export function removePlaylist(roomId, playlistId) {
-  return deleteDoc(playlistRef(roomId, playlistId))
-}
-
-export function renamePlaylist(roomId, playlistId, name) {
-  return updateDoc(playlistRef(roomId, playlistId), { name })
-}
-
-export function replacePlaylistSongs(roomId, playlistId, songs) {
-  return updateDoc(playlistRef(roomId, playlistId), { songs })
+export function replaceRoomSongs(roomId, songs) {
+  return updateDoc(roomRef(roomId), {
+    songs,
+    updatedAt: serverTimestamp(),
+  })
 }
 
 export function addSuggestion(roomId, userId, { title, ytId, url }) {
-  return addDoc(suggestionsRef(roomId), { userId, title, ytId, url, createdAt: serverTimestamp() })
+  return setDoc(doc(suggestionsRef(roomId)), {
+    userId,
+    title,
+    ytId,
+    url,
+    createdAt: serverTimestamp(),
+  })
 }
 
 export function deleteSuggestion(roomId, suggestionId) {
   return deleteDoc(suggestionRef(roomId, suggestionId))
 }
 
-export function ratePlaylist(roomId, playlistId, userId, score) {
-  return updateDoc(playlistRef(roomId, playlistId), { [`ratings.${userId}`]: score })
+export function rateRoom(roomId, userId, score) {
+  return updateDoc(roomRef(roomId), {
+    [`ratings.${userId}`]: score,
+    updatedAt: serverTimestamp(),
+  })
 }
 
-export function incrementPlaylistPlays(roomId, playlistId) {
-  return updateDoc(playlistRef(roomId, playlistId), { totalPlays: increment(1) })
+export function incrementRoomPlays(roomId) {
+  return updateDoc(roomRef(roomId), {
+    totalPlays: increment(1),
+    updatedAt: serverTimestamp(),
+  })
 }
 
-export function incrementPlaylistVotes(roomId, playlistId) {
-  return updateDoc(playlistRef(roomId, playlistId), { totalVotes: increment(1) })
+export function incrementRoomVotes(roomId) {
+  return updateDoc(roomRef(roomId), {
+    totalVotes: increment(1),
+    updatedAt: serverTimestamp(),
+  })
 }

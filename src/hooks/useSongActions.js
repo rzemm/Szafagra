@@ -1,11 +1,10 @@
 import { useCallback } from 'react'
 import { extractYtId, extractYtPlaylistId, fetchYtPlaylistItems, fetchYtTitle } from '../lib/youtube'
-import { replacePlaylistSongs } from '../services/jukeboxService'
+import { replaceRoomSongs } from '../services/jukeboxService'
 
 export function useSongActions({
   roomId,
-  activePlaylist,
-  activePlaylistId,
+  room,
   newSongUrl,
   newSongTitle,
   ytPlaylistId,
@@ -39,7 +38,7 @@ export function useSongActions({
   }, [dispatch, executeAction, newSongTitle, newSongUrl])
 
   const importFromYouTube = useCallback(async () => {
-    if (!ytPlaylistId || !activePlaylistId || !roomId) return
+    if (!ytPlaylistId || !roomId) return
 
     dispatch({ type: 'setField', field: 'importingYtPlaylist', value: true })
     const done = await executeAction(async () => {
@@ -47,8 +46,8 @@ export function useSongActions({
       if (fetched.length === 0) throw new Error('Playlista pusta lub niedostępna przez API')
 
       const newSongs = fetched.map((song) => ({ id: genId(), ...song }))
-      const existing = activePlaylist?.songs ?? []
-      return replacePlaylistSongs(roomId, activePlaylistId, [...existing, ...newSongs])
+      const existing = room?.songs ?? []
+      return replaceRoomSongs(roomId, [...existing, ...newSongs])
     }, 'Nie udało się zaimportować playlisty YouTube.')
     dispatch({ type: 'setField', field: 'importingYtPlaylist', value: false })
 
@@ -56,11 +55,11 @@ export function useSongActions({
       dispatch({ type: 'setField', field: 'newSongUrl', value: '' })
       dispatch({ type: 'setField', field: 'ytPlaylistId', value: null })
     }
-  }, [activePlaylist, activePlaylistId, dispatch, executeAction, genId, roomId, ytPlaylistId])
+  }, [dispatch, executeAction, genId, room, roomId, ytPlaylistId])
 
   const addSong = useCallback(async () => {
     const url = newSongUrl.trim()
-    if (!url || !activePlaylistId || !roomId) return
+    if (!url || !roomId) return
 
     const ytId = extractYtId(url)
     if (!ytId) {
@@ -78,22 +77,22 @@ export function useSongActions({
 
     const song = { id: genId(), url: cleanUrl, title: title || cleanUrl, ytId }
     const done = await executeAction(
-      () => replacePlaylistSongs(roomId, activePlaylistId, [...(activePlaylist?.songs ?? []), song]),
+      () => replaceRoomSongs(roomId, [...(room?.songs ?? []), song]),
       'Nie udało się dodać utworu.',
     )
     if (done === null) return
 
     dispatch({ type: 'songAdded' })
-  }, [activePlaylist, activePlaylistId, dispatch, executeAction, genId, newSongTitle, newSongUrl, roomId])
+  }, [dispatch, executeAction, genId, newSongTitle, newSongUrl, room, roomId])
 
   const deleteSong = useCallback(async (songId) => {
-    if (!activePlaylist || !roomId) return
+    if (!room || !roomId) return
 
     await executeAction(
-      () => replacePlaylistSongs(roomId, activePlaylistId, activePlaylist.songs.filter((song) => song.id !== songId)),
+      () => replaceRoomSongs(roomId, room.songs.filter((song) => song.id !== songId)),
       'Nie udało się usunąć utworu.',
     )
-  }, [activePlaylist, activePlaylistId, executeAction, roomId])
+  }, [executeAction, room, roomId])
 
   return {
     handleUrlBlur,

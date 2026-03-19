@@ -1,10 +1,5 @@
 import { useCallback } from 'react'
-import {
-  createPlaylist,
-  createPlaylistWithSongs,
-  removePlaylist,
-  renamePlaylist,
-} from '../services/jukeboxService'
+import { renameRoom, replaceRoomSongs } from '../services/jukeboxService'
 
 function sanitizeImportedSongs(songs, genId) {
   if (!Array.isArray(songs)) return []
@@ -30,43 +25,28 @@ function sanitizeImportedSongs(songs, genId) {
 
 export function usePlaylistActions({
   roomId,
-  activePlaylist,
-  activePlaylistId,
-  newPlaylistName,
-  editingId,
+  room,
   editingName,
   executeAction,
-  selectPlaylist,
   dispatch,
   genId,
 }) {
-  const addPlaylist = useCallback(async () => {
-    const name = newPlaylistName.trim()
-    if (!name || !roomId) return
-
-    const ref = await executeAction(() => createPlaylist(roomId, name), 'Nie udało się utworzyć playlisty.')
-    if (!ref) return
-
-    dispatch({ type: 'playlistAdded', playlistId: ref.id })
-    selectPlaylist(ref.id)
-  }, [dispatch, executeAction, newPlaylistName, roomId, selectPlaylist])
-
   const exportPlaylist = useCallback(() => {
-    if (!activePlaylist) return
+    if (!room) return
 
     const payload = {
       version: 1,
       exportedAt: new Date().toISOString(),
       playlist: {
-        name: activePlaylist.name,
-        songs: activePlaylist.songs ?? [],
+        name: room.name,
+        songs: room.songs ?? [],
       },
     }
 
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
-    const safeName = (activePlaylist.name || 'playlist')
+    const safeName = (room.name || 'playlist')
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '') || 'playlist'
@@ -77,7 +57,7 @@ export function usePlaylistActions({
     link.click()
     link.remove()
     URL.revokeObjectURL(url)
-  }, [activePlaylist])
+  }, [room])
 
   const importPlaylist = useCallback(async (file) => {
     if (!file || !roomId) return
@@ -86,49 +66,35 @@ export function usePlaylistActions({
       const raw = await file.text()
       const parsed = JSON.parse(raw)
       const playlistData = parsed?.playlist ?? parsed
-      const name = typeof playlistData?.name === 'string' ? playlistData.name.trim() : ''
+      const importedName = typeof playlistData?.name === 'string' ? playlistData.name.trim() : ''
       const songs = sanitizeImportedSongs(playlistData?.songs, genId)
-
-      if (!name) {
-        throw new Error('Imported playlist is missing a valid name.')
-      }
 
       if (songs.length === 0) {
         throw new Error('Imported playlist does not contain valid songs.')
       }
 
-      return createPlaylistWithSongs(roomId, name, songs)
+      await replaceRoomSongs(roomId, songs)
+      if (importedName) {
+        await renameRoom(roomId, importedName)
+      }
+      return true
     }, 'Nie udało się zaimportować playlisty z pliku JSON.')
 
-    if (!done) return
-
-    dispatch({ type: 'playlistAdded', playlistId: done.id })
-    selectPlaylist(done.id)
-  }, [dispatch, executeAction, genId, roomId, selectPlaylist])
-
-  const deletePlaylist = useCallback(async (playlistId) => {
-    if (!roomId) return
-
-    const done = await executeAction(() => removePlaylist(roomId, playlistId), 'Nie udało się usunąć playlisty.')
-    if (done === null) return
-
-    if (activePlaylistId === playlistId) selectPlaylist(null)
-  }, [activePlaylistId, executeAction, roomId, selectPlaylist])
+    if (done) dispatch({ type: 'cancelPlaylistEdit' })
+  }, [dispatch, executeAction, genId, roomId])
 
   const saveEditPlaylist = useCallback(async () => {
     const name = editingName.trim()
-    if (name && editingId && roomId) {
-      await executeAction(() => renamePlaylist(roomId, editingId, name), 'Nie udało się zmienić nazwy playlisty.')
+    if (name && roomId) {
+      await executeAction(() => renameRoom(roomId, name), 'Nie udało się zmienić nazwy pokoju.')
     }
 
     dispatch({ type: 'cancelPlaylistEdit' })
-  }, [dispatch, editingId, editingName, executeAction, roomId])
+  }, [dispatch, editingName, executeAction, roomId])
 
   return {
-    addPlaylist,
     exportPlaylist,
     importPlaylist,
-    deletePlaylist,
     saveEditPlaylist,
   }
 }

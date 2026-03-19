@@ -12,7 +12,19 @@ import { useRoomSubscriptions } from './hooks/useRoomSubscriptions'
 import { useShareLinks } from './hooks/useShareLinks'
 import { useSongActions } from './hooks/useSongActions'
 import { genId } from './lib/jukebox'
-import { addSuggestion, deleteSuggestion, incrementPlaylistVotes, ratePlaylist, replacePlaylistSongs, saveRoomSetting, toggleSkipVote, voteNextOption } from './services/jukeboxService'
+import {
+  addSuggestion,
+  createPrivateRoom,
+  createPublicRoom,
+  deleteSuggestion,
+  incrementRoomVotes,
+  rateRoom,
+  replaceRoomSongs,
+  saveRoomSetting,
+  subscribeOwnedRooms,
+  toggleSkipVote,
+  voteNextOption,
+} from './services/jukeboxService'
 import './App.css'
 
 function NotePicker({ value, onChange }) {
@@ -26,16 +38,125 @@ function NotePicker({ value, onChange }) {
           onClick={() => onChange(n)}
           onMouseEnter={() => setHover(n)}
           onMouseLeave={() => setHover(0)}
-          title={`${n} utwór${n === 1 ? '' : n < 5 ? 'y' : 'ów'} w grupie`}
+          title={`${n} utwor${n === 1 ? '' : n < 5 ? 'y' : 'ow'} w grupie`}
         >♪</button>
       ))}
     </div>
   )
 }
 
+const GoogleLogoSvg = () => (
+  <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true" style={{ flexShrink: 0 }}>
+    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+  </svg>
+)
+
+function useOwnedRooms(uid, enabled) {
+  const [rooms, setRooms] = useState([])
+
+  useEffect(() => {
+    if (!enabled || !uid) return
+    return subscribeOwnedRooms(uid, setRooms)
+  }, [enabled, uid])
+
+  return enabled && uid ? rooms : []
+}
+
+function HomePage({ onCreateRoom, creatingRoom, user, onSignIn, onSignOut, ownedRooms }) {
+  const [roomInput, setRoomInput] = useState('')
+  const isLoggedIn = user && !user.isAnonymous
+
+  const handleJoin = () => {
+    const id = roomInput.trim()
+    if (!id) return
+    window.location.href = `/?room=${encodeURIComponent(id)}`
+  }
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') handleJoin()
+  }
+
+  return (
+    <div className="homepage">
+      <div className="homepage-top">
+        <div className="homepage-logo">
+          <span className="homepage-logo-icon">🎵</span>
+          <span className="header-logo">szafi.fi</span>
+        </div>
+        {isLoggedIn ? (
+          <div className="home-user-bar">
+            {user.photoURL && <img src={user.photoURL} alt="" className="home-user-avatar" referrerPolicy="no-referrer" />}
+            <span className="home-user-name">{user.displayName}</span>
+            <button className="home-user-logout" onClick={onSignOut}>Wyloguj</button>
+          </div>
+        ) : (
+          <div className="home-google-signin">
+            <button className="home-google-btn" onClick={onSignIn}>
+              <GoogleLogoSvg />
+              Zaloguj sie przez Google
+            </button>
+            <p className="home-google-hint">aby zobaczyc swoje prywatne pokoje</p>
+          </div>
+        )}
+      </div>
+
+      <div className="homepage-body">
+        <div className="homepage-col">
+          <p className="home-col-title">Twoje pokoje</p>
+          <div className="home-rooms-list">
+            {isLoggedIn ? (
+              ownedRooms.length > 0 ? (
+                ownedRooms.map((ownedRoom) => (
+                  <a key={ownedRoom.id} className={`home-room-card home-room-card--admin${ownedRoom.isPlaying ? ' home-room-card--playing' : ''}`} href={`/?room=${ownedRoom.id}`}>
+                    <span className="home-room-icon">🎛</span>
+                    <span className="home-room-label">{ownedRoom.name || 'Pokoj prywatny'}</span>
+                    {ownedRoom.isPlaying ? <span className="home-room-playing">▶ Gra</span> : <span className="home-room-status">Zatrzymany</span>}
+                  </a>
+                ))
+              ) : (
+                <p className="home-rooms-empty">Nie masz jeszcze zadnych pokojow</p>
+              )
+            ) : (
+              <p className="home-rooms-empty">Zaloguj sie, aby zobaczyc swoje pokoje</p>
+            )}
+          </div>
+          <button className="homepage-btn homepage-btn--primary" onClick={onCreateRoom} disabled={creatingRoom}>
+            <span className="homepage-btn-icon">✦</span>
+            {creatingRoom ? 'Tworzenie...' : 'Utworz nowy pokoj'}
+          </button>
+        </div>
+
+        <div className="homepage-col">
+          <p className="home-col-title">Dolacz do pokoju</p>
+          <div className="homepage-join">
+            <input
+              className="homepage-join-input"
+              type="text"
+              placeholder="Wklej link, token albo ID pokoju..."
+              value={roomInput}
+              onChange={e => setRoomInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              autoComplete="off"
+              spellCheck={false}
+            />
+            <button
+              className="homepage-btn homepage-btn--secondary"
+              onClick={handleJoin}
+              disabled={!roomInput.trim()}
+            >
+              Dolacz
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const initialUiState = {
-  activePlaylistId: new URLSearchParams(window.location.search).get('playlist'),
-  newPlaylistName: '',
   newSongUrl: '',
   newSongTitle: '',
   urlErr: '',
@@ -46,27 +167,19 @@ const initialUiState = {
   editingName: '',
   copied: null,
   sidebarOpen: true,
-  collapsed: { settings: true, playlists: false, songs: true, suggestions: false },
+  collapsed: { settings: true, songs: false, suggestions: false },
   uiError: '',
 }
 
 function uiReducer(state, action) {
   switch (action.type) {
-    case 'setActivePlaylist':
-      return { ...state, activePlaylistId: action.payload }
-    case 'initActivePlaylist': {
-      const nextValue = typeof action.payload === 'function'
-        ? action.payload(state.activePlaylistId)
-        : action.payload
-      return { ...state, activePlaylistId: nextValue }
-    }
     case 'setField':
       return { ...state, [action.field]: action.value }
     case 'toggleField':
       return { ...state, [action.field]: !state[action.field] }
     case 'toggleSection': {
       const isCurrentlyOpen = !state.collapsed[action.key]
-      const allClosed = { settings: true, playlists: true, songs: true, suggestions: true }
+      const allClosed = { settings: true, songs: true, suggestions: true }
       return {
         ...state,
         collapsed: isCurrentlyOpen
@@ -86,8 +199,6 @@ function uiReducer(state, action) {
       return { ...state, fetchingTitle: false }
     case 'songAdded':
       return { ...state, newSongUrl: '', newSongTitle: '', urlErr: '' }
-    case 'playlistAdded':
-      return { ...state, activePlaylistId: action.playlistId, newPlaylistName: '' }
     case 'setCopied':
       return { ...state, copied: action.value }
     case 'setUiError':
@@ -100,64 +211,13 @@ function uiReducer(state, action) {
 export default function App() {
   const [uiState, dispatch] = useReducer(uiReducer, initialUiState)
   const [panelOpen, setPanelOpen] = useState({ queue: true, qr: true, voting: true })
-  const { user, roomId, isOwner, authReady, needsLogin, signInWithGoogle } = useRoomAuth()
+  const [hasRoomParam] = useState(() => !!new URLSearchParams(window.location.search).get('room'))
+  const [creatingRoom, setCreatingRoom] = useState(false)
+  const { user, roomId, roomType, isOwner, canEditRoom, authReady, roomError, signInWithGoogle, signOutUser } = useRoomAuth()
+  const { room, suggestions } = useRoomSubscriptions(roomId)
 
-  const setInitialActivePlaylist = useCallback((updater) => {
-    dispatch({ type: 'initActivePlaylist', payload: updater })
-  }, [])
-
-  const { playlists, jukeboxState, settings, guestToken, suggestions } = useRoomSubscriptions(roomId, setInitialActivePlaylist)
-
-  const selectPlaylist = useCallback((playlistId) => {
-    dispatch({ type: 'setActivePlaylist', payload: playlistId })
-    const url = new URL(window.location.href)
-    if (playlistId) url.searchParams.set('playlist', playlistId)
-    else url.searchParams.delete('playlist')
-    window.history.replaceState({}, '', url.toString())
-  }, [])
-
-  const playback = useJukeboxPlayback({
-    authReady,
-    isOwner,
-    roomId,
-    playlists,
-    settings,
-    jukeboxState,
-    activePlaylistId: uiState.activePlaylistId,
-    selectPlaylist,
-  })
-
-  const {
-    playerDivRef,
-    playerRef,
-    ytPlayerState,
-    loadProgress,
-    remaining,
-    playSongNow,
-    advanceToWinner,
-    advanceToOption,
-    resizeVotingOptions,
-    startJukeboxWith,
-    stopJukebox,
-    voteMode,
-  } = playback
-
-  const activePlaylist = playlists.find((playlist) => playlist.id === uiState.activePlaylistId) ?? null
-  const isPlaying = jukeboxState?.isPlaying ?? false
-  const currentSong = jukeboxState?.currentSong ?? null
-  const queue = jukeboxState?.queue ?? []
-  const nextOptions = jukeboxState?.nextOptions ?? {}
-  const nextVotesData = jukeboxState?.nextVotes ?? {}
-  const nextOptionKeys = Object.keys(nextOptions).sort()
-  const voteThreshold = settings?.voteThreshold ?? 1
-  const skipThreshold = settings?.skipThreshold ?? 0
-  const allowSuggestions = settings?.allowSuggestions ?? false
-  const showThumbnails = settings?.showThumbnails ?? true
-  const skipVoters = jukeboxState?.skipVoters ?? {}
-  const skipCount = Object.keys(skipVoters).length
-  const userId = user?.uid ?? null
-  const mySkipVote = userId ? (skipVoters[userId] ?? false) : false
-  const showOwnerUI = isOwner
+  const homepageEnabled = !hasRoomParam && !!user && !user.isAnonymous
+  const ownedRooms = useOwnedRooms(user?.uid, homepageEnabled)
 
   useEffect(() => {
     if (!uiState.copied) return
@@ -202,79 +262,124 @@ export default function App() {
     }
   }, [])
 
-  const saveSettings = useCallback(async (key, value) => {
-    if (!roomId || !isOwner) return
-    await executeAction(() => saveRoomSetting(roomId, key, value), 'Nie udało się zapisać ustawień.')
-    if (key === 'queueSize') {
-      await executeAction(() => resizeVotingOptions(value), 'Nie udało się zaktualizować opcji głosowania.')
+  const handleCreateRoom = useCallback(async () => {
+    if (!user) return
+    setCreatingRoom(true)
+
+    const ref = user.isAnonymous
+      ? await executeAction(() => createPublicRoom('Nowy pokoj publiczny', user.uid), 'Nie udalo sie utworzyc pokoju publicznego.')
+      : await executeAction(() => createPrivateRoom(user.uid, 'Nowy pokoj prywatny'), 'Nie udalo sie utworzyc pokoju prywatnego.')
+
+    setCreatingRoom(false)
+    if (ref?.id) {
+      window.location.href = `/?room=${ref.id}`
     }
-  }, [executeAction, isOwner, resizeVotingOptions, roomId])
+  }, [executeAction, user])
+
+  const settings = room?.settings ?? {}
+  const playback = useJukeboxPlayback({
+    authReady,
+    canEditRoom,
+    roomId,
+    room,
+    settings,
+  })
+
+  const {
+    playerDivRef,
+    playerRef,
+    playerReady,
+    ytPlayerState,
+    loadProgress,
+    remaining,
+    playSongNow,
+    advanceToWinner,
+    advanceToOption,
+    resizeVotingOptions,
+    startJukebox,
+    stopJukebox,
+    voteMode,
+  } = playback
+
+  const isPlaying = room?.isPlaying ?? false
+  const currentSong = room?.currentSong ?? null
+  const queue = room?.queue ?? []
+  const nextOptions = room?.nextOptions ?? {}
+  const nextVotesData = room?.nextVotes ?? {}
+  const nextOptionKeys = Object.keys(nextOptions).sort()
+  const voteThreshold = settings?.voteThreshold ?? 1
+  const skipThreshold = settings?.skipThreshold ?? 0
+  const allowSuggestions = settings?.allowSuggestions ?? false
+  const showThumbnails = settings?.showThumbnails ?? true
+  const skipVoters = room?.skipVoters ?? {}
+  const skipCount = Object.keys(skipVoters).length
+  const userId = user?.uid ?? null
+  const mySkipVote = userId ? (skipVoters[userId] ?? false) : false
+  const showOwnerUI = canEditRoom
+  const myRating = (room?.ratings ?? {})[userId] ?? 0
+
+  const saveSettings = useCallback(async (key, value) => {
+    if (!roomId || !canEditRoom) return
+    await executeAction(() => saveRoomSetting(roomId, key, value), 'Nie udalo sie zapisac ustawien.')
+    if (key === 'queueSize') {
+      await executeAction(() => resizeVotingOptions(value), 'Nie udalo sie zaktualizowac opcji glosowania.')
+    }
+  }, [canEditRoom, executeAction, resizeVotingOptions, roomId])
 
   const vote = useCallback(async (optionKey) => {
-    if (!user || !roomId || !jukeboxState) return
-    const uid = user.uid
-    const currentVote = (jukeboxState.nextVotes ?? {})[uid]
+    if (!user || !roomId || !room) return
+    const currentVote = (room.nextVotes ?? {})[user.uid]
     if (currentVote !== optionKey) {
-      const pid = jukeboxState.activePlaylistId
-      if (pid) incrementPlaylistVotes(roomId, pid).catch(() => {})
+      incrementRoomVotes(roomId).catch(() => {})
     }
-    await executeAction(() => voteNextOption(roomId, uid, optionKey, currentVote), 'Nie udało się zapisać głosu.')
-  }, [executeAction, jukeboxState, roomId, user])
+    await executeAction(() => voteNextOption(roomId, user.uid, optionKey, currentVote), 'Nie udalo sie zapisac glosu.')
+  }, [executeAction, room, roomId, user])
 
   const voteSkip = useCallback(async () => {
     if (!userId || !roomId || !isPlaying) return
-    await executeAction(() => toggleSkipVote(roomId, userId, mySkipVote), 'Nie udało się zapisać głosu pominięcia.')
+    await executeAction(() => toggleSkipVote(roomId, userId, mySkipVote), 'Nie udalo sie zapisac glosu pominiecia.')
   }, [executeAction, isPlaying, mySkipVote, roomId, userId])
 
-  const playingPlaylistId = jukeboxState?.activePlaylistId ?? null
-  const playingPlaylist = playlists.find(p => p.id === playingPlaylistId) ?? null
-  const myRating = (playingPlaylist?.ratings ?? {})[userId] ?? 0
-
   const rateActivePlaylist = useCallback(async (score) => {
-    if (!userId || !roomId || !playingPlaylistId) return
-    await ratePlaylist(roomId, playingPlaylistId, userId, score)
-  }, [userId, roomId, playingPlaylistId])
+    if (!userId || !roomId) return
+    await rateRoom(roomId, userId, score)
+  }, [roomId, userId])
 
   const submitSuggestion = useCallback(async ({ title, ytId, url }) => {
     if (!roomId || !userId) return false
     const done = await executeAction(
       () => addSuggestion(roomId, userId, { title, ytId, url }),
-      'Nie udało się wysłać propozycji.'
+      'Nie udalo sie wyslac propozycji.'
     )
     return done !== null
   }, [executeAction, roomId, userId])
 
   const approveSuggestion = useCallback(async (suggestion) => {
-    if (!roomId || !activePlaylist) return
+    if (!roomId || !room) return
     const song = { id: genId(), title: suggestion.title, ytId: suggestion.ytId, url: suggestion.url }
     await executeAction(async () => {
-      await replacePlaylistSongs(roomId, activePlaylist.id, [...(activePlaylist.songs ?? []), song])
+      await replaceRoomSongs(roomId, [...(room.songs ?? []), song])
       await deleteSuggestion(roomId, suggestion.id)
-    }, 'Nie udało się zatwierdzić propozycji.')
-  }, [activePlaylist, executeAction, roomId])
+    }, 'Nie udalo sie zatwierdzic propozycji.')
+  }, [executeAction, room, roomId])
 
   const rejectSuggestion = useCallback(async (suggestionId) => {
     if (!roomId) return
-    await executeAction(() => deleteSuggestion(roomId, suggestionId), 'Nie udało się odrzucić propozycji.')
+    await executeAction(() => deleteSuggestion(roomId, suggestionId), 'Nie udalo sie odrzucic propozycji.')
   }, [executeAction, roomId])
 
   const playlistActions = usePlaylistActions({
     roomId,
-    activePlaylist,
-    activePlaylistId: uiState.activePlaylistId,
-    newPlaylistName: uiState.newPlaylistName,
-    editingId: uiState.editingId,
+    room,
     editingName: uiState.editingName,
     executeAction,
-    selectPlaylist,
     dispatch,
     genId,
   })
 
   const songActions = useSongActions({
     roomId,
-    activePlaylist,
-    activePlaylistId: uiState.activePlaylistId,
+    room,
     newSongUrl: uiState.newSongUrl,
     newSongTitle: uiState.newSongTitle,
     ytPlaylistId: uiState.ytPlaylistId,
@@ -285,7 +390,8 @@ export default function App() {
 
   const shareLinks = useShareLinks({
     roomId,
-    guestToken,
+    roomType,
+    guestToken: room?.guestToken ?? null,
     onCopied: (value) => dispatch({ type: 'setCopied', value }),
   })
 
@@ -293,30 +399,35 @@ export default function App() {
     setPanelOpen((current) => ({ ...current, [key]: !current[key] }))
   }, [])
 
-  if (!authReady) return <div className="splash"><div className="splash-icon">🎵</div><p>Łączenie...</p></div>
+  if (!authReady) return <div className="splash"><div className="splash-icon">🎵</div><p>Laczenie...</p></div>
 
-  if (needsLogin) return (
-    <div className="splash">
-      <div className="splash-icon">🎵</div>
-      <h1 className="login-title">Szafagra</h1>
-      <p className="login-subtitle">Zaloguj się, aby zarządzać swoim jukeboxem</p>
-      <button className="btn-google-login" onClick={signInWithGoogle}>
-        <svg className="google-icon" viewBox="0 0 48 48" width="20" height="20">
-          <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.3 5.5-4.9 7.2v6h7.9c4.6-4.2 7.3-10.5 7.3-17.2z"/>
-          <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.8-5.8l-7.9-6c-2.1 1.4-4.8 2.3-7.9 2.3-6.1 0-11.2-4.1-13-9.6H2.8v6.2C6.7 42.6 14.8 48 24 48z"/>
-          <path fill="#FBBC05" d="M11 28.9c-.5-1.4-.7-2.9-.7-4.4s.3-3 .7-4.4v-6.2H2.8C1 17.6 0 20.7 0 24s1 6.4 2.8 9.1l8.2-4.2z"/>
-          <path fill="#EA4335" d="M24 9.5c3.4 0 6.5 1.2 8.9 3.5l6.6-6.6C35.9 2.5 30.5 0 24 0 14.8 0 6.7 5.4 2.8 13.3l8.2 4.2C12.8 13.6 17.9 9.5 24 9.5z"/>
-        </svg>
-        Zaloguj się przez Google
-      </button>
-    </div>
-  )
+  if (!hasRoomParam) {
+    return (
+      <HomePage
+        onCreateRoom={handleCreateRoom}
+        creatingRoom={creatingRoom}
+        user={user}
+        onSignIn={signInWithGoogle}
+        onSignOut={signOutUser}
+        ownedRooms={ownedRooms}
+      />
+    )
+  }
+
+  if (roomError) {
+    return <div className="splash"><div className="splash-icon">🎵</div><p>{roomError}</p></div>
+  }
+
+  if (!room) {
+    return <div className="splash"><div className="splash-icon">🎵</div><p>Ladowanie pokoju...</p></div>
+  }
 
   return (
     <div className="app">
       {uiState.uiError && <div className="error-banner">{uiState.uiError}</div>}
       <RoomHeader
         showOwnerUI={showOwnerUI}
+        roomType={roomType}
         sidebarOpen={uiState.sidebarOpen}
         toggleSidebar={toggleSidebar}
         copied={uiState.copied}
@@ -328,7 +439,10 @@ export default function App() {
         newSongTitle={uiState.newSongTitle}
         fetchingTitle={uiState.fetchingTitle}
         urlErr={uiState.urlErr}
-        activePlaylist={activePlaylist}
+        room={room}
+        user={user}
+        signInWithGoogle={signInWithGoogle}
+        signOutUser={signOutUser}
       />
 
       <main className="main">
@@ -336,27 +450,21 @@ export default function App() {
           <PlaylistSidebar
             sidebarOpen={uiState.sidebarOpen}
             showOwnerUI={showOwnerUI}
+            roomType={roomType}
             collapsed={uiState.collapsed}
             toggleSection={toggleSection}
             voteMode={voteMode}
             skipThreshold={skipThreshold}
             saveSettings={saveSettings}
             isPlaying={isPlaying}
-            playlists={playlists}
-            activePlaylist={activePlaylist}
-            activePlaylistId={uiState.activePlaylistId}
+            room={room}
             editingId={uiState.editingId}
             editingName={uiState.editingName}
             startEditPlaylist={startEditPlaylist}
             cancelEditPlaylist={cancelEditPlaylist}
             setEditingName={(value) => setField('editingName', value)}
             saveEditPlaylist={playlistActions.saveEditPlaylist}
-            selectPlaylist={selectPlaylist}
-            startJukeboxWith={startJukeboxWith}
-            deletePlaylist={playlistActions.deletePlaylist}
-            newPlaylistName={uiState.newPlaylistName}
-            setNewPlaylistName={(value) => setField('newPlaylistName', value)}
-            addPlaylist={playlistActions.addPlaylist}
+            startJukebox={startJukebox}
             exportPlaylist={playlistActions.exportPlaylist}
             importPlaylist={playlistActions.importPlaylist}
             currentSong={currentSong}
@@ -413,16 +521,16 @@ export default function App() {
                       {shareLinks.voterUrl && (
                         <div className="admin-qr-panel">
                           <div className="panel-title-row" onClick={() => togglePanel('qr')}>
-                            <h2 className="section-title">Zeskanuj kod i zagłosuj na następny utwór</h2>
+                            <h2 className="section-title">{roomType === 'public' ? 'Udostepnij kod pokoju' : 'Zeskanuj kod i glosuj'}</h2>
                             <span className="section-arrow">{panelOpen.qr ? '▼' : '▶'}</span>
                           </div>
                           {panelOpen.qr && (
                             <>
-                              <div className="qr-clickable" onClick={shareLinks.copyVoterLink} title="Kliknij aby skopiować link">
+                              <div className="qr-clickable" onClick={shareLinks.copyVoterLink} title="Kliknij aby skopiowac link">
                                 <QRCodeSVG value={shareLinks.voterUrl} size={150} bgColor="#000000" fgColor="#ffffff" />
                                 {uiState.copied === 'voter' && <div className="qr-copied-overlay">✓ Skopiowano</div>}
                               </div>
-                              <p className="qr-hint">Kliknij na QR code aby skopiować linka</p>
+                              <p className="qr-hint">Kliknij QR, aby skopiowac link</p>
                             </>
                           )}
                         </div>
@@ -438,21 +546,20 @@ export default function App() {
                     loadProgress={loadProgress}
                     playerRef={playerRef}
                     playerDivRef={playerDivRef}
+                    playerReady={playerReady}
                     advanceToWinner={advanceToWinner}
                     skipThreshold={skipThreshold}
                     skipCount={skipCount}
-                    startJukeboxWith={startJukeboxWith}
+                    startJukebox={startJukebox}
                     stopJukebox={stopJukebox}
-                    activePlaylistId={uiState.activePlaylistId}
-                    activePlaylist={activePlaylist}
+                    room={room}
                   />
                 </div>
               </div>
 
               <div className="voting-panel-bottom">
-                {/* column-reverse: pierwszy element = wizualnie na dole (pasek tytułu) */}
                 <div className="voting-bottom-bar" onClick={() => togglePanel('voting')}>
-                  <h2 className="section-title">Głosowanie</h2>
+                  <h2 className="section-title">Glosowanie</h2>
                   <span className="section-arrow">{panelOpen.voting ? '▼' : '▲'}</span>
                 </div>
                 {panelOpen.voting && (
@@ -472,7 +579,7 @@ export default function App() {
                       />
                     )}
                     <div className="queue-size-row">
-                      <span className="queue-size-label">Utworów w grupie:</span>
+                      <span className="queue-size-label">Utworow w grupie:</span>
                       <NotePicker value={Math.max(1, settings?.queueSize ?? 1)} onChange={(n) => saveSettings('queueSize', n)} />
                     </div>
                   </div>
@@ -500,6 +607,7 @@ export default function App() {
               myRating={myRating}
               onRate={rateActivePlaylist}
               showThumbnails={showThumbnails}
+              jukeboxState={room}
             />
           )}
         </div>

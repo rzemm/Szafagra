@@ -30,7 +30,6 @@ export function moveToNextTrack({ state, voteMode = 'highest', skippedSongIds = 
   if (validQueue.length > 0) {
     const [currentSong, ...queue] = validQueue
     return {
-      activePlaylistId: state.activePlaylistId,
       currentSong,
       queue,
       nextOptions: state.nextOptions ?? {},
@@ -49,7 +48,6 @@ export function moveToNextTrack({ state, voteMode = 'highest', skippedSongIds = 
 
   const [currentSong, ...queue] = winnerSongs
   return {
-    activePlaylistId: state.activePlaylistId,
     currentSong,
     queue,
     nextOptions: {},

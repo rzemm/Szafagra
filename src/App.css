@@ -2428,3 +2428,512 @@ body.disco-mode .app {
   border-color: var(--accent);
 }
 
+
+/* ─── Homepage ──────────────────────────────────────────────────────────────── */
+.homepage {
+  height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 2rem;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.homepage-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.homepage-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.homepage-logo-icon {
+  font-size: 2.2rem;
+  line-height: 1;
+}
+
+.homepage-logo .header-logo {
+  font-size: 2.2rem;
+}
+
+.homepage-body {
+  display: flex;
+  flex: 1;
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 860px;
+  overflow: hidden;
+}
+
+.homepage-col {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  overflow: hidden;
+}
+
+.home-col-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.home-rooms-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-height: 0;
+}
+
+.home-rooms-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.home-rooms-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.home-rooms-list::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+.home-rooms-empty {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  padding: 0.5rem 0;
+}
+
+.homepage-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  width: 100%;
+  flex-shrink: 0;
+  padding: 1rem 1.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+
+.homepage-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.4);
+}
+
+.homepage-btn:active {
+  transform: translateY(0);
+}
+
+.homepage-btn--primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  font-size: 1.2rem;
+  padding: 1.2rem 1.5rem;
+}
+
+.homepage-btn--primary:hover {
+  box-shadow: 0 6px 24px rgba(var(--accent-rgb, 99, 102, 241), 0.5);
+}
+
+.homepage-btn-icon {
+  font-size: 1.1em;
+}
+
+.homepage-btn--secondary {
+  background: var(--surface2);
+  color: var(--text);
+  border-color: var(--border);
+  width: auto;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.homepage-btn--secondary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.homepage-divider {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 0.75rem;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+
+.homepage-divider::before,
+.homepage-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.homepage-join {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.homepage-join .homepage-btn {
+  width: 100%;
+}
+
+.homepage-join-input {
+  flex: 1;
+  padding: 0.9rem 1rem;
+  font-size: 1rem;
+  background: var(--surface2);
+  color: var(--text);
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  outline: none;
+  font-family: monospace;
+  transition: border-color 0.15s;
+}
+
+.homepage-join-input:focus {
+  border-color: var(--accent);
+}
+
+.homepage-join-input::placeholder {
+  color: var(--text-dim);
+  font-family: inherit;
+}
+
+/* ─── Guest player ──────────────────────────────────────────────────────────── */
+.guest-player {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.guest-player-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1.1rem;
+  border-radius: 999px;
+  border: 1.5px solid var(--border);
+  background: var(--surface2);
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.guest-player-toggle.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.guest-player-toggle:hover:not(.active) {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.guest-player-yt {
+  width: 100%;
+  max-width: 480px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #000;
+  aspect-ratio: 16 / 9;
+}
+
+.guest-player-yt > div {
+  width: 100%;
+  height: 100%;
+}
+
+.guest-player-yt iframe {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+/* ─── Guest Google auth ─────────────────────────────────────────────────────── */
+.guest-google-auth {
+  display: flex;
+  justify-content: center;
+  padding: 0.6rem 1rem 0.2rem;
+}
+
+.guest-google-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.5rem 1.1rem;
+  border-radius: 999px;
+  border: 1.5px solid var(--border);
+  background: var(--surface2);
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.guest-google-btn:hover {
+  border-color: #4285F4;
+  color: var(--text);
+}
+
+.guest-google-user {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.guest-google-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.guest-google-name {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.guest-google-logout {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+
+.guest-google-logout:hover {
+  color: var(--text);
+}
+
+/* ─── Header Google auth ────────────────────────────────────────────────────── */
+.header-google-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.header-google-btn:hover {
+  border-color: #4285F4;
+  color: var(--text);
+}
+
+.header-google-user {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.header-google-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.header-google-name {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.header-google-logout {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+  transition: color 0.15s;
+  white-space: nowrap;
+}
+
+.header-google-logout:hover {
+  color: var(--text);
+}
+
+/* ─── Homepage Google signin + rooms ────────────────────────────────────────── */
+.home-google-signin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.home-google-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 1.4rem;
+  border-radius: 999px;
+  border: 1.5px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.home-google-btn:hover {
+  border-color: #4285F4;
+  background: var(--surface3, var(--surface2));
+}
+
+.home-google-hint {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  margin: 0;
+}
+
+
+.home-room-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  text-decoration: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.home-room-card:hover {
+  border-color: var(--accent);
+  background: var(--surface3, var(--surface2));
+}
+
+.home-room-card--playing {
+  border-color: var(--accent);
+}
+
+.home-room-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.home-room-label {
+  flex: 1;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.home-room-token {
+  font-family: monospace;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  font-weight: 500;
+  word-break: break-all;
+}
+
+.home-room-playing {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.home-room-status {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+/* ─── Homepage user bar ─────────────────────────────────────────────────────── */
+.home-user-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.home-user-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.home-user-name {
+  flex: 1;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-user-logout {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  cursor: pointer;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.home-user-logout:hover {
+  color: var(--text);
+  border-color: var(--text-dim);
+}

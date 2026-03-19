@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react'
 
-export function useShareLinks({ roomId, guestToken, onCopied }) {
-  const voterUrl = useMemo(() => {
+export function useShareLinks({ roomId, roomType, guestToken, onCopied }) {
+  const guestUrl = useMemo(() => {
     if (!guestToken) return null
 
     const url = new URL(window.location.origin + window.location.pathname)
@@ -9,19 +9,28 @@ export function useShareLinks({ roomId, guestToken, onCopied }) {
     return url.toString()
   }, [guestToken])
 
-  const copyAdminLink = useCallback(() => {
+  const adminUrl = useMemo(() => {
+    if (!roomId) return null
+
     const url = new URL(window.location.origin + window.location.pathname)
-    url.searchParams.set('room', roomId ?? '')
-    navigator.clipboard.writeText(url.toString()).then(() => onCopied('admin'))
-  }, [onCopied, roomId])
+    url.searchParams.set('room', roomId)
+    return url.toString()
+  }, [roomId])
+
+  const copyAdminLink = useCallback(() => {
+    const link = roomType === 'public' ? guestUrl : adminUrl
+    if (!link) return
+    navigator.clipboard.writeText(link).then(() => onCopied('admin'))
+  }, [adminUrl, guestUrl, onCopied, roomType])
 
   const copyVoterLink = useCallback(() => {
-    if (!voterUrl) return
-    navigator.clipboard.writeText(voterUrl).then(() => onCopied('voter'))
-  }, [onCopied, voterUrl])
+    if (!guestUrl) return
+    navigator.clipboard.writeText(guestUrl).then(() => onCopied('voter'))
+  }, [guestUrl, onCopied])
 
   return {
-    voterUrl,
+    voterUrl: guestUrl,
+    adminUrl,
     copyAdminLink,
     copyVoterLink,
   }

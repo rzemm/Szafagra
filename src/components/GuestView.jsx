@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react'
 import { formatTime } from '../lib/jukebox'
 import { extractYtId, fetchYtTitle } from '../lib/youtube'
+import { useGuestPlayer } from '../hooks/useGuestPlayer'
 
-export function GuestView({ isOwner, playerDivRef, isPlaying, currentSong, remaining, queue, nextOptionKeys, nextOptions, nextVotesData, userId, vote, skipThreshold, mySkipVote, voteSkip, allowSuggestions, submitSuggestion, myRating, onRate, showThumbnails = true }) {
+export function GuestView({ isOwner, playerDivRef, isPlaying, currentSong, remaining, queue, nextOptionKeys, nextOptions, nextVotesData, userId, vote, skipThreshold, mySkipVote, voteSkip, allowSuggestions, submitSuggestion, myRating, onRate, showThumbnails = true, jukeboxState }) {
+  const { listening, toggleListening, playerDivRef: guestPlayerDivRef } = useGuestPlayer({ jukeboxState, isPlaying })
   const [queueOpen, setQueueOpen] = useState(false)
   const [hoverStar, setHoverStar] = useState(0)
   const [suggestUrl, setSuggestUrl] = useState('')
@@ -56,6 +58,19 @@ export function GuestView({ isOwner, playerDivRef, isPlaying, currentSong, remai
   return (
     <div className="guest-view">
       {isOwner && <div style={{ position: 'fixed', top: '-9999px', left: '-9999px', pointerEvents: 'none' }}><div ref={playerDivRef} /></div>}
+
+      {!isOwner && isPlaying && currentSong && (
+        <div className="guest-player">
+          <button className={`guest-player-toggle${listening ? ' active' : ''}`} onClick={toggleListening}>
+            {listening ? '🔇 Wyłącz odsłuch' : '🎧 Słuchaj'}
+          </button>
+          {listening && (
+            <div className="guest-player-yt">
+              <div ref={guestPlayerDivRef} />
+            </div>
+          )}
+        </div>
+      )}
 
       {isPlaying && currentSong && (
         <div className="guest-now-bar">

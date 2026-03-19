@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 export function useYouTubePlayer({ enabled, currentVideoId, onPlaying, onEnded, onRecoverableError }) {
   const [ytPlayerState, setYtPlayerState] = useState(-1)
   const [loadProgress, setLoadProgress] = useState(0)
+  const [isReady, setIsReady] = useState(false)
 
   const playerRef = useRef(null)
   const playerDivRef = useRef(null)
@@ -34,13 +35,16 @@ export function useYouTubePlayer({ enabled, currentVideoId, onPlaying, onEnded, 
     setLoadProgress(Math.round((player?.getVideoLoadedFraction?.() ?? 0) * 100))
   }, [])
 
-  const loadVideoById = useCallback((ytId) => {
+  const loadVideoById = useCallback((ytId, startSeconds) => {
     if (!ytId) return
+    const arg = startSeconds > 0
+      ? { videoId: ytId, startSeconds: Math.floor(startSeconds) }
+      : { videoId: ytId }
     if (enabled && playerReadyRef.current && playerRef.current) {
-      playerRef.current.loadVideoById(ytId)
+      playerRef.current.loadVideoById(arg)
       return
     }
-    pendingVideoIdRef.current = ytId
+    pendingVideoIdRef.current = arg
   }, [enabled])
 
   const stopVideo = useCallback(() => {
@@ -50,6 +54,15 @@ export function useYouTubePlayer({ enabled, currentVideoId, onPlaying, onEnded, 
       void error
     }
   }, [])
+
+  useEffect(() => {
+    if (!enabled || !currentVideoId) return
+    if (!playerReadyRef.current || !playerRef.current) {
+      pendingVideoIdRef.current = { videoId: currentVideoId }
+      return
+    }
+    playerRef.current.loadVideoById({ videoId: currentVideoId })
+  }, [currentVideoId, enabled])
 
   useEffect(() => {
     if (!enabled) {
@@ -66,9 +79,10 @@ export function useYouTubePlayer({ enabled, currentVideoId, onPlaying, onEnded, 
       if (!alive) return
       playerRef.current = localPlayer
       playerReadyRef.current = true
+      setIsReady(true)
       const nextVideoId = pendingVideoIdRef.current ?? liveCallbacksRef.current.currentVideoId
       if (!nextVideoId) return
-      localPlayer.loadVideoById(nextVideoId)
+      localPlayer.loadVideoById(typeof nextVideoId === 'string' ? { videoId: nextVideoId } : nextVideoId)
       pendingVideoIdRef.current = null
       setYtPlayerState(3)
     }
@@ -110,7 +124,14 @@ export function useYouTubePlayer({ enabled, currentVideoId, onPlaying, onEnded, 
       localPlayer = new window.YT.Player(ytTarget, {
         height: '202',
         width: '360',
-        playerVars: { rel: 0, modestbranding: 1 },
+        playerVars: {
+          rel: 0,
+          modestbranding: 1,
+          autoplay: 1,
+          controls: 1,
+          playsinline: 1,
+          origin: window.location.origin,
+        },
         events: {
           onReady: handleReady,
           onStateChange: handleStateChange,
@@ -146,6 +167,7 @@ export function useYouTubePlayer({ enabled, currentVideoId, onPlaying, onEnded, 
   return {
     playerDivRef,
     playerRef,
+    isReady: enabled && isReady,
     ytPlayerState: enabled ? ytPlayerState : -1,
     loadProgress: enabled ? loadProgress : 0,
     loadVideoById,
