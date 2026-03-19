@@ -15,6 +15,10 @@ export function PlaylistSidebar(props) {
     showThumbnails,
     queue,
     voteThreshold,
+    voteMode,
+    skipThreshold,
+    allowSuggestions,
+    queueSize,
     saveSettings,
     importPlaylist,
   } = props
@@ -126,6 +130,91 @@ export function PlaylistSidebar(props) {
           ) : (
             <p className="sidebar-queue-empty">{isPlaying ? 'Kolejka jest pusta' : 'Odtwarzanie zatrzymane'}</p>
           )}
+        </div>
+      )}
+
+      {leftPanel === 'settings' && (
+        <div className="section">
+          <div className="sidebar-settings-list">
+
+            <div className="setting-row">
+              <span className="setting-label">Glosowanie</span>
+              <div className="setting-toggle-group">
+                <button className={`btn-setting${voteMode === 'highest' ? ' active' : ''}`} onClick={() => saveSettings('voteMode', 'highest')}>
+                  Najwyzszy wynik
+                </button>
+                <button className={`btn-setting${voteMode === 'weighted' ? ' active' : ''}`} onClick={() => saveSettings('voteMode', 'weighted')}>
+                  Wazone losowanie
+                </button>
+              </div>
+            </div>
+
+            <div className="setting-row">
+              <span className="setting-label">Utworow w grupie</span>
+              <div className="note-picker">
+                {[1, 2, 3, 4, 5].map((count) => (
+                  <button key={count} className={`note-btn${queueSize === count ? ' active' : ''}`} onClick={() => saveSettings('queueSize', count)}>
+                    {count}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="setting-row">
+              <span className="setting-label">Min. zakolejkowanych</span>
+              <div className="note-picker">
+                {[0, 1, 2, 3, 4].map((count) => (
+                  <button key={count} className={`note-btn${voteThreshold === count ? ' active' : ''}`} onClick={() => saveSettings('voteThreshold', count)}>
+                    {count}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="setting-row">
+              <span className="setting-label">Skip (goscie)</span>
+              <div className="note-picker">
+                {[0, 1, 2, 3, 4].map((count) => (
+                  <button key={count} className={`note-btn${skipThreshold === count ? ' active' : ''}`} onClick={() => saveSettings('skipThreshold', count)}>
+                    {count === 0 ? 'off' : count}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="setting-row">
+              <span className="setting-label">Propozycje gosci</span>
+              <div className="setting-toggle-group">
+                <button className={`btn-setting${!allowSuggestions ? ' active' : ''}`} onClick={() => saveSettings('allowSuggestions', false)}>
+                  Wylaczone
+                </button>
+                <button className={`btn-setting${allowSuggestions ? ' active' : ''}`} onClick={() => saveSettings('allowSuggestions', true)}>
+                  Wlaczone
+                </button>
+              </div>
+            </div>
+
+            <div className="setting-row">
+              <span className="setting-label">Miniatury</span>
+              <div className="setting-toggle-group">
+                <button className={`btn-setting${!showThumbnails ? ' active' : ''}`} onClick={() => saveSettings('showThumbnails', false)}>
+                  Wylaczone
+                </button>
+                <button className={`btn-setting${showThumbnails ? ' active' : ''}`} onClick={() => saveSettings('showThumbnails', true)}>
+                  Wlaczone
+                </button>
+              </div>
+            </div>
+
+            <div className="setting-row">
+              <span className="setting-label">Import playlisty</span>
+              <label className="btn-secondary btn-file">
+                Importuj JSON
+                <input type="file" accept="application/json,.json" onChange={handleImportChange} />
+              </label>
+            </div>
+
+          </div>
         </div>
       )}
     </aside>

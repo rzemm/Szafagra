@@ -482,6 +482,7 @@ export default function App() {
             showThumbnails={showThumbnails}
             queue={queue}
             voteThreshold={voteThreshold}
+            queueSize={Math.max(1, settings?.queueSize ?? 1)}
           />
         )}
 
@@ -490,6 +491,22 @@ export default function App() {
             <>
               <div className="admin-scroll-area">
                 <div className="admin-top-row">
+                  <NowPlayingPanel
+                    isPlaying={isPlaying}
+                    currentSong={currentSong}
+                    remaining={remaining}
+                    ytPlayerState={ytPlayerState}
+                    loadProgress={loadProgress}
+                    playerRef={playerRef}
+                    playerDivRef={playerDivRef}
+                    playerReady={playerReady}
+                    advanceToWinner={advanceToWinner}
+                    skipThreshold={skipThreshold}
+                    skipCount={skipCount}
+                    startJukebox={startJukebox}
+                    stopJukebox={stopJukebox}
+                    room={room}
+                  />
                   {shareLinks.voterUrl && (
                     <div className="admin-qr-panel">
                       <div className="panel-title-row" onClick={() => togglePanel('qr')}>
@@ -507,23 +524,6 @@ export default function App() {
                       )}
                     </div>
                   )}
-
-                  <NowPlayingPanel
-                    isPlaying={isPlaying}
-                    currentSong={currentSong}
-                    remaining={remaining}
-                    ytPlayerState={ytPlayerState}
-                    loadProgress={loadProgress}
-                    playerRef={playerRef}
-                    playerDivRef={playerDivRef}
-                    playerReady={playerReady}
-                    advanceToWinner={advanceToWinner}
-                    skipThreshold={skipThreshold}
-                    skipCount={skipCount}
-                    startJukebox={startJukebox}
-                    stopJukebox={stopJukebox}
-                    room={room}
-                  />
                 </div>
               </div>
 

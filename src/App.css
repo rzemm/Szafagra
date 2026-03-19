@@ -680,10 +680,10 @@ input.input-error { border-color: var(--accent); }
 }
 
 .admin-top-row {
-  display: grid;
-  grid-template-columns: 1fr auto;
+  display: flex;
   gap: 1rem;
   align-items: start;
+  justify-content: space-between;
 }
 
 .admin-col {

@@ -56,6 +56,13 @@ export function RoomHeader({
             >
               ▤ Kolejka
             </button>
+            <button
+              className={`btn-panel-toggle${leftPanel === 'settings' ? ' active' : ''}`}
+              onClick={() => toggleLeftPanel('settings')}
+              title="Ustawienia pokoju"
+            >
+              ⚙ Ustawienia
+            </button>
           </>
         )}
         <span className="header-icon">🎵</span>
