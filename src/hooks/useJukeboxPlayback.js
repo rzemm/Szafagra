@@ -179,6 +179,12 @@ export function useJukeboxPlayback({ authReady, canEditRoom, roomId, room, setti
     })
   }, [room, roomId])
 
+  const removeFromQueue = useCallback(async (songId) => {
+    if (!roomId || !room) return
+    const newQueue = (room.queue ?? []).filter((s) => s.id !== songId)
+    await patchMainState(roomId, { queue: newQueue })
+  }, [room, roomId])
+
   const removeVotingOption = useCallback(async (optionKey) => {
     if (!roomId || !room) return
 
@@ -324,6 +330,7 @@ export function useJukeboxPlayback({ authReady, canEditRoom, roomId, room, setti
     remaining,
     playSongNow,
     queueSong,
+    removeFromQueue,
     removeVotingOption,
     advanceToWinner,
     advanceToOption,

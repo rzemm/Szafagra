@@ -41,10 +41,16 @@ export function PlaylistSidebar(props) {
     saveSettings,
     importPlaylist,
     exportPlaylist,
+    queueSong,
+    removeFromQueue,
     copyAdminLink,
     copied,
     roomType,
     onRenameRoom,
+    showQr,
+    showQueueOverlay,
+    onToggleQr,
+    onToggleQueueOverlay,
   } = props
 
   const [searchQuery, setSearchQuery] = useState('')
@@ -95,9 +101,10 @@ export function PlaylistSidebar(props) {
                   {showThumbnails && <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="song-thumb" />}
                   <span className="song-title">{song.title}</span>
                   {showOwnerUI && (
-                    <button className="btn-icon danger" onClick={(event) => { event.stopPropagation(); if (window.confirm(`Usun "${song.title}"?`)) deleteSong(song.id) }}>
-                      🗑
-                    </button>
+                    <>
+                      <button className="btn-icon queue-add" onClick={(event) => { event.stopPropagation(); queueSong(song) }} title="Dodaj do kolejki">+</button>
+                      <button className="btn-icon danger" onClick={(event) => { event.stopPropagation(); if (window.confirm(`Usun "${song.title}"?`)) deleteSong(song.id) }} title="Usun">🗑</button>
+                    </>
                   )}
                 </div>
               ))}
@@ -157,6 +164,7 @@ export function PlaylistSidebar(props) {
                   {showThumbnails && <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="queue-thumb" />}
                   <ScrollText className="queue-title">{song.title}</ScrollText>
                   <button className="btn-icon play" onClick={() => playSongNow(song)}>▶</button>
+                  <button className="btn-icon danger" onClick={() => removeFromQueue(song.id)} title="Usun z kolejki">✕</button>
                 </li>
               ))}
             </ol>
@@ -244,6 +252,30 @@ export function PlaylistSidebar(props) {
               </button>
               <button className={`btn-setting${showThumbnails ? ' active' : ''}`} onClick={() => saveSettings('showThumbnails', true)}>
                 Wlaczone
+              </button>
+            </div>
+          </div>
+
+          <div className="setting-row">
+            <span className="setting-label">Pokaz QR code</span>
+            <div className="setting-toggle-group">
+              <button className={`btn-setting${!showQr ? ' active' : ''}`} onClick={onToggleQr}>
+                Ukryty
+              </button>
+              <button className={`btn-setting${showQr ? ' active' : ''}`} onClick={onToggleQr}>
+                Widoczny
+              </button>
+            </div>
+          </div>
+
+          <div className="setting-row">
+            <span className="setting-label">Pokaz kolejke</span>
+            <div className="setting-toggle-group">
+              <button className={`btn-setting${!showQueueOverlay ? ' active' : ''}`} onClick={onToggleQueueOverlay}>
+                Ukryta
+              </button>
+              <button className={`btn-setting${showQueueOverlay ? ' active' : ''}`} onClick={onToggleQueueOverlay}>
+                Widoczna
               </button>
             </div>
           </div>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useReducer, useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import { GuestView } from './components/GuestView'
+import { ScrollText } from './components/ScrollText'
 import { NowPlayingPanel } from './components/NowPlayingPanel'
 import { PlaylistSidebar } from './components/PlaylistSidebar'
 import { RoomHeader } from './components/RoomHeader'
@@ -210,7 +211,7 @@ function uiReducer(state, action) {
 
 export default function App() {
   const [uiState, dispatch] = useReducer(uiReducer, initialUiState)
-  const [panelOpen, setPanelOpen] = useState({ qr: true, voting: false })
+  const [panelOpen, setPanelOpen] = useState({ qr: true, voting: false, showQueue: false })
   const [leftPanel, setLeftPanel] = useState('songs')
   const [hasRoomParam] = useState(() => !!new URLSearchParams(window.location.search).get('room'))
   const [creatingRoom, setCreatingRoom] = useState(false)
@@ -300,6 +301,7 @@ export default function App() {
     remaining,
     playSongNow,
     queueSong,
+    removeFromQueue,
     removeVotingOption,
     advanceToWinner,
     advanceToOption,
@@ -489,15 +491,31 @@ export default function App() {
             queue={queue}
             voteThreshold={voteThreshold}
             queueSize={Math.max(1, settings?.queueSize ?? 1)}
+            queueSong={queueSong}
+            removeFromQueue={removeFromQueue}
             copyAdminLink={shareLinks.copyAdminLink}
             copied={uiState.copied}
             onRenameRoom={renameRoom}
+            showQr={panelOpen.qr}
+            showQueueOverlay={panelOpen.showQueue}
+            onToggleQr={() => togglePanel('qr')}
+            onToggleQueueOverlay={() => togglePanel('showQueue')}
           />
         )}
 
         <div className={`player-area${showOwnerUI ? ' player-area-admin' : ''}`}>
           {showOwnerUI ? (
             <>
+              {panelOpen.showQueue && queue.length > 0 && (
+                <div className="queue-overlay">
+                  {queue.map((song) => (
+                    <div key={song.id} className="queue-overlay-item">
+                      <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="queue-overlay-thumb" />
+                      <ScrollText className="queue-overlay-title">{song.title}</ScrollText>
+                    </div>
+                  ))}
+                </div>
+              )}
               <div className="admin-scroll-area">
                 <div className="admin-top-row">
                   <NowPlayingPanel
@@ -516,21 +534,13 @@ export default function App() {
                     stopJukebox={stopJukebox}
                     room={room}
                   />
-                  {shareLinks.voterUrl && (
+                  {shareLinks.voterUrl && panelOpen.qr && (
                     <div className="admin-qr-panel">
-                      <div className="panel-title-row" onClick={() => togglePanel('qr')}>
-                        <h2 className="section-title">{roomType === 'public' ? 'Udostepnij kod pokoju' : 'Zeskanuj kod i glosuj'}</h2>
-                        <span className="section-arrow">{panelOpen.qr ? '▼' : '▶'}</span>
+                      <div className="qr-clickable" onClick={shareLinks.copyVoterLink} title="Kliknij aby skopiowac link">
+                        <QRCodeSVG value={shareLinks.voterUrl} size={150} bgColor="#000000" fgColor="#ffffff" />
+                        {uiState.copied === 'voter' && <div className="qr-copied-overlay">✓ Skopiowano</div>}
                       </div>
-                      {panelOpen.qr && (
-                        <>
-                          <div className="qr-clickable" onClick={shareLinks.copyVoterLink} title="Kliknij aby skopiowac link">
-                            <QRCodeSVG value={shareLinks.voterUrl} size={150} bgColor="#000000" fgColor="#ffffff" />
-                            {uiState.copied === 'voter' && <div className="qr-copied-overlay">✓ Skopiowano</div>}
-                          </div>
-                          <p className="qr-hint">Kliknij QR, aby skopiowac link</p>
-                        </>
-                      )}
+                      <p className="qr-hint">Kliknij QR, aby skopiowac link</p>
                     </div>
                   )}
                 </div>
