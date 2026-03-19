@@ -3,6 +3,7 @@ import {
   deleteDoc,
   deleteField,
   doc,
+  getDoc,
   increment,
   onSnapshot,
   query,
@@ -12,7 +13,7 @@ import {
   where,
 } from 'firebase/firestore'
 import { db } from '../firebase'
-import { genId } from '../lib/jukebox'
+import { createJoinCode } from '../lib/jukebox'
 
 const roomsRef = collection(db, 'rooms')
 const roomRef = roomId => doc(db, 'rooms', roomId)
@@ -58,8 +59,19 @@ function createRoomPayload({ type, name, ownerId, guestToken }) {
   }
 }
 
+async function createUniqueGuestToken(maxAttempts = 10) {
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    const token = createJoinCode()
+    const tokenSnap = await getDoc(tokenRef(token))
+
+    if (!tokenSnap.exists()) return token
+  }
+
+  throw new Error('Could not generate a unique guest token')
+}
+
 export async function createPrivateRoom(ownerId, name = 'Nowy pokoj prywatny') {
-  const guestToken = genId()
+  const guestToken = await createUniqueGuestToken()
   const newRoomRef = doc(roomsRef)
 
   await setDoc(newRoomRef, createRoomPayload({
@@ -79,7 +91,7 @@ export async function createPrivateRoom(ownerId, name = 'Nowy pokoj prywatny') {
 }
 
 export async function createPublicRoom(name = 'Nowy pokoj publiczny', creatorUid) {
-  const guestToken = genId()
+  const guestToken = await createUniqueGuestToken()
   const newRoomRef = doc(roomsRef)
 
   await setDoc(newRoomRef, createRoomPayload({

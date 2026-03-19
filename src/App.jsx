@@ -73,9 +73,20 @@ function HomePage({ onCreateRoom, creatingRoom, user, onSignIn, onSignOut, owned
   const isLoggedIn = user && !user.isAnonymous
 
   const handleJoin = () => {
-    const id = roomInput.trim()
-    if (!id) return
-    window.location.href = `/?room=${encodeURIComponent(id)}`
+    const rawInput = roomInput.trim()
+    if (!rawInput) return
+
+    let roomValue = rawInput
+
+    try {
+      const parsedUrl = new URL(rawInput)
+      roomValue = parsedUrl.searchParams.get('room')?.trim() || parsedUrl.pathname.replace(/^\/+|\/+$/g, '') || rawInput
+    } catch {
+      roomValue = rawInput
+    }
+
+    if (!roomValue) return
+    window.location.href = `/?room=${encodeURIComponent(roomValue)}`
   }
 
   const handleKeyDown = (e) => {

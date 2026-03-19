@@ -5,7 +5,8 @@
       "Bash(npx vite:*)",
       "Bash(firebase deploy:*)",
       "Bash(npm install:*)",
-      "Bash(find c:/Piu/Witryny/Szafagra -maxdepth 2 -type f -name *.json -o -name *.env*)"
+      "Bash(find c:/Piu/Witryny/Szafagra -maxdepth 2 -type f -name *.json -o -name *.env*)",
+      "Bash(find /c/Piu/Witryny/Szafagra -type f -name *auth* -o -name *firebase*)"
     ]
   }
 }
