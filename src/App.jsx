@@ -166,7 +166,6 @@ const initialUiState = {
   editingId: null,
   editingName: '',
   copied: null,
-  sidebarOpen: true,
   collapsed: { settings: true, songs: false, suggestions: false },
   uiError: '',
 }
@@ -210,7 +209,8 @@ function uiReducer(state, action) {
 
 export default function App() {
   const [uiState, dispatch] = useReducer(uiReducer, initialUiState)
-  const [panelOpen, setPanelOpen] = useState({ queue: true, qr: true, voting: true })
+  const [panelOpen, setPanelOpen] = useState({ qr: true, voting: true })
+  const [leftPanel, setLeftPanel] = useState('songs')
   const [hasRoomParam] = useState(() => !!new URLSearchParams(window.location.search).get('room'))
   const [creatingRoom, setCreatingRoom] = useState(false)
   const { user, roomId, roomType, isOwner, canEditRoom, authReady, roomError, signInWithGoogle, signOutUser } = useRoomAuth()
@@ -235,8 +235,8 @@ export default function App() {
     dispatch({ type: 'toggleSection', key })
   }, [])
 
-  const toggleSidebar = useCallback(() => {
-    dispatch({ type: 'toggleField', field: 'sidebarOpen' })
+  const toggleLeftPanel = useCallback((panel) => {
+    setLeftPanel((current) => current === panel ? null : panel)
   }, [])
 
   const startEditPlaylist = useCallback((playlistId, name) => {
@@ -430,8 +430,8 @@ export default function App() {
       <RoomHeader
         showOwnerUI={showOwnerUI}
         roomType={roomType}
-        sidebarOpen={uiState.sidebarOpen}
-        toggleSidebar={toggleSidebar}
+        leftPanel={leftPanel}
+        toggleLeftPanel={toggleLeftPanel}
         copied={uiState.copied}
         copyAdminLink={shareLinks.copyAdminLink}
         newSongUrl={uiState.newSongUrl}
@@ -450,7 +450,7 @@ export default function App() {
       <main className="main">
         {showOwnerUI && (
           <PlaylistSidebar
-            sidebarOpen={uiState.sidebarOpen}
+            leftPanel={leftPanel}
             showOwnerUI={showOwnerUI}
             roomType={roomType}
             collapsed={uiState.collapsed}
@@ -480,6 +480,8 @@ export default function App() {
             approveSuggestion={approveSuggestion}
             rejectSuggestion={rejectSuggestion}
             showThumbnails={showThumbnails}
+            queue={queue}
+            voteThreshold={voteThreshold}
           />
         )}
 
@@ -488,57 +490,23 @@ export default function App() {
             <>
               <div className="admin-scroll-area">
                 <div className="admin-top-row">
-                  <div className="admin-col">
-                    <div className="admin-queue-qr">
-                      <div className="voting-card">
-                        <div className="panel-title-row" onClick={() => togglePanel('queue')}>
-                          <h2 className="section-title voting-title">Kolejka</h2>
-                          {panelOpen.queue && (
-                            <div className="panel-header-setting" onClick={(e) => e.stopPropagation()}>
-                              <span className="panel-header-label">Min. zakolejkowanych:</span>
-                              <div className="note-picker note-picker-sm">
-                                {[0, 1, 2, 3, 4].map((count) => (
-                                  <button key={count} className={`note-btn${voteThreshold === count ? ' active' : ''}`} onClick={() => saveSettings('voteThreshold', count)}>
-                                    {count}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          <span className="section-arrow">{panelOpen.queue ? '▼' : '▶'}</span>
-                        </div>
-                        {isPlaying && panelOpen.queue && queue.length > 0 && (
-                          <ol className="queue-list">
-                            {queue.map((song, index) => (
-                              <li key={song.id} className="queue-item">
-                                <span className="queue-pos">{index + 1}</span>
-                                {showThumbnails && <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="queue-thumb" />}
-                                <span className="queue-title">{song.title}</span>
-                                <button className="btn-icon play" onClick={() => playSongNow(song)}>▶</button>
-                              </li>
-                            ))}
-                          </ol>
-                        )}
+                  {shareLinks.voterUrl && (
+                    <div className="admin-qr-panel">
+                      <div className="panel-title-row" onClick={() => togglePanel('qr')}>
+                        <h2 className="section-title">{roomType === 'public' ? 'Udostepnij kod pokoju' : 'Zeskanuj kod i glosuj'}</h2>
+                        <span className="section-arrow">{panelOpen.qr ? '▼' : '▶'}</span>
                       </div>
-                      {shareLinks.voterUrl && (
-                        <div className="admin-qr-panel">
-                          <div className="panel-title-row" onClick={() => togglePanel('qr')}>
-                            <h2 className="section-title">{roomType === 'public' ? 'Udostepnij kod pokoju' : 'Zeskanuj kod i glosuj'}</h2>
-                            <span className="section-arrow">{panelOpen.qr ? '▼' : '▶'}</span>
+                      {panelOpen.qr && (
+                        <>
+                          <div className="qr-clickable" onClick={shareLinks.copyVoterLink} title="Kliknij aby skopiowac link">
+                            <QRCodeSVG value={shareLinks.voterUrl} size={150} bgColor="#000000" fgColor="#ffffff" />
+                            {uiState.copied === 'voter' && <div className="qr-copied-overlay">✓ Skopiowano</div>}
                           </div>
-                          {panelOpen.qr && (
-                            <>
-                              <div className="qr-clickable" onClick={shareLinks.copyVoterLink} title="Kliknij aby skopiowac link">
-                                <QRCodeSVG value={shareLinks.voterUrl} size={150} bgColor="#000000" fgColor="#ffffff" />
-                                {uiState.copied === 'voter' && <div className="qr-copied-overlay">✓ Skopiowano</div>}
-                              </div>
-                              <p className="qr-hint">Kliknij QR, aby skopiowac link</p>
-                            </>
-                          )}
-                        </div>
+                          <p className="qr-hint">Kliknij QR, aby skopiowac link</p>
+                        </>
                       )}
                     </div>
-                  </div>
+                  )}
 
                   <NowPlayingPanel
                     isPlaying={isPlaying}

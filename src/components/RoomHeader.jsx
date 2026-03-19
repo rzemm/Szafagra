@@ -12,8 +12,8 @@ const GoogleIcon = () => (
 export function RoomHeader({
   showOwnerUI,
   roomType,
-  sidebarOpen,
-  toggleSidebar,
+  leftPanel,
+  toggleLeftPanel,
   copied,
   copyAdminLink,
   newSongUrl,
@@ -41,9 +41,22 @@ export function RoomHeader({
     <header className="header">
       <div className="header-inner">
         {showOwnerUI && (
-          <button className="btn-sidebar-toggle" onClick={toggleSidebar} title={sidebarOpen ? 'Ukryj panel' : 'Pokaz panel'}>
-            {sidebarOpen ? '◀' : '▶'}
-          </button>
+          <>
+            <button
+              className={`btn-panel-toggle${leftPanel === 'songs' ? ' active' : ''}`}
+              onClick={() => toggleLeftPanel('songs')}
+              title="Lista piosenek"
+            >
+              ♫ Lista
+            </button>
+            <button
+              className={`btn-panel-toggle${leftPanel === 'queue' ? ' active' : ''}`}
+              onClick={() => toggleLeftPanel('queue')}
+              title="Kolejka odtwarzania"
+            >
+              ▤ Kolejka
+            </button>
+          </>
         )}
         <span className="header-icon">🎵</span>
         <a href="/" className="header-logo">szafi.fi</a>
