@@ -2297,19 +2297,20 @@ body.disco-mode .sidebar {
   line-height: 1.3;
   flex: 1;
   min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
 }
 
-.queue-title .scroll-text {
+.scroll-text {
   display: inline-block;
   white-space: nowrap;
-  animation: queue-title-scroll 4s ease-in-out 1s infinite alternate;
 }
 
-@keyframes queue-title-scroll {
+.scroll-text.scrolling {
+  animation: scroll-text-bounce 2.5s ease-in-out 0.8s infinite alternate;
+}
+
+@keyframes scroll-text-bounce {
   from { transform: translateX(0); }
-  to   { transform: translateX(min(0px, calc(-100% + 14rem))); }
+  to   { transform: translateX(var(--scroll-dist, 0px)); }
 }
 
 /* ─── Skip card ──────────────────────────────────────────────────────────────── */
@@ -2380,20 +2381,8 @@ body.disco-mode .sidebar {
   font-size: 0.87rem;
   color: var(--text);
   line-height: 1.3;
-  overflow: hidden;
-  white-space: nowrap;
 }
 
-.slot-title .scroll-text {
-  display: inline-block;
-  white-space: nowrap;
-  animation: slot-title-scroll 4s ease-in-out 1s infinite alternate;
-}
-
-@keyframes slot-title-scroll {
-  from { transform: translateX(0); }
-  to   { transform: translateX(min(0px, calc(-100% + 9rem))); }
-}
 
 .slot-votes {
   font-size: 0.78rem;

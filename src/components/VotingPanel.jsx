@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { ScrollText } from './ScrollText'
 
 export function VotingPanel({ nextOptionKeys, nextOptions, nextVotesData, userId, onVote, showPlayNow = false, onPlayNow, onQueueSong, onRemoveOption, columns = false, onChooseOption, showThumbnails = true }) {
   const myVote = nextVotesData[userId] ?? null
@@ -39,7 +40,7 @@ export function VotingPanel({ nextOptionKeys, nextOptions, nextVotesData, userId
                   <div key={song.id} className="option-song-item">
                     <span className="option-song-pos">{i + 1}</span>
                     {showThumbnails && <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="slot-thumb" />}
-                    <span className="slot-title"><span className="scroll-text">{song.title}</span></span>
+                    <ScrollText className="slot-title">{song.title}</ScrollText>
                     {showPlayNow && <button className="btn-icon play" onClick={() => onPlayNow(song)} title="Puść teraz">▶</button>}
                     {onQueueSong && <button className="btn-icon queue" onClick={() => onQueueSong(song)} title="Dodaj do kolejki">▤</button>}
                   </div>

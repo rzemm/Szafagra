@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ScrollText } from './ScrollText'
 
 function NotePickerInline({ value, onChange }) {
   const [hover, setHover] = useState(0)
@@ -154,7 +155,7 @@ export function PlaylistSidebar(props) {
                 <li key={song.id} className="queue-item">
                   <span className="queue-pos">{index + 1}</span>
                   {showThumbnails && <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="queue-thumb" />}
-                  <span className="queue-title"><span className="scroll-text">{song.title}</span></span>
+                  <ScrollText className="queue-title">{song.title}</ScrollText>
                   <button className="btn-icon play" onClick={() => playSongNow(song)}>▶</button>
                 </li>
               ))}
