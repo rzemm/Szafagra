@@ -786,6 +786,7 @@ input.input-error { border-color: var(--accent); }
 
 .voting-bar-opt {
   flex: 1;
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -793,13 +794,29 @@ input.input-error { border-color: var(--accent); }
   gap: 0.05rem;
   border-left: 1px solid var(--border);
   padding: 0.4rem 0.5rem;
+  overflow: hidden;
 }
 
 .voting-bar-opt:first-child {
   border-left: none;
 }
 
+.vbo-fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(232, 65, 90, 0.18);
+  transition: height 0.4s ease;
+  pointer-events: none;
+}
+
+.voting-bar-opt.winning .vbo-fill {
+  background: rgba(245, 166, 35, 0.28);
+}
+
 .vbo-num {
+  position: relative;
   font-size: 1.1rem;
   font-weight: 800;
   color: var(--text);
@@ -807,6 +824,7 @@ input.input-error { border-color: var(--accent); }
 }
 
 .vbo-pct {
+  position: relative;
   font-size: 0.65rem;
   color: var(--text-dim);
   font-weight: 600;
@@ -1381,6 +1399,131 @@ body.disco-mode .sidebar {
   padding: 1rem 0.8rem;
   text-align: center;
   margin: 0;
+}
+
+/* ─── Settings panel extras ──────────────────────────────────────────────────── */
+.sidebar-settings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.setting-row--rename .setting-label {
+  margin-bottom: 0.3rem;
+}
+
+.setting-row--rename {
+  flex-direction: column;
+  align-items: stretch;
+  padding-bottom: 0.7rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.3rem;
+}
+
+.setting-rename-group {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.setting-rename-input {
+  flex: 1;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 0.85rem;
+  padding: 0.35rem 0.6rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.setting-rename-input:focus {
+  border-color: var(--accent);
+}
+
+.setting-number-input {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 0.85rem;
+  padding: 0.25rem 0.5rem;
+  width: 4rem;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.setting-number-input:focus {
+  border-color: var(--accent);
+}
+
+.setting-row--stats {
+  padding: 0.4rem 0 0.7rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.3rem;
+}
+
+.settings-stats {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.settings-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.settings-stat-value {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1;
+}
+
+.settings-stat-label {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  text-align: center;
+  margin-top: 0.2rem;
+}
+
+.setting-row--actions {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.4rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--border);
+  margin-top: 0.3rem;
+}
+
+.btn-setting-action {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.btn-setting-action:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn-setting-action.btn-file {
+  display: block;
+}
+
+.btn-setting-action.btn-file input[type="file"] {
+  display: none;
 }
 
 .header-join-row {
@@ -2156,6 +2299,12 @@ body.disco-mode .sidebar {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  transition: none;
+}
+
+.queue-item:hover .queue-title {
+  text-overflow: clip;
+  animation: slot-title-scroll 5s ease-in-out 0.3s infinite;
 }
 
 /* ─── Skip card ──────────────────────────────────────────────────────────────── */

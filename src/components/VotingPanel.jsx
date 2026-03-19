@@ -41,7 +41,7 @@ export function VotingPanel({ nextOptionKeys, nextOptions, nextVotesData, userId
                     {showThumbnails && <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="slot-thumb" />}
                     <span className="slot-title">{song.title}</span>
                     {showPlayNow && <button className="btn-icon play" onClick={() => onPlayNow(song)} title="Puść teraz">▶</button>}
-                    {onQueueSong && <button className="btn-icon queue" onClick={() => onQueueSong(song)} title="Dodaj do kolejki">+Q</button>}
+                    {onQueueSong && <button className="btn-icon queue" onClick={() => onQueueSong(song)} title="Dodaj do kolejki">▤</button>}
                   </div>
                 ))}
               </div>

@@ -21,6 +21,7 @@ import {
   rateRoom,
   replaceRoomSongs,
   saveRoomSetting,
+  setMainState,
   subscribeOwnedRooms,
   toggleSkipVote,
   voteNextOption,
@@ -209,7 +210,7 @@ function uiReducer(state, action) {
 
 export default function App() {
   const [uiState, dispatch] = useReducer(uiReducer, initialUiState)
-  const [panelOpen, setPanelOpen] = useState({ qr: true, voting: true })
+  const [panelOpen, setPanelOpen] = useState({ qr: true, voting: false })
   const [leftPanel, setLeftPanel] = useState('songs')
   const [hasRoomParam] = useState(() => !!new URLSearchParams(window.location.search).get('room'))
   const [creatingRoom, setCreatingRoom] = useState(false)
@@ -261,6 +262,11 @@ export default function App() {
       return null
     }
   }, [])
+
+  const renameRoom = useCallback(async (name) => {
+    if (!roomId || !canEditRoom) return
+    await executeAction(() => setMainState(roomId, { name }), 'Nie udalo sie zmienic nazwy pokoju.')
+  }, [canEditRoom, executeAction, roomId])
 
   const handleCreateRoom = useCallback(async () => {
     if (!user) return
@@ -483,6 +489,9 @@ export default function App() {
             queue={queue}
             voteThreshold={voteThreshold}
             queueSize={Math.max(1, settings?.queueSize ?? 1)}
+            copyAdminLink={shareLinks.copyAdminLink}
+            copied={uiState.copied}
+            onRenameRoom={renameRoom}
           />
         )}
 
@@ -529,19 +538,23 @@ export default function App() {
 
               <div className="voting-panel-bottom">
                 <div className="voting-bottom-bar" onClick={() => togglePanel('voting')}>
-                  {isPlaying && nextOptionKeys.length > 0 ? (
-                    nextOptionKeys.map((k) => {
-                      const count = Object.values(nextVotesData).filter(v => v === k).length
-                      const total = Object.values(nextVotesData).length
+                  {isPlaying && nextOptionKeys.length > 0 ? (() => {
+                    const counts = nextOptionKeys.map(k => Object.values(nextVotesData).filter(v => v === k).length)
+                    const total = Object.values(nextVotesData).length
+                    const maxCount = Math.max(0, ...counts)
+                    return nextOptionKeys.map((k, i) => {
+                      const count = counts[i]
                       const pct = total > 0 ? Math.round(count / total * 100) : 0
+                      const isWinning = count > 0 && count === maxCount
                       return (
-                        <div key={k} className="voting-bar-opt">
+                        <div key={k} className={`voting-bar-opt${isWinning ? ' winning' : ''}`}>
+                          <div className="vbo-fill" style={{ height: `${pct}%` }} />
                           <span className="vbo-num">{count}</span>
                           <span className="vbo-pct">{pct}%</span>
                         </div>
                       )
                     })
-                  ) : (
+                  })() : (
                     <h2 className="section-title" style={{ flex: 1, padding: '0 1rem' }}>Glosowanie</h2>
                   )}
                   <span className="section-arrow" style={{ padding: '0 1rem' }}>{panelOpen.voting ? '▼' : '▲'}</span>

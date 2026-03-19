@@ -77,7 +77,7 @@ export function RoomHeader({
             onChange={(event) => setNewSongUrl(event.target.value)}
             onBlur={handleUrlBlur}
             onKeyDown={(event) => event.key === 'Enter' && addSong()}
-            placeholder={fetchingTitle ? 'Pobieranie tytulu...' : newSongTitle ? `🎵 ${newSongTitle}` : 'Dodaj piosenke - wklej link YouTube...'}
+            placeholder={fetchingTitle ? 'Pobieranie tytulu...' : newSongTitle ? `🎵 ${newSongTitle}` : 'Dodaj piosenke lub liste - wklej link z Youtube'}
             title={urlErr || undefined}
             style={urlErr ? { borderColor: 'var(--accent)' } : undefined}
             disabled={!room}
@@ -95,7 +95,6 @@ export function RoomHeader({
         ) : user ? (
           <div className="header-google-user">
             {user.photoURL && <img src={user.photoURL} alt="" className="header-google-avatar" referrerPolicy="no-referrer" />}
-            <span className="header-google-name">{user.displayName}</span>
             <button className="header-google-logout" onClick={signOutUser}>Wyloguj</button>
           </div>
         ) : null}
@@ -103,13 +102,6 @@ export function RoomHeader({
         {showOwnerUI ? (
           <>
             <a className="btn-share" href="https://buycoffee.to/szafifi" target="_blank" rel="noreferrer">☕ Postaw kawe</a>
-            <button className="btn-share btn-share-admin" onClick={copyAdminLink} title="Kopiuj link do pokoju">
-              {copied === 'admin'
-                ? '✓ Skopiowano'
-                : roomType === 'public'
-                  ? '⎋ Skopiuj link do pokoju'
-                  : '⚙ Skopiuj link admina'}
-            </button>
           </>
         ) : (
           <button className="btn-header-share" onClick={copyGuestLink} title="Udostepnij link">

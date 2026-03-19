@@ -1,5 +1,23 @@
 import { useState } from 'react'
 
+function NotePickerInline({ value, onChange }) {
+  const [hover, setHover] = useState(0)
+  return (
+    <div className="note-picker-notes">
+      {[1, 2, 3, 4, 5].map(n => (
+        <button
+          key={n}
+          className={`note-icon-btn${(hover ? hover >= n : value >= n) ? ' active' : ''}`}
+          onClick={() => onChange(n)}
+          onMouseEnter={() => setHover(n)}
+          onMouseLeave={() => setHover(0)}
+          title={`${n} utw${n === 1 ? 'ór' : 'ory'} w grupie`}
+        >♪</button>
+      ))}
+    </div>
+  )
+}
+
 export function PlaylistSidebar(props) {
   const {
     leftPanel,
@@ -21,14 +39,25 @@ export function PlaylistSidebar(props) {
     queueSize,
     saveSettings,
     importPlaylist,
+    exportPlaylist,
+    copyAdminLink,
+    copied,
+    roomType,
+    onRenameRoom,
   } = props
 
   const [searchQuery, setSearchQuery] = useState('')
+  const [roomNameInput, setRoomNameInput] = useState(room?.name ?? '')
 
   const handleImportChange = async (event) => {
     const [file] = event.target.files ?? []
     if (file) await importPlaylist(file)
     event.target.value = ''
+  }
+
+  const handleRoomNameSave = () => {
+    const trimmed = roomNameInput.trim()
+    if (trimmed && trimmed !== room?.name) onRenameRoom(trimmed)
   }
 
   const songs = room?.songs ?? []
@@ -38,6 +67,8 @@ export function PlaylistSidebar(props) {
 
   return (
     <aside className={`sidebar${leftPanel ? '' : ' sidebar-hidden'}`}>
+
+      {/* ── Lista piosenek ───────────────────────────────── */}
       {leftPanel === 'songs' && room && (
         <div className="section songs-section">
           <div className="sidebar-search-bar">
@@ -97,6 +128,7 @@ export function PlaylistSidebar(props) {
         </div>
       )}
 
+      {/* ── Kolejka ──────────────────────────────────────── */}
       {leftPanel === 'queue' && (
         <div className="section songs-section">
           <div className="sidebar-queue-header">
@@ -133,88 +165,135 @@ export function PlaylistSidebar(props) {
         </div>
       )}
 
+      {/* ── Ustawienia ───────────────────────────────────── */}
       {leftPanel === 'settings' && (
-        <div className="section">
-          <div className="sidebar-settings-list">
+        <div className="section sidebar-settings-list">
 
-            <div className="setting-row">
-              <span className="setting-label">Glosowanie</span>
-              <div className="setting-toggle-group">
-                <button className={`btn-setting${voteMode === 'highest' ? ' active' : ''}`} onClick={() => saveSettings('voteMode', 'highest')}>
-                  Najwyzszy wynik
-                </button>
-                <button className={`btn-setting${voteMode === 'weighted' ? ' active' : ''}`} onClick={() => saveSettings('voteMode', 'weighted')}>
-                  Wazone losowanie
-                </button>
-              </div>
+          <div className="setting-row setting-row--rename">
+            <span className="setting-label">Nazwa pokoju</span>
+            <div className="setting-rename-group">
+              <input
+                className="setting-rename-input"
+                value={roomNameInput}
+                onChange={(e) => setRoomNameInput(e.target.value)}
+                onBlur={handleRoomNameSave}
+                onKeyDown={(e) => e.key === 'Enter' && e.target.blur()}
+                placeholder="Nazwa pokoju..."
+              />
             </div>
-
-            <div className="setting-row">
-              <span className="setting-label">Utworow w grupie</span>
-              <div className="note-picker">
-                {[1, 2, 3, 4, 5].map((count) => (
-                  <button key={count} className={`note-btn${queueSize === count ? ' active' : ''}`} onClick={() => saveSettings('queueSize', count)}>
-                    {count}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="setting-row">
-              <span className="setting-label">Min. zakolejkowanych</span>
-              <div className="note-picker">
-                {[0, 1, 2, 3, 4].map((count) => (
-                  <button key={count} className={`note-btn${voteThreshold === count ? ' active' : ''}`} onClick={() => saveSettings('voteThreshold', count)}>
-                    {count}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="setting-row">
-              <span className="setting-label">Skip (goscie)</span>
-              <div className="note-picker">
-                {[0, 1, 2, 3, 4].map((count) => (
-                  <button key={count} className={`note-btn${skipThreshold === count ? ' active' : ''}`} onClick={() => saveSettings('skipThreshold', count)}>
-                    {count === 0 ? 'off' : count}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="setting-row">
-              <span className="setting-label">Propozycje gosci</span>
-              <div className="setting-toggle-group">
-                <button className={`btn-setting${!allowSuggestions ? ' active' : ''}`} onClick={() => saveSettings('allowSuggestions', false)}>
-                  Wylaczone
-                </button>
-                <button className={`btn-setting${allowSuggestions ? ' active' : ''}`} onClick={() => saveSettings('allowSuggestions', true)}>
-                  Wlaczone
-                </button>
-              </div>
-            </div>
-
-            <div className="setting-row">
-              <span className="setting-label">Miniatury</span>
-              <div className="setting-toggle-group">
-                <button className={`btn-setting${!showThumbnails ? ' active' : ''}`} onClick={() => saveSettings('showThumbnails', false)}>
-                  Wylaczone
-                </button>
-                <button className={`btn-setting${showThumbnails ? ' active' : ''}`} onClick={() => saveSettings('showThumbnails', true)}>
-                  Wlaczone
-                </button>
-              </div>
-            </div>
-
-            <div className="setting-row">
-              <span className="setting-label">Import playlisty</span>
-              <label className="btn-secondary btn-file">
-                Importuj JSON
-                <input type="file" accept="application/json,.json" onChange={handleImportChange} />
-              </label>
-            </div>
-
           </div>
+
+          <div className="setting-row">
+            <span className="setting-label">Rodzaj glosowania</span>
+            <div className="setting-toggle-group">
+              <button className={`btn-setting${voteMode === 'highest' ? ' active' : ''}`} onClick={() => saveSettings('voteMode', 'highest')}>
+                Najwiecej
+              </button>
+              <button className={`btn-setting${voteMode === 'weighted' ? ' active' : ''}`} onClick={() => saveSettings('voteMode', 'weighted')}>
+                Kazdy ma szanse
+              </button>
+            </div>
+          </div>
+
+          <div className="setting-row">
+            <span className="setting-label">Utworow w grupie</span>
+            <NotePickerInline value={queueSize} onChange={(n) => saveSettings('queueSize', n)} />
+          </div>
+
+          <div className="setting-row">
+            <span className="setting-label">Min. zakolejkowanych</span>
+            <div className="note-picker note-picker-sm">
+              {[0, 1, 2, 3, 4].map((count) => (
+                <button key={count} className={`note-btn${voteThreshold === count ? ' active' : ''}`} onClick={() => saveSettings('voteThreshold', count)}>
+                  {count}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="setting-row">
+            <span className="setting-label">Wymagane glosy do pominiecia</span>
+            <input
+              className="setting-number-input"
+              type="number"
+              min="0"
+              max="99"
+              value={skipThreshold}
+              onChange={(e) => saveSettings('skipThreshold', Math.max(0, parseInt(e.target.value) || 0))}
+            />
+          </div>
+
+          <div className="setting-row">
+            <span className="setting-label">Propozycje gosci</span>
+            <div className="setting-toggle-group">
+              <button className={`btn-setting${!allowSuggestions ? ' active' : ''}`} onClick={() => saveSettings('allowSuggestions', false)}>
+                Wylaczone
+              </button>
+              <button className={`btn-setting${allowSuggestions ? ' active' : ''}`} onClick={() => saveSettings('allowSuggestions', true)}>
+                Wlaczone
+              </button>
+            </div>
+          </div>
+
+          <div className="setting-row">
+            <span className="setting-label">Miniatury</span>
+            <div className="setting-toggle-group">
+              <button className={`btn-setting${!showThumbnails ? ' active' : ''}`} onClick={() => saveSettings('showThumbnails', false)}>
+                Wylaczone
+              </button>
+              <button className={`btn-setting${showThumbnails ? ' active' : ''}`} onClick={() => saveSettings('showThumbnails', true)}>
+                Wlaczone
+              </button>
+            </div>
+          </div>
+
+          <div className="setting-row setting-row--stats">
+            {(() => {
+              const ratingsMap = room?.ratings ?? {}
+              const ratingValues = Object.values(ratingsMap)
+              const ratingCount = ratingValues.length
+              const avgRating = ratingCount > 0
+                ? (ratingValues.reduce((s, v) => s + v, 0) / ratingCount).toFixed(1)
+                : '–'
+              return (
+                <div className="settings-stats">
+                  <div className="settings-stat">
+                    <span className="settings-stat-value">{avgRating}</span>
+                    <span className="settings-stat-label">Ocena{ratingCount > 0 ? ` (${ratingCount} głosów)` : ''}</span>
+                  </div>
+                  <div className="settings-stat">
+                    <span className="settings-stat-value">{room?.totalPlays ?? 0}</span>
+                    <span className="settings-stat-label">Odtworzeń</span>
+                  </div>
+                  <div className="settings-stat">
+                    <span className="settings-stat-value">{room?.totalVotes ?? 0}</span>
+                    <span className="settings-stat-label">Głosów</span>
+                  </div>
+                </div>
+              )
+            })()}
+          </div>
+
+          <div className="setting-row setting-row--actions">
+            <button
+              className="btn-setting-action"
+              onClick={copyAdminLink}
+            >
+              {copied === 'admin'
+                ? '✓ Skopiowano'
+                : roomType === 'public'
+                  ? '⎋ Skopiuj link pokoju'
+                  : '⚙ Skopiuj link admina'}
+            </button>
+            <button className="btn-setting-action" onClick={exportPlaylist}>
+              ↓ Eksportuj liste
+            </button>
+            <label className="btn-setting-action btn-file">
+              ↑ Importuj liste
+              <input type="file" accept="application/json,.json" onChange={handleImportChange} />
+            </label>
+          </div>
+
         </div>
       )}
     </aside>
