@@ -87,7 +87,7 @@ export function usePlaylistActions({
   const saveEditPlaylist = useCallback(async () => {
     const name = editingName.trim()
     if (name && roomId) {
-      await executeAction(() => renameRoom(roomId, name), 'Nie udało się zmienić nazwy pokoju.')
+      await executeAction(() => renameRoom(roomId, name), 'Nie udało się zmienić nazwy szafy.')
     }
 
     dispatch({ type: 'cancelPlaylistEdit' })

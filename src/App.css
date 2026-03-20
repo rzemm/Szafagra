@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 /* ─── Reset & Base ─────────────────────────────────────────────────────────── */
 *, *::before, *::after {
   box-sizing: border-box;
@@ -27,7 +29,7 @@
   overflow: hidden;
   background: var(--bg);
   color: var(--text);
-  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
 }
 
 .error-banner {
@@ -1525,6 +1527,22 @@ body.disco-mode .sidebar {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.sidebar-settings-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-settings-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-settings-list::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
 }
 
 .settings-group {
@@ -1853,6 +1871,8 @@ body.disco-mode .sidebar {
   border-radius: var(--radius);
   overflow: hidden;
   transition: border-color 0.15s;
+  flex-shrink: 0;
+  min-height: 70px;
 }
 
 .guest-vote-card.winning {
@@ -2163,7 +2183,9 @@ body.disco-mode .sidebar {
 .rating-star {
   background: none;
   border: none;
-  font-size: 2rem;
+  font-size: 0;
+  line-height: 0;
+  padding: 0.1rem;
   color: var(--surface3);
   cursor: pointer;
   line-height: 1;
@@ -2628,7 +2650,12 @@ body.disco-mode .sidebar {
 
 .options-list.options-columns .vote-option {
   flex: 1;
-  min-width: 0;
+  min-width: 160px;
+  min-height: 80px;
+}
+
+.options-list.options-columns {
+  overflow-x: auto;
 }
 
 .vote-option {
@@ -3333,6 +3360,8 @@ body.disco-mode .app {
   color: var(--text);
   transition: background 0.15s;
   overflow: hidden;
+  flex-shrink: 0;
+  min-height: 42px;
 }
 
 .home-room-card--admin {

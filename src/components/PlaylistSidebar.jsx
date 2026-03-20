@@ -3,6 +3,18 @@ import { ContactMessageForm } from './ContactMessageForm'
 import { NotePicker } from './NotePicker'
 import { ScrollText } from './ScrollText'
 
+const IconPlay = () => (
+  <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true">
+    <path d="M8 5v14l11-7z"/>
+  </svg>
+)
+
+const IconTrash = () => (
+  <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true">
+    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+  </svg>
+)
+
 export function PlaylistSidebar({
   leftPanel,
   isPlaying,
@@ -132,8 +144,8 @@ export function PlaylistSidebar({
                   <span className="queue-pos">{index + 1}</span>
                   {showThumbnails && <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="queue-thumb" />}
                   <ScrollText className="queue-title">{song.title}</ScrollText>
-                  {canEditRoom && <button className="btn-icon play" onClick={() => playSongNow(song)}>Play</button>}
-                  {canEditRoom && <button className="btn-icon danger" onClick={() => removeFromQueue(song.id)} title="Usun z kolejki">x</button>}
+                  {canEditRoom && <button className="btn-icon play" onClick={() => playSongNow(song)} title="Odtworz teraz"><IconPlay /></button>}
+                  {canEditRoom && <button className="btn-icon danger" onClick={() => removeFromQueue(song.id)} title="Usun z kolejki"><IconTrash /></button>}
                 </li>
               ))}
             </ol>
@@ -258,7 +270,7 @@ export function PlaylistSidebar({
             </div>
 
             <div className="setting-row">
-              <span className="setting-label">Pokaz kod pokoju</span>
+              <span className="setting-label">Pokaz kod szafy</span>
               <label className="toggle-switch">
                 <input type="checkbox" checked={!!showRoomCode} onChange={onToggleShowRoomCode} />
                 <span className="toggle-slider" />
@@ -275,7 +287,7 @@ export function PlaylistSidebar({
           </div>
 
           <div className="settings-group">
-            <span className="settings-group-title">Opcje pokoju</span>
+            <span className="settings-group-title">Opcje szafy</span>
 
             <div className="setting-row">
               <span className="setting-label">Nazwa</span>
@@ -285,13 +297,13 @@ export function PlaylistSidebar({
                 defaultValue={room?.name ?? ''}
                 onBlur={(event) => handleRoomNameSave(event.target.value)}
                 onKeyDown={(event) => event.key === 'Enter' && event.target.blur()}
-                placeholder="Nazwa pokoju..."
+                placeholder="Nazwa szafy..."
                 disabled={!canEditRoom}
               />
             </div>
 
             <div className="setting-row">
-              <span className="setting-label">Widocznosc pokoju</span>
+              <span className="setting-label">Widocznosc szafy</span>
               <label className="toggle-switch">
                 <input type="checkbox" checked={isVisible !== false} onChange={(event) => saveSettings('isVisible', event.target.checked)} disabled={!canEditRoom} />
                 <span className="toggle-slider" />
@@ -329,7 +341,7 @@ export function PlaylistSidebar({
             {canEditRoom && (
               <div className="setting-row">
                 <button className="btn-setting-action" style={{ flex: 1 }} onClick={copyAdminLink}>
-                  {copied === 'admin' ? 'Skopiowano' : roomType === 'public' ? 'Skopiuj link pokoju' : 'Skopiuj link admina'}
+                  {copied === 'admin' ? 'Skopiowano' : roomType === 'public' ? 'Skopiuj link szafy' : 'Skopiuj link admina'}
                 </button>
               </div>
             )}
@@ -348,8 +360,8 @@ export function PlaylistSidebar({
               <ContactMessageForm
                 triggerClassName="btn-setting-action"
                 triggerLabel="Napisz wiadomosc"
-                title="Napisz wiadomosc o pokoju"
-                description="Mozesz zapisac uwage, blad albo pomysl powiazany z tym pokojem."
+                title="Napisz wiadomosc o szafie"
+                description="Mozesz zapisac uwage, blad albo pomysl powiazany z ta szafa."
                 successMessage="Wiadomosc zostala zapisana."
                 submitLabel="Wyslij wiadomosc"
                 panelClassName="settings-contact-form"

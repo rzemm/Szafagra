@@ -40,7 +40,7 @@ export function useRoomAuth(roomParam) {
           await signInAnonymously(auth)
         } catch (err) {
           console.error('Anonymous sign-in failed', err)
-          setRoomError('Nie udało się połączyć z pokojem.')
+          setRoomError('Nie udało się połączyć z szafą.')
           setAuthReady(true)
         }
         return
@@ -67,7 +67,7 @@ export function useRoomAuth(roomParam) {
           setRoomType(null)
           setIsOwner(false)
           setCanEditRoom(false)
-          setRoomError('Ten pokój nie istnieje albo link jest nieprawidłowy.')
+          setRoomError('Ta szafa nie istnieje albo link jest nieprawidłowy.')
           setAuthReady(true)
           return
         }
@@ -88,7 +88,7 @@ export function useRoomAuth(roomParam) {
         setCanEditRoom(canEdit)
       } catch (err) {
         console.error('Room auth failed', err)
-        setRoomError('Nie udało się otworzyć pokoju.')
+        setRoomError('Nie udało się otworzyć szafy.')
         setRoomId(null)
         setRoomType(null)
         setIsOwner(false)

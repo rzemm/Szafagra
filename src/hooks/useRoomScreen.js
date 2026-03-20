@@ -145,16 +145,16 @@ export function useRoomScreen(route) {
 
   const renameRoom = useCallback(async (name) => {
     if (!auth.roomId || !canEditRoom) return
-    await executeAction(() => setMainState(auth.roomId, { name }), 'Nie udalo sie zmienic nazwy pokoju.')
+    await executeAction(() => setMainState(auth.roomId, { name }), 'Nie udalo sie zmienic nazwy szafy.')
   }, [auth.roomId, canEditRoom, executeAction])
 
   const handleDeleteRoom = useCallback(async (targetRoom) => {
-    const roomName = targetRoom?.name || 'Pokoj prywatny'
-    if (!targetRoom?.id || !window.confirm(`Czy na pewno chcesz usunac pokoj "${roomName}"?`)) return
+    const roomName = targetRoom?.name || 'Szafa prywatna'
+    if (!targetRoom?.id || !window.confirm(`Czy na pewno chcesz usunac szafe "${roomName}"?`)) return
 
     await executeAction(
       () => deleteRoom(targetRoom.id, targetRoom.guestToken),
-      'Nie udalo sie usunac pokoju.'
+      'Nie udalo sie usunac szafy.'
     )
   }, [executeAction])
 
@@ -163,8 +163,8 @@ export function useRoomScreen(route) {
     setCreatingRoom(true)
 
     const ref = auth.user.isAnonymous
-      ? await executeAction(() => createPublicRoom('Nowy pokoj publiczny', auth.user.uid), 'Nie udalo sie utworzyc pokoju publicznego.')
-      : await executeAction(() => createPrivateRoom(auth.user.uid, 'Nowy pokoj prywatny'), 'Nie udalo sie utworzyc pokoju prywatnego.')
+      ? await executeAction(() => createPublicRoom('Nowa szafa publiczna', auth.user.uid), 'Nie udalo sie utworzyc szafy publicznej.')
+      : await executeAction(() => createPrivateRoom(auth.user.uid, 'Nowa szafa prywatna'), 'Nie udalo sie utworzyc szafy prywatnej.')
 
     setCreatingRoom(false)
     if (ref?.id) route.navigateToRoom(ref.id)
@@ -175,7 +175,7 @@ export function useRoomScreen(route) {
     setCopyingRoom(true)
     const ref = await executeAction(
       () => createPrivateRoomCopy(auth.user.uid, room),
-      'Nie udalo sie skopiowac pokoju.'
+      'Nie udalo sie skopiowac szafy.'
     )
     setCopyingRoom(false)
     if (ref?.id) route.navigateToRoom(ref.id)

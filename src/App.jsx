@@ -41,7 +41,7 @@ export default function App() {
   }
 
   if (!screen.room) {
-    return <SplashScreen message="Ladowanie pokoju..." />
+    return <SplashScreen message="Ladowanie szafy..." />
   }
 
   return (

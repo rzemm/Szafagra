@@ -1,4 +1,10 @@
 import { useMemo, useState } from 'react'
+
+const IconStar = () => (
+  <svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor" aria-hidden="true">
+    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+  </svg>
+)
 import { formatTime } from '../lib/jukebox'
 import { extractYtId, fetchYtTitle } from '../lib/youtube'
 import { useGuestPlayer } from '../hooks/useGuestPlayer'
@@ -185,7 +191,7 @@ export function GuestView({
       {!isPlaying && (
         <div className="guest-waiting">
           <span className="guest-waiting-icon">Muzyka</span>
-          <p>Wlasciciel pokoju jeszcze nie uruchomil jukeboxu...</p>
+          <p>Wlasciciel szafy jeszcze nie uruchomil jukeboxu...</p>
         </div>
       )}
 
@@ -202,7 +208,7 @@ export function GuestView({
                 onMouseLeave={() => setHoverStar(0)}
                 title={`${star}/5`}
               >
-                *
+                <IconStar />
               </button>
             ))}
           </div>
@@ -249,7 +255,7 @@ export function GuestView({
           triggerClassName="guest-footer-btn guest-footer-btn--active"
           triggerLabel="Napisz wiadomosc"
           title="Napisz wiadomosc do tworcow"
-          description="Mozesz zglosic blad, pomysl albo szybki feedback dotyczacy tego pokoju."
+          description="Mozesz zglosic blad, pomysl albo szybki feedback dotyczacy tej szafy."
           successMessage="Dzieki, wiadomosc zostala zapisana."
           submitLabel="Wyslij"
           panelClassName="guest-contact-form"

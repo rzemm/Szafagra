@@ -49,7 +49,7 @@ export function RoomHeader({
             <button
               className={`btn-panel-toggle${leftPanel === 'settings' ? ' active' : ''}`}
               onClick={() => toggleLeftPanel('settings')}
-              title="Ustawienia pokoju"
+              title="Ustawienia szafy"
             >
               Ustawienia{suggestions?.length > 0 ? ` (${suggestions.length})` : ''}
             </button>

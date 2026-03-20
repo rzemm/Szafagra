@@ -1,6 +1,18 @@
 import { useState } from 'react'
 import { ScrollText } from './ScrollText.jsx'
 
+const IconTrash = () => (
+  <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
+    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zm2.46-7.12 1.41-1.41L12 12.59l2.12-2.12 1.41 1.41L13.41 14l2.12 2.12-1.41 1.41L12 15.41l-2.12 2.12-1.41-1.41L10.59 14 8.46 11.88zM15.5 4l-1-1h-5l-1 1H5v2h14V4z"/>
+  </svg>
+)
+
+const IconMusic = () => (
+  <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden="true">
+    <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+  </svg>
+)
+
 const GoogleLogoSvg = () => (
   <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true" style={{ flexShrink: 0 }}>
     <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
@@ -42,7 +54,7 @@ export function HomePage({
     <div className="homepage">
       <div className="homepage-top">
         <div className="homepage-logo">
-          <span className="homepage-logo-icon">đźŽµ</span>
+          <span className="homepage-logo-icon"><IconMusic /></span>
           <span className="header-logo">szafi.fi</span>
         </div>
         {isLoggedIn ? (
@@ -57,7 +69,7 @@ export function HomePage({
               <GoogleLogoSvg />
               Zaloguj sie przez Google
             </button>
-            <p className="home-google-hint">aby zobaczyc swoje prywatne pokoje</p>
+            <p className="home-google-hint">aby zobaczyc swoje prywatne szafy</p>
           </div>
         )}
       </div>
@@ -67,7 +79,7 @@ export function HomePage({
           <input
             className="homepage-join-input"
             type="text"
-            placeholder="Wklej link, token albo ID pokoju..."
+            placeholder="Podaj kod szafy"
             value={roomInput}
             onChange={(event) => setRoomInput(event.target.value)}
             onKeyDown={(event) => event.key === 'Enter' && handleJoin()}
@@ -85,38 +97,37 @@ export function HomePage({
 
         <div className="homepage-cols-row">
           <div className="homepage-col">
-            <p className="home-col-title">Twoje pokoje</p>
+            <p className="home-col-title">Twoje szafy</p>
             <div className="home-rooms-list">
               {isLoggedIn ? (
                 ownedRooms.length > 0 ? (
                   ownedRooms.map((ownedRoom) => (
-                    <div key={ownedRoom.id} className={`home-room-card home-room-card--admin${ownedRoom.isPlaying ? ' home-room-card--playing' : ''}`}>
+                    <div key={ownedRoom.id} className="home-room-card home-room-card--admin">
                       <a className="home-room-card-link" href={`/?room=${ownedRoom.id}`}>
-                        <span className="home-room-icon">đźŽ›</span>
-                        <ScrollText className="home-room-label">{ownedRoom.name || 'Pokoj prywatny'}</ScrollText>
+                        <ScrollText className="home-room-label">{ownedRoom.name || 'Szafa prywatna'}</ScrollText>
                       </a>
                       <button
                         className="home-room-delete"
-                        title="Usun pokoj"
+                        title="Usun szafe"
                         onClick={(event) => {
                           event.preventDefault()
                           onDeleteRoom(ownedRoom)
                         }}
                       >
-                        đź—‘
+                        <IconTrash />
                       </button>
                     </div>
                   ))
                 ) : (
-                  <p className="home-rooms-empty">Nie masz jeszcze zadnych pokojow</p>
+                  <p className="home-rooms-empty">Nie masz jeszcze zadnych szaf</p>
                 )
               ) : (
-                <p className="home-rooms-empty">Zaloguj sie, aby zobaczyc swoje pokoje</p>
+                <p className="home-rooms-empty">Zaloguj sie, aby zobaczyc swoje szafy</p>
               )}
             </div>
             <button className="homepage-btn homepage-btn--primary" onClick={onCreateRoom} disabled={creatingRoom}>
-              <span className="homepage-btn-icon">âś¦</span>
-              {creatingRoom ? 'Tworzenie...' : 'Utworz nowy pokoj'}
+              <span className="homepage-btn-icon">{'\u2726'}</span>
+              {creatingRoom ? 'Tworzenie...' : 'Utworz nowa szafe'}
             </button>
           </div>
 
@@ -139,7 +150,7 @@ export function HomePage({
                     return (
                       <a
                         key={recentRoom.id}
-                        className={`home-room-card${recentRoom.isPlaying ? ' home-room-card--playing' : ''}`}
+                        className="home-room-card"
                         href={`/?room=${recentRoom.id}`}
                         onClick={(event) => {
                           event.preventDefault()
@@ -152,21 +163,21 @@ export function HomePage({
                         <div className="home-room-stats">
                           {avgRating !== null && (
                             <span className="home-room-stat home-room-stat--rating">
-                              <span className="home-stat-icon">â…</span>
+                              <span className="home-stat-icon">{'\u2605'}</span>
                               <span className="home-stat-val">{avgRating}</span>
                               <span className="home-stat-sub">/{ratingsArr.length}</span>
                             </span>
                           )}
                           <span className="home-room-stat">
-                            <span className="home-stat-icon">â–¶</span>
+                            <span className="home-stat-icon">{'\u25B6'}</span>
                             <span className="home-stat-val">{recentRoom.totalPlays ?? 0}</span>
                           </span>
                           <span className="home-room-stat">
-                            <span className="home-stat-icon">âś”</span>
+                            <span className="home-stat-icon">{'\u2714'}</span>
                             <span className="home-stat-val">{recentRoom.totalVotes ?? 0}</span>
                           </span>
                           <span className="home-room-stat">
-                            <span className="home-stat-icon">â™Ş</span>
+                            <span className="home-stat-icon">{'\u266A'}</span>
                             <span className="home-stat-val">{recentRoom.songs?.length ?? 0}</span>
                           </span>
                         </div>
@@ -177,7 +188,7 @@ export function HomePage({
                   <p className="home-rooms-empty">Brak list do pokazania</p>
                 )
               ) : (
-                <p className="home-rooms-empty">Zaloguj sie, aby zobaczyc ostatnie listy</p>
+                <p className="home-rooms-empty">Zaloguj sie, aby zobaczyc ostatnie szafy</p>
               )}
             </div>
           </div>

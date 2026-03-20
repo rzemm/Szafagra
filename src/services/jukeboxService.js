@@ -77,7 +77,7 @@ async function createUniqueGuestToken(maxAttempts = 10) {
   throw new Error('Could not generate a unique guest token')
 }
 
-export async function createPrivateRoom(ownerId, name = 'Nowy pokoj prywatny') {
+export async function createPrivateRoom(ownerId, name = 'Nowa szafa prywatna') {
   const guestToken = await createUniqueGuestToken()
   const newRoomRef = doc(roomsRef)
 
@@ -102,7 +102,7 @@ export async function createPrivateRoomCopy(ownerId, sourceRoom) {
   const newRoomRef = doc(roomsRef)
   const sourceName = typeof sourceRoom?.name === 'string' && sourceRoom.name.trim()
     ? sourceRoom.name.trim()
-    : 'Pokoj prywatny'
+    : 'Szafa prywatna'
 
   await setDoc(newRoomRef, {
     ...createRoomPayload({
@@ -127,7 +127,7 @@ export async function createPrivateRoomCopy(ownerId, sourceRoom) {
   return newRoomRef
 }
 
-export async function createPublicRoom(name = 'Nowy pokoj publiczny', creatorUid) {
+export async function createPublicRoom(name = 'Nowa szafa publiczna', creatorUid) {
   const guestToken = await createUniqueGuestToken()
   const newRoomRef = doc(roomsRef)
 
