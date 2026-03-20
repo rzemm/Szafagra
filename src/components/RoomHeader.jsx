@@ -25,6 +25,7 @@ export function RoomHeader({
   signOutUser,
   onShareGuestLink,
   guestCopied,
+  suggestions,
 }) {
   return (
     <header className="header">
@@ -50,7 +51,7 @@ export function RoomHeader({
               onClick={() => toggleLeftPanel('settings')}
               title="Ustawienia pokoju"
             >
-              Ustawienia
+              Ustawienia{suggestions?.length > 0 ? ` (${suggestions.length})` : ''}
             </button>
           </>
         )}

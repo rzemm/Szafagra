@@ -65,6 +65,7 @@ export default function App() {
         signOutUser={screen.auth.signOutUser}
         onShareGuestLink={screen.shareLinks.copyVoterLink}
         guestCopied={screen.uiState.copied === 'voter'}
+        suggestions={screen.suggestions}
       />
 
       <main className="main">
@@ -142,6 +143,9 @@ export default function App() {
             mySkipVote={screen.mySkipVote}
             voteSkip={screen.voteSkip}
             allowSuggestions={screen.settings.allowSuggestions ?? true}
+            allowGuestListening={screen.settings.allowGuestListening ?? true}
+            tickerText={screen.settings.tickerText ?? ''}
+            tickerForGuests={screen.settings.tickerForGuests ?? false}
             submitSuggestion={screen.submitSuggestion}
             myRating={screen.myRating}
             onRate={screen.rateActivePlaylist}

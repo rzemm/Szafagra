@@ -1,9 +1,9 @@
 import { GuestView } from './GuestView'
 
-export function GuestRoomView(props) {
+export function GuestRoomView({ allowGuestListening = true, ...props }) {
   return (
     <div className="player-area">
-      <GuestView {...props} />
+      <GuestView allowGuestListening={allowGuestListening} {...props} />
     </div>
   )
 }

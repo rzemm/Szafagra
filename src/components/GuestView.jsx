@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react'
 import { formatTime } from '../lib/jukebox'
 import { extractYtId, fetchYtTitle } from '../lib/youtube'
 import { useGuestPlayer } from '../hooks/useGuestPlayer'
+import { ScrollText } from './ScrollText'
 
-export function GuestView({ isOwner, playerDivRef, isPlaying, currentSong, remaining, queue, nextOptionKeys, nextOptions, nextVotesData, userId, vote, skipThreshold, mySkipVote, voteSkip, allowSuggestions, submitSuggestion, myRating, onRate, showThumbnails = true, jukeboxState }) {
+export function GuestView({ isOwner, playerDivRef, isPlaying, currentSong, remaining, queue, nextOptionKeys, nextOptions, nextVotesData, userId, vote, skipThreshold, mySkipVote, voteSkip, allowSuggestions, submitSuggestion, myRating, onRate, showThumbnails = true, jukeboxState, allowGuestListening = true, tickerText = '', tickerForGuests = false }) {
   const { listening, toggleListening, playerDivRef: guestPlayerDivRef } = useGuestPlayer({ jukeboxState, isPlaying })
   const [queueOpen, setQueueOpen] = useState(false)
   const [hoverStar, setHoverStar] = useState(0)
@@ -57,9 +58,15 @@ export function GuestView({ isOwner, playerDivRef, isPlaying, currentSong, remai
 
   return (
     <div className="guest-view">
+      {tickerForGuests && tickerText && (
+        <div className="ticker-bar">
+          <span className="ticker-bar-inner">{tickerText}</span>
+        </div>
+      )}
+
       {isOwner && <div style={{ position: 'fixed', top: '-9999px', left: '-9999px', pointerEvents: 'none' }}><div ref={playerDivRef} /></div>}
 
-      {!isOwner && isPlaying && currentSong && (
+      {!isOwner && allowGuestListening && isPlaying && currentSong && (
         <div className="guest-player">
           <button className={`guest-player-toggle${listening ? ' active' : ''}`} onClick={toggleListening}>
             {listening ? '🔇 Wyłącz odsłuch' : '🎧 Słuchaj'}
@@ -109,19 +116,19 @@ export function GuestView({ isOwner, playerDivRef, isPlaying, currentSong, remai
             const voteCount = countsByOption[key] ?? 0
             const isWinning = voteCount > 0 && voteCount === maxVotes
             return (
-              <div key={key} className={`guest-vote-card${isVoted ? ' voted' : ''}${isWinning ? ' winning' : ''}`}>
+              <div key={key} className={`guest-vote-card${isVoted ? ' voted' : ''}${isWinning ? ' winning' : ''}`} onClick={() => vote(key)}>
                 <div className="guest-vote-songs">
                   {songs.map(song => (
                     <div key={song.id} className="guest-vote-song">
                       {showThumbnails && <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="guest-vote-thumb" />}
-                      <span className="guest-vote-title">{song.title}</span>
+                      <ScrollText className="guest-vote-title">{song.title}</ScrollText>
                     </div>
                   ))}
                 </div>
-                <button className={`guest-vote-btn${isVoted ? ' active' : ''}`} onClick={() => vote(key)}>
+                <div className={`guest-vote-btn${isVoted ? ' active' : ''}`}>
                   <span>{isVoted ? '✓ Zagłosowano' : '▲ Głosuj'}</span>
                   {voteCount > 0 && <span className="guest-vote-count">{voteCount}</span>}
-                </button>
+                </div>
               </div>
             )
           })}
@@ -143,9 +150,9 @@ export function GuestView({ isOwner, playerDivRef, isPlaying, currentSong, remai
         </div>
       )}
 
-      {isPlaying && userId && myRating === 0 && (
+      {isPlaying && userId && (
         <div className="guest-rating">
-          <p className="guest-rating-label">Oceń tę playlistę</p>
+          <p className="guest-rating-label">{myRating > 0 ? 'Twoja ocena' : 'Oceń tę playlistę'}</p>
           <div className="guest-rating-stars">
             {[1, 2, 3, 4, 5].map(star => (
               <button
@@ -158,7 +165,7 @@ export function GuestView({ isOwner, playerDivRef, isPlaying, currentSong, remai
               >★</button>
             ))}
           </div>
-          {myRating > 0 && <span className="guest-rating-value">Twoja ocena: {myRating}/5</span>}
+          {myRating > 0 && <span className="guest-rating-value">{myRating}/5</span>}
         </div>
       )}
 

@@ -18,6 +18,10 @@ export function PlaylistSidebar({
   voteMode,
   skipThreshold,
   allowSuggestions,
+  allowGuestListening,
+  tickerText,
+  tickerOnScreen,
+  tickerForGuests,
   queueSize,
   saveSettings,
   importPlaylist,
@@ -219,6 +223,38 @@ export function PlaylistSidebar({
                 Wylaczone
               </button>
               <button className={`btn-setting${allowSuggestions ? ' active' : ''}`} onClick={() => saveSettings('allowSuggestions', true)} disabled={!canEditRoom}>
+                Wlaczone
+              </button>
+            </div>
+          </div>
+
+          <div className="setting-row" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '0.4rem' }}>
+            <span className="setting-label">Pasek z tekstem</span>
+            <input
+              className="setting-ticker-input"
+              type="text"
+              placeholder="Tekst paska..."
+              value={tickerText}
+              onChange={(e) => saveSettings('tickerText', e.target.value)}
+              disabled={!canEditRoom}
+            />
+            <div className="setting-toggle-group">
+              <button className={`btn-setting${tickerOnScreen ? ' active' : ''}`} onClick={() => saveSettings('tickerOnScreen', !tickerOnScreen)} disabled={!canEditRoom}>
+                Na ekranie
+              </button>
+              <button className={`btn-setting${tickerForGuests ? ' active' : ''}`} onClick={() => saveSettings('tickerForGuests', !tickerForGuests)} disabled={!canEditRoom}>
+                U widza
+              </button>
+            </div>
+          </div>
+
+          <div className="setting-row">
+            <span className="setting-label">Sluchaj u goscia</span>
+            <div className="setting-toggle-group">
+              <button className={`btn-setting${!allowGuestListening ? ' active' : ''}`} onClick={() => saveSettings('allowGuestListening', false)} disabled={!canEditRoom}>
+                Wylaczone
+              </button>
+              <button className={`btn-setting${allowGuestListening ? ' active' : ''}`} onClick={() => saveSettings('allowGuestListening', true)} disabled={!canEditRoom}>
                 Wlaczone
               </button>
             </div>

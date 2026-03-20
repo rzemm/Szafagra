@@ -1,5 +1,4 @@
 import { QRCodeSVG } from 'qrcode.react'
-import { NotePicker } from './NotePicker'
 import { NowPlayingPanel } from './NowPlayingPanel'
 import { PlaylistSidebar } from './PlaylistSidebar'
 import { ScrollText } from './ScrollText'
@@ -83,6 +82,10 @@ export function OwnerRoomView({
         voteMode={voteMode}
         skipThreshold={skipThreshold}
         allowSuggestions={settings.allowSuggestions ?? true}
+        allowGuestListening={settings.allowGuestListening ?? true}
+        tickerText={settings.tickerText ?? ''}
+        tickerOnScreen={settings.tickerOnScreen ?? false}
+        tickerForGuests={settings.tickerForGuests ?? false}
         queueSize={Math.max(1, settings.queueSize ?? 1)}
         saveSettings={saveSettings}
         importPlaylist={playlistActions.importPlaylist}
@@ -172,6 +175,10 @@ export function OwnerRoomView({
           </div>
         </div>
 
+        {settings.tickerOnScreen && settings.tickerText && (
+          <div className="admin-ticker">📢 {settings.tickerText}</div>
+        )}
+
         <div className="voting-panel-bottom">
           <div className="voting-bottom-bar" onClick={() => togglePanel('voting')}>
             {isPlaying && nextOptionKeys.length > 0 ? nextOptionKeys.map((key, index) => {
@@ -210,10 +217,6 @@ export function OwnerRoomView({
                   showThumbnails={showThumbnails}
                 />
               )}
-              <div className="queue-size-row">
-                <span className="queue-size-label">Utworow w grupie:</span>
-                <NotePicker value={Math.max(1, settings.queueSize ?? 1)} onChange={(value) => saveSettings('queueSize', value)} />
-              </div>
             </div>
           )}
         </div>
