@@ -115,6 +115,9 @@ export default function App() {
             isViewMode={route.isViewMode}
             handleCopyRoom={screen.handleCopyRoom}
             copyingRoom={screen.copyingRoom}
+            handleAppendToRoom={screen.handleAppendToRoom}
+            appendingRoom={screen.appendingRoom}
+            ownedRooms={screen.ownedRooms}
             approveSuggestion={screen.approveSuggestion}
             rejectSuggestion={screen.rejectSuggestion}
             removeFromQueue={screen.removeFromQueue}

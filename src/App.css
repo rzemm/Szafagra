@@ -746,6 +746,55 @@ textarea:focus { outline: none; border-color: var(--accent); }
   color: var(--text-dim);
 }
 
+.view-mode-append-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.view-mode-append-select {
+  flex: 1;
+  min-width: 0;
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.85rem;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  outline: none;
+}
+
+.view-mode-append-select:focus {
+  border-color: var(--accent);
+}
+
+.view-mode-append-btn {
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.5rem 1.25rem;
+  background: var(--surface3);
+  color: var(--text);
+  border: 1.5px solid var(--accent);
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s, background 0.15s;
+}
+
+.view-mode-append-btn:hover:not(:disabled) {
+  background: var(--accent);
+  color: #000;
+}
+
+.view-mode-append-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .admin-top-row {
   display: flex;
   gap: 1rem;
@@ -1492,6 +1541,86 @@ body.disco-mode .sidebar {
   padding: 0.8rem;
   text-align: center;
   margin: 0;
+}
+
+.sidebar-bulk-delete-toggle {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text-dim);
+  font-size: 0.72rem;
+  cursor: pointer;
+  padding: 0.2rem 0.45rem;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.sidebar-bulk-delete-toggle:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.sidebar-bulk-delete-toggle.active {
+  color: var(--danger, #e55);
+  border-color: var(--danger, #e55);
+}
+
+.song-item-selectable {
+  cursor: pointer;
+}
+
+.song-item-selectable:hover {
+  border-color: var(--accent);
+  background: var(--surface3);
+}
+
+.song-item-selected {
+  border-color: var(--danger, #e55) !important;
+  background: color-mix(in srgb, var(--danger, #e55) 12%, var(--surface2)) !important;
+}
+
+.song-select-checkbox {
+  flex-shrink: 0;
+  accent-color: var(--danger, #e55);
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+
+.bulk-delete-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.8rem;
+  border-top: 1px solid var(--border);
+  background: var(--surface2);
+}
+
+.bulk-delete-count {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+.bulk-delete-confirm {
+  background: var(--danger, #e55);
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.3rem 0.8rem;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.bulk-delete-confirm:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.bulk-delete-confirm:not(:disabled):hover {
+  opacity: 0.85;
 }
 
 /* ─── Sidebar queue view ─────────────────────────────────────────────────────── */

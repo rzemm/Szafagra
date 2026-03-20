@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import { NowPlayingPanel } from './NowPlayingPanel'
 import { PlaylistSidebar } from './PlaylistSidebar'
@@ -49,6 +50,9 @@ export function OwnerRoomView({
   isViewMode,
   handleCopyRoom,
   copyingRoom,
+  handleAppendToRoom,
+  appendingRoom,
+  ownedRooms,
   approveSuggestion,
   rejectSuggestion,
   removeFromQueue,
@@ -61,6 +65,16 @@ export function OwnerRoomView({
   cancelEditPlaylist,
   onSubmitMessage,
 }) {
+  const [appendTargetId, setAppendTargetId] = useState('')
+  const [appendDone, setAppendDone] = useState(false)
+
+  const handleAppend = async () => {
+    if (!appendTargetId) return
+    await handleAppendToRoom(appendTargetId)
+    setAppendDone(true)
+    setTimeout(() => setAppendDone(false), 3000)
+  }
+
   const voteCounts = nextOptionKeys.map((key) => Object.values(nextVotesData).filter((value) => value === key).length)
   const totalVotes = Object.values(nextVotesData).length
   const maxCount = Math.max(0, ...voteCounts)
@@ -74,6 +88,7 @@ export function OwnerRoomView({
         currentSong={currentSong}
         playSongNow={playSongNow}
         deleteSong={songActions.deleteSong}
+        deleteSongs={songActions.deleteSongs}
         suggestions={suggestions}
         approveSuggestion={approveSuggestion}
         rejectSuggestion={rejectSuggestion}
@@ -145,6 +160,29 @@ export function OwnerRoomView({
               >
                 {copyingRoom ? 'Kopiowanie...' : 'Skopiuj te liste do siebie'}
               </button>
+              {ownedRooms?.length > 0 && (
+                <div className="view-mode-append-row">
+                  <select
+                    className="view-mode-append-select"
+                    value={appendTargetId}
+                    onChange={(event) => { setAppendTargetId(event.target.value); setAppendDone(false) }}
+                  >
+                    <option value="">Dołącz piosenki do listy...</option>
+                    {ownedRooms.map((r) => (
+                      <option key={r.id} value={r.id}>{r.name || 'Szafa prywatna'}</option>
+                    ))}
+                  </select>
+                  {appendTargetId && (
+                    <button
+                      className="view-mode-append-btn"
+                      onClick={handleAppend}
+                      disabled={appendingRoom || appendDone}
+                    >
+                      {appendDone ? 'Dołączono!' : appendingRoom ? 'Dołączanie...' : 'Dołącz'}
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           )}
 

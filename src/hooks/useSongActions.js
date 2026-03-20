@@ -102,10 +102,20 @@ export function useSongActions({
     )
   }, [executeAction, room, roomId])
 
+  const deleteSongs = useCallback(async (songIds) => {
+    if (!room || !roomId || songIds.length === 0) return
+    const idSet = new Set(songIds)
+    await executeAction(
+      () => replaceRoomSongs(roomId, room.songs.filter((song) => !idSet.has(song.id))),
+      'Nie udało się usunąć utworów.',
+    )
+  }, [executeAction, room, roomId])
+
   return {
     handleUrlBlur,
     importFromYouTube,
     addSong,
     deleteSong,
+    deleteSongs,
   }
 }

@@ -90,14 +90,16 @@ export function useRoomScreen(route) {
   const [leftPanel, setLeftPanel] = useState('songs')
   const [creatingRoom, setCreatingRoom] = useState(false)
   const [copyingRoom, setCopyingRoom] = useState(false)
+  const [appendingRoom, setAppendingRoom] = useState(false)
   const [localCurrentSongId, setLocalCurrentSongId] = useState(null)
 
   const auth = useRoomAuth(route.roomParam)
   const canEditRoom = route.isViewMode ? auth.isOwner : auth.canEditRoom
   const { room, suggestions } = useRoomSubscriptions(auth.roomId)
 
-  const homepageEnabled = !route.hasRoomParam && !!auth.user && !auth.user.isAnonymous
-  const ownedRooms = useOwnedRooms(auth.user?.uid, homepageEnabled)
+  const isLoggedIn = !!auth.user && !auth.user.isAnonymous
+  const homepageEnabled = !route.hasRoomParam && isLoggedIn
+  const ownedRooms = useOwnedRooms(auth.user?.uid, isLoggedIn)
   const latestForeignRooms = useLatestForeignRooms(auth.user?.uid, homepageEnabled)
 
   useEffect(() => {
@@ -180,6 +182,17 @@ export function useRoomScreen(route) {
     setCopyingRoom(false)
     if (ref?.id) route.navigateToRoom(ref.id)
   }, [auth.user, canEditRoom, executeAction, room, route])
+
+  const handleAppendToRoom = useCallback(async (targetRoomId) => {
+    const targetRoom = ownedRooms.find((r) => r.id === targetRoomId)
+    if (!targetRoom || !room) return
+    setAppendingRoom(true)
+    const existingYtIds = new Set((targetRoom.songs ?? []).map((s) => s.ytId))
+    const newSongs = (room.songs ?? []).filter((s) => !existingYtIds.has(s.ytId))
+    const merged = [...(targetRoom.songs ?? []), ...newSongs]
+    await executeAction(() => replaceRoomSongs(targetRoomId, merged), 'Nie udało się dołączyć piosenek.')
+    setAppendingRoom(false)
+  }, [executeAction, ownedRooms, room])
 
   const handleJoinRoom = useCallback((input) => {
     const roomValue = resolveRoomInput(input)
@@ -359,6 +372,7 @@ export function useRoomScreen(route) {
     panelOpen,
     creatingRoom,
     copyingRoom,
+    appendingRoom,
     localCurrentSongId,
     setField,
     toggleSection,
@@ -368,6 +382,7 @@ export function useRoomScreen(route) {
     handleSongUrlChange,
     handleCreateRoom,
     handleCopyRoom,
+    handleAppendToRoom,
     handleDeleteRoom,
     handleJoinRoom,
     handleLocalPlay,

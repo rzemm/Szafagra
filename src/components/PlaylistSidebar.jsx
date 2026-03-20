@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { ContactMessageForm } from './ContactMessageForm'
 import { NotePicker } from './NotePicker'
 import { ScrollText } from './ScrollText'
@@ -22,6 +22,7 @@ export function PlaylistSidebar({
   currentSong,
   playSongNow,
   deleteSong,
+  deleteSongs,
   suggestions,
   approveSuggestion,
   rejectSuggestion,
@@ -59,6 +60,30 @@ export function PlaylistSidebar({
   onSubmitMessage,
 }) {
   const [searchQuery, setSearchQuery] = useState('')
+  const [bulkDeleteMode, setBulkDeleteMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState(new Set())
+
+  const toggleBulkDelete = useCallback(() => {
+    setBulkDeleteMode((prev) => !prev)
+    setSelectedIds(new Set())
+  }, [])
+
+  const toggleSelectSong = useCallback((id) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }, [])
+
+  const handleBulkDelete = useCallback(async () => {
+    if (selectedIds.size === 0) return
+    if (!window.confirm(`Usunąć ${selectedIds.size} zaznaczonych utworów?`)) return
+    await deleteSongs([...selectedIds])
+    setSelectedIds(new Set())
+    setBulkDeleteMode(false)
+  }, [deleteSongs, selectedIds])
 
   const handleImportChange = async (event) => {
     const [file] = event.target.files ?? []
@@ -91,18 +116,44 @@ export function PlaylistSidebar({
             {searchQuery && (
               <button className="sidebar-search-clear" onClick={() => setSearchQuery('')} title="Wyczysc">x</button>
             )}
+            {canEditRoom && (
+              <button
+                className={`sidebar-bulk-delete-toggle${bulkDeleteMode ? ' active' : ''}`}
+                onClick={toggleBulkDelete}
+                title={bulkDeleteMode ? 'Anuluj usuwanie' : 'Zaznacz do usunięcia'}
+              >
+                {bulkDeleteMode ? 'Anuluj' : 'Usuń więcej'}
+              </button>
+            )}
           </div>
           <div className="songs-content">
             <div className="song-list">
               {filteredSongs.map((song) => (
                 <div
                   key={song.id}
-                  className={`song-item${(canEditRoom && currentSong?.id === song.id && isPlaying) || (isViewMode && localCurrentSongId === song.id) ? ' song-playing' : ''}${canEditRoom || isViewMode ? ' song-item-clickable' : ''}`}
-                  onClick={canEditRoom ? () => playSongNow(song) : isViewMode ? () => onLocalPlay(song) : undefined}
+                  className={`song-item${(canEditRoom && currentSong?.id === song.id && isPlaying) || (isViewMode && localCurrentSongId === song.id) ? ' song-playing' : ''}${!bulkDeleteMode && (canEditRoom || isViewMode) ? ' song-item-clickable' : ''}${bulkDeleteMode ? ' song-item-selectable' : ''}${bulkDeleteMode && selectedIds.has(song.id) ? ' song-item-selected' : ''}`}
+                  onClick={
+                    bulkDeleteMode
+                      ? () => toggleSelectSong(song.id)
+                      : canEditRoom
+                        ? () => playSongNow(song)
+                        : isViewMode
+                          ? () => onLocalPlay(song)
+                          : undefined
+                  }
                 >
+                  {bulkDeleteMode && (
+                    <input
+                      type="checkbox"
+                      className="song-select-checkbox"
+                      checked={selectedIds.has(song.id)}
+                      onChange={() => toggleSelectSong(song.id)}
+                      onClick={(event) => event.stopPropagation()}
+                    />
+                  )}
                   {showThumbnails && <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="song-thumb" />}
                   <span className="song-title">{song.title}</span>
-                  {canEditRoom && (
+                  {!bulkDeleteMode && canEditRoom && (
                     <>
                       <button className="btn-icon queue-add" onClick={(event) => { event.stopPropagation(); queueSong(song) }} title="Dodaj do kolejki">+</button>
                       <button className="btn-icon danger" onClick={(event) => { event.stopPropagation(); if (window.confirm(`Usun "${song.title}"?`)) deleteSong(song.id) }} title="Usun">x</button>
@@ -114,6 +165,18 @@ export function PlaylistSidebar({
                 <p className="sidebar-search-empty">Brak wynikow dla "{searchQuery}"</p>
               )}
             </div>
+            {bulkDeleteMode && (
+              <div className="bulk-delete-bar">
+                <span className="bulk-delete-count">{selectedIds.size} zaznaczonych</span>
+                <button
+                  className="bulk-delete-confirm"
+                  onClick={handleBulkDelete}
+                  disabled={selectedIds.size === 0}
+                >
+                  Usuń zaznaczone
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
