@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useReducer, useState } from 'react'
+import { seedSampleRooms } from './dev/seedRooms'
 import { QRCodeSVG } from 'qrcode.react'
 import { GuestView } from './components/GuestView'
 import { ScrollText } from './components/ScrollText'
@@ -16,6 +17,7 @@ import { genId } from './lib/jukebox'
 import {
   addSuggestion,
   createPrivateRoom,
+  createPrivateRoomCopy,
   createPublicRoom,
   deleteRoom,
   deleteSuggestion,
@@ -24,6 +26,7 @@ import {
   replaceRoomSongs,
   saveRoomSetting,
   setMainState,
+  subscribeLatestRooms,
   subscribeOwnedRooms,
   toggleSkipVote,
   voteNextOption,
@@ -68,9 +71,41 @@ function useOwnedRooms(uid, enabled) {
   return enabled && uid ? rooms : []
 }
 
-function HomePage({ onCreateRoom, creatingRoom, user, onSignIn, onSignOut, ownedRooms, onDeleteRoom }) {
+function useLatestForeignRooms(uid, enabled) {
+  const [rooms, setRooms] = useState([])
+
+  useEffect(() => {
+    if (!enabled || !uid) return
+    return subscribeLatestRooms((latestRooms) => {
+      setRooms(
+        latestRooms
+          .filter((room) => room.ownerId !== uid)
+          .filter((room) => (room.songs?.length ?? 0) > 0)
+          .filter((room) => room.settings?.isVisible !== false)
+          .slice(0, 5)
+      )
+    })
+  }, [enabled, uid])
+
+  return enabled && uid ? rooms : []
+}
+
+function HomePage({ onCreateRoom, creatingRoom, user, onSignIn, onSignOut, ownedRooms, latestForeignRooms, onDeleteRoom }) {
   const [roomInput, setRoomInput] = useState('')
+  const [seeding, setSeeding] = useState(false)
   const isLoggedIn = user && !user.isAnonymous
+
+  const handleSeed = async () => {
+    if (!window.confirm('Utworzyc 5 przykladowych list w bazie danych?')) return
+    setSeeding(true)
+    try {
+      await seedSampleRooms()
+      alert('Gotowe! Odswież strone, aby zobaczyc listy.')
+    } catch (err) {
+      alert('Blad: ' + err.message)
+    }
+    setSeeding(false)
+  }
 
   const handleJoin = () => {
     const rawInput = roomInput.trim()
@@ -176,6 +211,50 @@ function HomePage({ onCreateRoom, creatingRoom, user, onSignIn, onSignOut, owned
             </button>
           </div>
         </div>
+
+        <div className="homepage-col">
+          <p className="home-col-title">Ostatnie listy</p>
+          {import.meta.env.DEV && (
+            <button className="home-seed-btn" onClick={handleSeed} disabled={seeding}>
+              {seeding ? 'Tworzenie...' : '+ Wygeneruj przykladowe listy'}
+            </button>
+          )}
+          <div className="home-rooms-list">
+            {isLoggedIn ? (
+              latestForeignRooms.length > 0 ? (
+                latestForeignRooms.map((recentRoom) => {
+                  const ratingsArr = Object.values(recentRoom.ratings ?? {})
+                  const avgRating = ratingsArr.length > 0
+                    ? (ratingsArr.reduce((s, v) => s + v, 0) / ratingsArr.length).toFixed(1)
+                    : null
+                  return (
+                    <a
+                      key={recentRoom.id}
+                      className={`home-room-card${recentRoom.isPlaying ? ' home-room-card--playing' : ''}`}
+                      href={`/?room=${recentRoom.id}&view=1`}
+                    >
+                      <div className="home-room-card-link">
+                        <span className="home-room-icon">♫</span>
+                        <span className="home-room-label">{recentRoom.name || 'Lista'}</span>
+                        <span className="home-room-status">Podejrzyj</span>
+                      </div>
+                      <div className="home-room-stats">
+                        {avgRating !== null && <span>★ {avgRating} ({ratingsArr.length})</span>}
+                        <span>{recentRoom.totalPlays ?? 0} odtw.</span>
+                        <span>{recentRoom.totalVotes ?? 0} gł.</span>
+                        <span>{recentRoom.songs?.length ?? 0} ut.</span>
+                      </div>
+                    </a>
+                  )
+                })
+              ) : (
+                <p className="home-rooms-empty">Brak list do pokazania</p>
+              )
+            ) : (
+              <p className="home-rooms-empty">Zaloguj sie, aby zobaczyc ostatnie listy</p>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -238,11 +317,14 @@ export default function App() {
   const [leftPanel, setLeftPanel] = useState('songs')
   const [hasRoomParam] = useState(() => !!new URLSearchParams(window.location.search).get('room'))
   const [creatingRoom, setCreatingRoom] = useState(false)
-  const { user, roomId, roomType, isOwner, canEditRoom, authReady, roomError, signInWithGoogle, signOutUser } = useRoomAuth()
+  const [copyingRoom, setCopyingRoom] = useState(false)
+  const [localCurrentSongId, setLocalCurrentSongId] = useState(null)
+  const { user, roomId, roomType, isOwner, canEditRoom, isViewMode, authReady, roomError, signInWithGoogle, signOutUser } = useRoomAuth()
   const { room, suggestions } = useRoomSubscriptions(roomId)
 
   const homepageEnabled = !hasRoomParam && !!user && !user.isAnonymous
   const ownedRooms = useOwnedRooms(user?.uid, homepageEnabled)
+  const latestForeignRooms = useLatestForeignRooms(user?.uid, homepageEnabled)
 
   useEffect(() => {
     if (!uiState.copied) return
@@ -310,7 +392,21 @@ export default function App() {
     }
   }, [executeAction, user])
 
+  const handleCopyRoom = useCallback(async () => {
+    if (!user || user.isAnonymous || !room || canEditRoom) return
+    setCopyingRoom(true)
+    const ref = await executeAction(
+      () => createPrivateRoomCopy(user.uid, room),
+      'Nie udalo sie skopiowac pokoju.'
+    )
+    setCopyingRoom(false)
+    if (ref?.id) {
+      window.location.href = `/?room=${ref.id}`
+    }
+  }, [canEditRoom, executeAction, room, user])
+
   const settings = room?.settings ?? {}
+  const isVisible = settings.isVisible !== false
   const playback = useJukeboxPlayback({
     authReady,
     canEditRoom,
@@ -338,6 +434,11 @@ export default function App() {
     voteMode,
   } = playback
 
+  const handleLocalPlay = useCallback((song) => {
+    playerRef.current?.loadVideoById(song.ytId)
+    setLocalCurrentSongId(song.id)
+  }, [playerRef])
+
   const isPlaying = room?.isPlaying ?? false
   const currentSong = room?.currentSong ?? null
   const queue = room?.queue ?? []
@@ -352,7 +453,7 @@ export default function App() {
   const skipCount = Object.keys(skipVoters).length
   const userId = user?.uid ?? null
   const mySkipVote = userId ? (skipVoters[userId] ?? false) : false
-  const showOwnerUI = canEditRoom
+  const showOwnerUI = !!user && !user.isAnonymous
   const myRating = (room?.ratings ?? {})[userId] ?? 0
 
   const saveSettings = useCallback(async (key, value) => {
@@ -447,6 +548,7 @@ export default function App() {
         onSignIn={signInWithGoogle}
         onSignOut={signOutUser}
         ownedRooms={ownedRooms}
+        latestForeignRooms={latestForeignRooms}
         onDeleteRoom={handleDeleteRoom}
       />
     )
@@ -465,6 +567,7 @@ export default function App() {
       {uiState.uiError && <div className="error-banner">{uiState.uiError}</div>}
       <RoomHeader
         showOwnerUI={showOwnerUI}
+        canEditRoom={canEditRoom}
         roomType={roomType}
         leftPanel={leftPanel}
         toggleLeftPanel={toggleLeftPanel}
@@ -481,6 +584,8 @@ export default function App() {
         user={user}
         signInWithGoogle={signInWithGoogle}
         signOutUser={signOutUser}
+        copyRoom={handleCopyRoom}
+        copyingRoom={copyingRoom}
       />
 
       <main className="main">
@@ -488,6 +593,7 @@ export default function App() {
           <PlaylistSidebar
             leftPanel={leftPanel}
             showOwnerUI={showOwnerUI}
+            canEditRoom={canEditRoom}
             roomType={roomType}
             collapsed={uiState.collapsed}
             toggleSection={toggleSection}
@@ -528,6 +634,10 @@ export default function App() {
             showQueueOverlay={panelOpen.showQueue}
             onToggleQr={() => togglePanel('qr')}
             onToggleQueueOverlay={() => togglePanel('showQueue')}
+            isVisible={isVisible}
+            isViewMode={isViewMode}
+            onLocalPlay={handleLocalPlay}
+            localCurrentSongId={localCurrentSongId}
           />
         )}
 
@@ -545,6 +655,21 @@ export default function App() {
                 </div>
               )}
               <div className="admin-scroll-area">
+                {isViewMode && (
+                  <div className="view-mode-banner">
+                    <span className="view-mode-label">Tryb podgladu — lista tylko do odczytu</span>
+                    <button
+                      className="view-mode-copy-btn"
+                      onClick={handleCopyRoom}
+                      disabled={copyingRoom || !user || user.isAnonymous}
+                    >
+                      {copyingRoom ? 'Kopiowanie...' : 'Skopiuj te liste do siebie'}
+                    </button>
+                    {(!user || user.isAnonymous) && (
+                      <span className="view-mode-hint">Zaloguj sie przez Google, aby skopiowac liste</span>
+                    )}
+                  </div>
+                )}
                 <div className="admin-top-row">
                   <NowPlayingPanel
                     isPlaying={isPlaying}
@@ -561,6 +686,7 @@ export default function App() {
                     startJukebox={startJukebox}
                     stopJukebox={stopJukebox}
                     room={room}
+                    canEditRoom={canEditRoom}
                   />
                   {shareLinks.voterUrl && panelOpen.qr && (
                     <div className="admin-qr-panel">

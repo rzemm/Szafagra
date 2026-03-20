@@ -682,6 +682,52 @@ input.input-error { border-color: var(--accent); }
   gap: 1rem;
 }
 
+.view-mode-banner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  text-align: center;
+}
+
+.view-mode-label {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.view-mode-copy-btn {
+  font-size: 1.1rem;
+  font-weight: 700;
+  padding: 0.75rem 2rem;
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+}
+
+.view-mode-copy-btn:hover:not(:disabled) {
+  opacity: 0.85;
+  transform: translateY(-1px);
+}
+
+.view-mode-copy-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.view-mode-hint {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
 .admin-top-row {
   display: flex;
   gap: 1rem;
@@ -3218,13 +3264,18 @@ body.disco-mode .app {
 
 .home-room-card {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   border-radius: 10px;
   border: 1.5px solid var(--border);
   background: var(--surface2);
   color: var(--text);
   transition: border-color 0.15s, background 0.15s;
   overflow: hidden;
+}
+
+.home-room-card--admin {
+  flex-direction: row;
+  align-items: center;
 }
 
 .home-room-card:hover {
@@ -3288,6 +3339,34 @@ body.disco-mode .app {
   font-weight: 700;
   color: var(--accent);
   white-space: nowrap;
+}
+
+.home-room-stats {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0 1rem 0.55rem 1rem;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  flex-wrap: wrap;
+}
+
+.home-seed-btn {
+  font-size: 0.78rem;
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  color: var(--text-dim);
+  padding: 0.3rem 0.75rem;
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+  width: 100%;
+  text-align: left;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.home-seed-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .home-room-status {

@@ -36,6 +36,7 @@ export function extractYtPlaylistId(url) {
 
 export async function fetchYtPlaylistItems(playlistId) {
   if (!YT_API_KEY) throw new Error('Brak klucza YouTube API (VITE_YOUTUBE_API_KEY)')
+  if (playlistId.startsWith('RD')) throw new Error('Listy "Mix" i "Polecane przez YouTube" nie są dostępne przez API. Dodaj utwory ręcznie lub użyj zwykłej playlisty YT.')
   const items = []
   let pageToken = ''
   do {

@@ -51,6 +51,11 @@ export function PlaylistSidebar(props) {
     showQueueOverlay,
     onToggleQr,
     onToggleQueueOverlay,
+    isVisible,
+    canEditRoom,
+    isViewMode,
+    onLocalPlay,
+    localCurrentSongId,
   } = props
 
   const [searchQuery, setSearchQuery] = useState('')
@@ -95,12 +100,12 @@ export function PlaylistSidebar(props) {
               {filteredSongs.map((song) => (
                 <div
                   key={song.id}
-                  className={`song-item${currentSong?.id === song.id && isPlaying ? ' song-playing' : ''}${showOwnerUI ? ' song-item-clickable' : ''}`}
-                  onClick={showOwnerUI ? () => playSongNow(song) : undefined}
+                  className={`song-item${(canEditRoom && currentSong?.id === song.id && isPlaying) || (isViewMode && localCurrentSongId === song.id) ? ' song-playing' : ''}${canEditRoom || isViewMode ? ' song-item-clickable' : ''}`}
+                  onClick={canEditRoom ? () => playSongNow(song) : isViewMode ? () => onLocalPlay(song) : undefined}
                 >
                   {showThumbnails && <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="song-thumb" />}
                   <span className="song-title">{song.title}</span>
-                  {showOwnerUI && (
+                  {canEditRoom && (
                     <>
                       <button className="btn-icon queue-add" onClick={(event) => { event.stopPropagation(); queueSong(song) }} title="Dodaj do kolejki">+</button>
                       <button className="btn-icon danger" onClick={(event) => { event.stopPropagation(); if (window.confirm(`Usun "${song.title}"?`)) deleteSong(song.id) }} title="Usun">🗑</button>
@@ -144,8 +149,8 @@ export function PlaylistSidebar(props) {
                   <span className="queue-pos">{index + 1}</span>
                   {showThumbnails && <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="queue-thumb" />}
                   <ScrollText className="queue-title">{song.title}</ScrollText>
-                  <button className="btn-icon play" onClick={() => playSongNow(song)}>▶</button>
-                  <button className="btn-icon danger" onClick={() => removeFromQueue(song.id)} title="Usun z kolejki">✕</button>
+                  {canEditRoom && <button className="btn-icon play" onClick={() => playSongNow(song)}>▶</button>}
+                  {canEditRoom && <button className="btn-icon danger" onClick={() => removeFromQueue(song.id)} title="Usun z kolejki">✕</button>}
                 </li>
               ))}
             </ol>
@@ -189,6 +194,7 @@ export function PlaylistSidebar(props) {
                 onBlur={handleRoomNameSave}
                 onKeyDown={(e) => e.key === 'Enter' && e.target.blur()}
                 placeholder="Nazwa pokoju..."
+                disabled={!canEditRoom}
               />
             </div>
           </div>
@@ -196,10 +202,10 @@ export function PlaylistSidebar(props) {
           <div className="setting-row">
             <span className="setting-label">Rodzaj glosowania</span>
             <div className="setting-toggle-group">
-              <button className={`btn-setting${voteMode === 'highest' ? ' active' : ''}`} onClick={() => saveSettings('voteMode', 'highest')}>
+              <button className={`btn-setting${voteMode === 'highest' ? ' active' : ''}`} onClick={() => saveSettings('voteMode', 'highest')} disabled={!canEditRoom}>
                 Najwiecej
               </button>
-              <button className={`btn-setting${voteMode === 'weighted' ? ' active' : ''}`} onClick={() => saveSettings('voteMode', 'weighted')}>
+              <button className={`btn-setting${voteMode === 'weighted' ? ' active' : ''}`} onClick={() => saveSettings('voteMode', 'weighted')} disabled={!canEditRoom}>
                 Kazdy ma szanse
               </button>
             </div>
@@ -207,14 +213,14 @@ export function PlaylistSidebar(props) {
 
           <div className="setting-row">
             <span className="setting-label">Utworow w grupie</span>
-            <NotePickerInline value={queueSize} onChange={(n) => saveSettings('queueSize', n)} />
+            <NotePickerInline value={queueSize} onChange={(n) => canEditRoom && saveSettings('queueSize', n)} />
           </div>
 
           <div className="setting-row">
             <span className="setting-label">Min. zakolejkowanych</span>
             <div className="note-picker note-picker-sm">
               {[0, 1, 2, 3, 4].map((count) => (
-                <button key={count} className={`note-btn${voteThreshold === count ? ' active' : ''}`} onClick={() => saveSettings('voteThreshold', count)}>
+                <button key={count} className={`note-btn${voteThreshold === count ? ' active' : ''}`} onClick={() => saveSettings('voteThreshold', count)} disabled={!canEditRoom}>
                   {count}
                 </button>
               ))}
@@ -230,16 +236,17 @@ export function PlaylistSidebar(props) {
               max="99"
               value={skipThreshold}
               onChange={(e) => saveSettings('skipThreshold', Math.max(0, parseInt(e.target.value) || 0))}
+              disabled={!canEditRoom}
             />
           </div>
 
           <div className="setting-row">
             <span className="setting-label">Propozycje gosci</span>
             <div className="setting-toggle-group">
-              <button className={`btn-setting${!allowSuggestions ? ' active' : ''}`} onClick={() => saveSettings('allowSuggestions', false)}>
+              <button className={`btn-setting${!allowSuggestions ? ' active' : ''}`} onClick={() => saveSettings('allowSuggestions', false)} disabled={!canEditRoom}>
                 Wylaczone
               </button>
-              <button className={`btn-setting${allowSuggestions ? ' active' : ''}`} onClick={() => saveSettings('allowSuggestions', true)}>
+              <button className={`btn-setting${allowSuggestions ? ' active' : ''}`} onClick={() => saveSettings('allowSuggestions', true)} disabled={!canEditRoom}>
                 Wlaczone
               </button>
             </div>
@@ -248,11 +255,23 @@ export function PlaylistSidebar(props) {
           <div className="setting-row">
             <span className="setting-label">Miniatury</span>
             <div className="setting-toggle-group">
-              <button className={`btn-setting${!showThumbnails ? ' active' : ''}`} onClick={() => saveSettings('showThumbnails', false)}>
+              <button className={`btn-setting${!showThumbnails ? ' active' : ''}`} onClick={() => saveSettings('showThumbnails', false)} disabled={!canEditRoom}>
                 Wylaczone
               </button>
-              <button className={`btn-setting${showThumbnails ? ' active' : ''}`} onClick={() => saveSettings('showThumbnails', true)}>
+              <button className={`btn-setting${showThumbnails ? ' active' : ''}`} onClick={() => saveSettings('showThumbnails', true)} disabled={!canEditRoom}>
                 Wlaczone
+              </button>
+            </div>
+          </div>
+
+          <div className="setting-row">
+            <span className="setting-label">Widocznosc listy</span>
+            <div className="setting-toggle-group">
+              <button className={`btn-setting${isVisible === false ? ' active' : ''}`} onClick={() => saveSettings('isVisible', false)} disabled={!canEditRoom}>
+                Ukryta
+              </button>
+              <button className={`btn-setting${isVisible !== false ? ' active' : ''}`} onClick={() => saveSettings('isVisible', true)} disabled={!canEditRoom}>
+                Widoczna
               </button>
             </div>
           </div>
@@ -309,23 +328,24 @@ export function PlaylistSidebar(props) {
           </div>
 
           <div className="setting-row setting-row--actions">
-            <button
-              className="btn-setting-action"
-              onClick={copyAdminLink}
-            >
-              {copied === 'admin'
-                ? '✓ Skopiowano'
-                : roomType === 'public'
-                  ? '⎋ Skopiuj link pokoju'
-                  : '⚙ Skopiuj link admina'}
-            </button>
+            {canEditRoom && (
+              <button className="btn-setting-action" onClick={copyAdminLink}>
+                {copied === 'admin'
+                  ? '✓ Skopiowano'
+                  : roomType === 'public'
+                    ? '⎋ Skopiuj link pokoju'
+                    : '⚙ Skopiuj link admina'}
+              </button>
+            )}
             <button className="btn-setting-action" onClick={exportPlaylist}>
               ↓ Eksportuj liste
             </button>
-            <label className="btn-setting-action btn-file">
-              ↑ Importuj liste
-              <input type="file" accept="application/json,.json" onChange={handleImportChange} />
-            </label>
+            {canEditRoom && (
+              <label className="btn-setting-action btn-file">
+                ↑ Importuj liste
+                <input type="file" accept="application/json,.json" onChange={handleImportChange} />
+              </label>
+            )}
           </div>
 
         </div>

@@ -11,6 +11,7 @@ const GoogleIcon = () => (
 
 export function RoomHeader({
   showOwnerUI,
+  canEditRoom,
   roomType,
   leftPanel,
   toggleLeftPanel,
@@ -27,6 +28,8 @@ export function RoomHeader({
   user,
   signInWithGoogle,
   signOutUser,
+  copyRoom,
+  copyingRoom,
 }) {
   const [guestCopied, setGuestCopied] = useState(false)
 
@@ -47,29 +50,29 @@ export function RoomHeader({
               onClick={() => toggleLeftPanel('songs')}
               title="Lista piosenek"
             >
-              ♫ Lista
+              Lista
             </button>
             <button
               className={`btn-panel-toggle${leftPanel === 'queue' ? ' active' : ''}`}
               onClick={() => toggleLeftPanel('queue')}
               title="Kolejka odtwarzania"
             >
-              ▤ Kolejka
+              Kolejka
             </button>
             <button
               className={`btn-panel-toggle${leftPanel === 'settings' ? ' active' : ''}`}
               onClick={() => toggleLeftPanel('settings')}
               title="Ustawienia pokoju"
             >
-              ⚙ Ustawienia
+              Ustawienia
             </button>
           </>
         )}
-        <span className="header-icon">🎵</span>
+        <span className="header-icon">Muzyka</span>
         <a href="/" className="header-logo">szafi.fi</a>
       </div>
 
-      {showOwnerUI && (
+      {showOwnerUI && canEditRoom && (
         <div className="header-add-song">
           <input
             className="header-song-input"
@@ -77,7 +80,7 @@ export function RoomHeader({
             onChange={(event) => setNewSongUrl(event.target.value)}
             onBlur={handleUrlBlur}
             onKeyDown={(event) => event.key === 'Enter' && addSong()}
-            placeholder={fetchingTitle ? 'Pobieranie tytulu...' : newSongTitle ? `🎵 ${newSongTitle}` : 'Dodaj piosenke lub liste - wklej link z Youtube'}
+            placeholder={fetchingTitle ? 'Pobieranie tytulu...' : newSongTitle ? `Muzyka ${newSongTitle}` : 'Dodaj piosenke lub liste - wklej link z YouTube'}
             title={urlErr || undefined}
             style={urlErr ? { borderColor: 'var(--accent)' } : undefined}
             disabled={!room}
@@ -100,12 +103,10 @@ export function RoomHeader({
         ) : null}
 
         {showOwnerUI ? (
-          <>
-            <a className="btn-share" href="https://buycoffee.to/szafifi" target="_blank" rel="noreferrer">☕ Postaw kawe</a>
-          </>
+          <a className="btn-share" href="https://buycoffee.to/szafifi" target="_blank" rel="noreferrer">Postaw kawe</a>
         ) : (
           <button className="btn-header-share" onClick={copyGuestLink} title="Udostepnij link">
-            {guestCopied ? '✓' : '⎋'}
+            {guestCopied ? 'OK' : 'Link'}
           </button>
         )}
       </div>

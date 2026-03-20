@@ -18,6 +18,10 @@ export function useSongActions({
 
     const playlistId = extractYtPlaylistId(url)
     if (playlistId) {
+      if (playlistId.startsWith('RD')) {
+        dispatch({ type: 'setField', field: 'urlErr', value: 'Listy "Mix" i "Polecane przez YouTube" nie są dostępne przez API. Dodaj utwory ręcznie lub użyj zwykłej playlisty YT.' })
+        return
+      }
       dispatch({ type: 'setField', field: 'ytPlaylistId', value: playlistId })
       return
     }
@@ -45,8 +49,12 @@ export function useSongActions({
       const fetched = await fetchYtPlaylistItems(ytPlaylistId)
       if (fetched.length === 0) throw new Error('Playlista pusta lub niedostępna przez API')
 
-      const newSongs = fetched.map((song) => ({ id: genId(), ...song, title: cleanTitle(song.title) }))
       const existing = room?.songs ?? []
+      const existingIds = new Set(existing.map((s) => s.ytId))
+      const newSongs = fetched
+        .filter((song) => !existingIds.has(song.ytId))
+        .map((song) => ({ id: genId(), ...song, title: cleanTitle(song.title) }))
+      if (newSongs.length === 0) throw new Error('Wszystkie utwory z tej playlisty są już na liście.')
       return replaceRoomSongs(roomId, [...existing, ...newSongs])
     }, 'Nie udało się zaimportować playlisty YouTube.')
     dispatch({ type: 'setField', field: 'importingYtPlaylist', value: false })

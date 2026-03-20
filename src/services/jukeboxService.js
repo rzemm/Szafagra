@@ -5,7 +5,9 @@ import {
   doc,
   getDoc,
   increment,
+  limit,
   onSnapshot,
+  orderBy,
   query,
   serverTimestamp,
   setDoc,
@@ -31,6 +33,7 @@ function defaultSettings() {
     queueSize: 1,
     allowSuggestions: false,
     showThumbnails: true,
+    isVisible: true,
   }
 }
 
@@ -80,6 +83,36 @@ export async function createPrivateRoom(ownerId, name = 'Nowy pokoj prywatny') {
     ownerId,
     guestToken,
   }))
+
+  await setDoc(tokenRef(guestToken), {
+    roomId: newRoomRef.id,
+    type: 'private',
+    createdAt: serverTimestamp(),
+  })
+
+  return newRoomRef
+}
+
+export async function createPrivateRoomCopy(ownerId, sourceRoom) {
+  const guestToken = await createUniqueGuestToken()
+  const newRoomRef = doc(roomsRef)
+  const sourceName = typeof sourceRoom?.name === 'string' && sourceRoom.name.trim()
+    ? sourceRoom.name.trim()
+    : 'Pokoj prywatny'
+
+  await setDoc(newRoomRef, {
+    ...createRoomPayload({
+      type: 'private',
+      name: `${sourceName} (kopia)`,
+      ownerId,
+      guestToken,
+    }),
+    songs: Array.isArray(sourceRoom?.songs) ? sourceRoom.songs : [],
+    settings: {
+      ...defaultSettings(),
+      ...(sourceRoom?.settings ?? {}),
+    },
+  })
 
   await setDoc(tokenRef(guestToken), {
     roomId: newRoomRef.id,
@@ -143,6 +176,19 @@ export function subscribeOwnedRooms(uid, callback) {
     const rooms = snap.docs
       .map(d => ({ id: d.id, ...d.data() }))
       .sort((a, b) => (b.updatedAt?.toMillis?.() ?? 0) - (a.updatedAt?.toMillis?.() ?? 0))
+    callback(rooms)
+  })
+}
+
+export function subscribeLatestRooms(callback, count = 5) {
+  const latestRoomsQuery = query(
+    roomsRef,
+    orderBy('updatedAt', 'desc'),
+    limit(Math.max(count * 3, 10)),
+  )
+
+  return onSnapshot(latestRoomsQuery, snap => {
+    const rooms = snap.docs.map(d => ({ id: d.id, ...d.data() }))
     callback(rooms)
   })
 }

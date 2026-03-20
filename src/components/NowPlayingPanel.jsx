@@ -2,7 +2,7 @@ import { createPortal } from 'react-dom'
 import { useEffect, useState } from 'react'
 import { formatTime } from '../lib/jukebox'
 
-export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerState, loadProgress, playerRef, playerDivRef, playerReady, advanceToWinner, skipThreshold, skipCount, startJukebox, stopJukebox, room }) {
+export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerState, loadProgress, playerRef, playerDivRef, playerReady, advanceToWinner, skipThreshold, skipCount, startJukebox, stopJukebox, room, canEditRoom }) {
   const [volume, setVolume] = useState(80)
   const [discoMode, setDiscoMode] = useState(true)
   const [blurAmount, setBlurAmount] = useState(8)
@@ -52,7 +52,7 @@ export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerSta
 
           {!discoMode && (
             <div className="player-controls">
-              {!isPlaying ? (
+              {canEditRoom && (!isPlaying ? (
                 <button
                   className="btn-ctrl btn-ctrl-start"
                   onClick={startJukebox}
@@ -68,7 +68,7 @@ export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerSta
                   <button className="btn-ctrl btn-ctrl-skip" onClick={advanceToWinner}>⏭</button>
                   <button className="btn-ctrl btn-ctrl-stop" onClick={stopJukebox}>■ STOP</button>
                 </>
-              )}
+              ))}
               <button
                 className="btn-ctrl btn-ctrl-disco"
                 onClick={() => setDiscoMode(true)}
@@ -117,7 +117,7 @@ export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerSta
           </div>
 
           <div className="disco-bar-controls">
-            {!isPlaying ? (
+            {canEditRoom && (!isPlaying ? (
               <button
                 className="btn-ctrl btn-ctrl-start"
                 onClick={startJukebox}
@@ -133,7 +133,7 @@ export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerSta
                 <button className="btn-ctrl btn-ctrl-skip" onClick={advanceToWinner}>⏭</button>
                 <button className="btn-ctrl btn-ctrl-stop" onClick={stopJukebox}>■ STOP</button>
               </>
-            )}
+            ))}
           </div>
 
           <div className="disco-bar-extras">
