@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ContactMessageForm } from './ContactMessageForm'
 import { NotePicker } from './NotePicker'
 import { ScrollText } from './ScrollText'
 
@@ -43,8 +44,10 @@ export function PlaylistSidebar({
   isViewMode,
   onLocalPlay,
   localCurrentSongId,
+  onSubmitMessage,
 }) {
   const [searchQuery, setSearchQuery] = useState('')
+
   const handleImportChange = async (event) => {
     const [file] = event.target.files ?? []
     if (file) await importPlaylist(file)
@@ -74,7 +77,7 @@ export function PlaylistSidebar({
               onChange={(event) => setSearchQuery(event.target.value)}
             />
             {searchQuery && (
-              <button className="sidebar-search-clear" onClick={() => setSearchQuery('')} title="Wyczysc">✕</button>
+              <button className="sidebar-search-clear" onClick={() => setSearchQuery('')} title="Wyczysc">x</button>
             )}
           </div>
           <div className="songs-content">
@@ -90,7 +93,7 @@ export function PlaylistSidebar({
                   {canEditRoom && (
                     <>
                       <button className="btn-icon queue-add" onClick={(event) => { event.stopPropagation(); queueSong(song) }} title="Dodaj do kolejki">+</button>
-                      <button className="btn-icon danger" onClick={(event) => { event.stopPropagation(); if (window.confirm(`Usun "${song.title}"?`)) deleteSong(song.id) }} title="Usun">🗑</button>
+                      <button className="btn-icon danger" onClick={(event) => { event.stopPropagation(); if (window.confirm(`Usun "${song.title}"?`)) deleteSong(song.id) }} title="Usun">x</button>
                     </>
                   )}
                 </div>
@@ -129,8 +132,8 @@ export function PlaylistSidebar({
                   <span className="queue-pos">{index + 1}</span>
                   {showThumbnails && <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="queue-thumb" />}
                   <ScrollText className="queue-title">{song.title}</ScrollText>
-                  {canEditRoom && <button className="btn-icon play" onClick={() => playSongNow(song)}>▶</button>}
-                  {canEditRoom && <button className="btn-icon danger" onClick={() => removeFromQueue(song.id)} title="Usun z kolejki">✕</button>}
+                  {canEditRoom && <button className="btn-icon play" onClick={() => playSongNow(song)}>Play</button>}
+                  {canEditRoom && <button className="btn-icon danger" onClick={() => removeFromQueue(song.id)} title="Usun z kolejki">x</button>}
                 </li>
               ))}
             </ol>
@@ -151,8 +154,8 @@ export function PlaylistSidebar({
                 {showThumbnails && <img src={`https://img.youtube.com/vi/${suggestion.ytId}/default.jpg`} alt="" className="song-thumb" />}
                 <span className="song-title">{suggestion.title}</span>
                 <div className="suggestion-actions">
-                  <button className="btn-icon play" onClick={() => approveSuggestion(suggestion)} title="Dodaj do listy">✓</button>
-                  <button className="btn-icon danger" onClick={() => rejectSuggestion(suggestion.id)} title="Odrzuc">✕</button>
+                  <button className="btn-icon play" onClick={() => approveSuggestion(suggestion)} title="Dodaj do listy">OK</button>
+                  <button className="btn-icon danger" onClick={() => rejectSuggestion(suggestion.id)} title="Odrzuc">x</button>
                 </div>
               </div>
             ))}
@@ -162,15 +165,13 @@ export function PlaylistSidebar({
 
       {leftPanel === 'settings' && (
         <div className="section sidebar-settings-list">
-
-          {/* Grupa 1 — Głosowanie */}
           <div className="settings-group">
             <span className="settings-group-title">Glosowanie</span>
 
             <div className="setting-row">
               <span className="setting-label">Rodzaj glosowania</span>
               <div className="setting-toggle-group">
-                <button className={`btn-setting${voteMode === 'highest' ? ' active' : ''}`} onClick={() => saveSettings('voteMode', 'highest')} disabled={!canEditRoom}>🏆</button>
+                <button className={`btn-setting${voteMode === 'highest' ? ' active' : ''}`} onClick={() => saveSettings('voteMode', 'highest')} disabled={!canEditRoom}>Top</button>
                 <button className={`btn-setting${voteMode === 'weighted' ? ' active' : ''}`} onClick={() => saveSettings('voteMode', 'weighted')} disabled={!canEditRoom}>%</button>
               </div>
             </div>
@@ -207,7 +208,7 @@ export function PlaylistSidebar({
             <div className="setting-row">
               <span className="setting-label">Propozycje gosci</span>
               <label className="toggle-switch">
-                <input type="checkbox" checked={!!allowSuggestions} onChange={(e) => saveSettings('allowSuggestions', e.target.checked)} disabled={!canEditRoom} />
+                <input type="checkbox" checked={!!allowSuggestions} onChange={(event) => saveSettings('allowSuggestions', event.target.checked)} disabled={!canEditRoom} />
                 <span className="toggle-slider" />
               </label>
             </div>
@@ -215,13 +216,12 @@ export function PlaylistSidebar({
             <div className="setting-row">
               <span className="setting-label">Sluchaj u goscia</span>
               <label className="toggle-switch">
-                <input type="checkbox" checked={!!allowGuestListening} onChange={(e) => saveSettings('allowGuestListening', e.target.checked)} disabled={!canEditRoom} />
+                <input type="checkbox" checked={!!allowGuestListening} onChange={(event) => saveSettings('allowGuestListening', event.target.checked)} disabled={!canEditRoom} />
                 <span className="toggle-slider" />
               </label>
             </div>
           </div>
 
-          {/* Grupa 2 — Wyświetlanie */}
           <div className="settings-group">
             <span className="settings-group-title">Wyswietlanie</span>
 
@@ -232,7 +232,7 @@ export function PlaylistSidebar({
                 type="text"
                 placeholder="Tekst paska..."
                 value={tickerText}
-                onChange={(e) => saveSettings('tickerText', e.target.value)}
+                onChange={(event) => saveSettings('tickerText', event.target.value)}
                 disabled={!canEditRoom}
               />
               <div className="setting-toggle-group">
@@ -244,7 +244,7 @@ export function PlaylistSidebar({
             <div className="setting-row">
               <span className="setting-label">Miniatury</span>
               <label className="toggle-switch">
-                <input type="checkbox" checked={!!showThumbnails} onChange={(e) => saveSettings('showThumbnails', e.target.checked)} disabled={!canEditRoom} />
+                <input type="checkbox" checked={!!showThumbnails} onChange={(event) => saveSettings('showThumbnails', event.target.checked)} disabled={!canEditRoom} />
                 <span className="toggle-slider" />
               </label>
             </div>
@@ -274,7 +274,6 @@ export function PlaylistSidebar({
             </div>
           </div>
 
-          {/* Grupa 3 — Opcje pokoju */}
           <div className="settings-group">
             <span className="settings-group-title">Opcje pokoju</span>
 
@@ -294,7 +293,7 @@ export function PlaylistSidebar({
             <div className="setting-row">
               <span className="setting-label">Widocznosc pokoju</span>
               <label className="toggle-switch">
-                <input type="checkbox" checked={isVisible !== false} onChange={(e) => saveSettings('isVisible', e.target.checked)} disabled={!canEditRoom} />
+                <input type="checkbox" checked={isVisible !== false} onChange={(event) => saveSettings('isVisible', event.target.checked)} disabled={!canEditRoom} />
                 <span className="toggle-slider" />
               </label>
             </div>
@@ -307,6 +306,7 @@ export function PlaylistSidebar({
                 const avgRating = ratingCount > 0
                   ? (ratingValues.reduce((sum, value) => sum + value, 0) / ratingCount).toFixed(1)
                   : '-'
+
                 return (
                   <div className="settings-stats">
                     <div className="settings-stat">
@@ -329,22 +329,34 @@ export function PlaylistSidebar({
             {canEditRoom && (
               <div className="setting-row">
                 <button className="btn-setting-action" style={{ flex: 1 }} onClick={copyAdminLink}>
-                  {copied === 'admin' ? '✓ Skopiowano' : roomType === 'public' ? '⎋ Skopiuj link pokoju' : '⚙ Skopiuj link admina'}
+                  {copied === 'admin' ? 'Skopiowano' : roomType === 'public' ? 'Skopiuj link pokoju' : 'Skopiuj link admina'}
                 </button>
               </div>
             )}
 
             <div className="setting-row setting-row--import-export">
-              <button className="btn-setting-action" style={{ flex: 1 }} onClick={exportPlaylist}>↓ Eksportuj</button>
+              <button className="btn-setting-action" style={{ flex: 1 }} onClick={exportPlaylist}>Eksportuj</button>
               {canEditRoom && (
                 <label className="btn-setting-action btn-file" style={{ flex: 1 }}>
-                  ↑ Importuj
+                  Importuj
                   <input type="file" accept="application/json,.json" onChange={handleImportChange} />
                 </label>
               )}
             </div>
-          </div>
 
+            <div className="setting-row setting-row--message">
+              <ContactMessageForm
+                triggerClassName="btn-setting-action"
+                triggerLabel="Napisz wiadomosc"
+                title="Napisz wiadomosc o pokoju"
+                description="Mozesz zapisac uwage, blad albo pomysl powiazany z tym pokojem."
+                successMessage="Wiadomosc zostala zapisana."
+                submitLabel="Wyslij wiadomosc"
+                panelClassName="settings-contact-form"
+                onSubmit={(payload) => onSubmitMessage({ ...payload, source: 'guest_room', roomId: room?.id ?? null })}
+              />
+            </div>
+          </div>
         </div>
       )}
     </aside>

@@ -92,6 +92,43 @@ service cloud.firestore {
         );
     }
 
+    function validContactSource() {
+      return request.resource.data.source in ['guest_room', 'homepage'];
+    }
+
+    function validOptionalString(field) {
+      return !(field in request.resource.data) || request.resource.data[field] is string;
+    }
+
+    function validContactMessageCreate() {
+      return request.resource.data.keys().hasOnly([
+          'message',
+          'authorName',
+          'authorEmail',
+          'createdAt',
+          'source',
+          'roomId',
+          'userId',
+          'status'
+        ]) &&
+        request.resource.data.keys().hasAll(['message', 'createdAt', 'source', 'status']) &&
+        request.resource.data.message is string &&
+        request.resource.data.message.size() > 0 &&
+        validOptionalString('authorName') &&
+        validOptionalString('authorEmail') &&
+        validOptionalString('roomId') &&
+        (
+          !('userId' in request.resource.data) ||
+          (
+            request.resource.data.userId is string &&
+            request.resource.data.userId == request.auth.uid
+          )
+        ) &&
+        request.resource.data.status == 'new' &&
+        validContactSource() &&
+        request.resource.data.createdAt == request.time;
+    }
+
     match /userRooms/{uid} {
       allow read, write: if request.auth.uid == uid;
     }
@@ -113,6 +150,11 @@ service cloud.firestore {
           roomData(request.resource.data.roomId).ownerId == request.auth.uid
         );
       allow update, delete: if false;
+    }
+
+    match /contactMessages/{messageId} {
+      allow create: if signedIn() && validContactMessageCreate();
+      allow read, update, delete: if false;
     }
 
     match /rooms/{roomId} {

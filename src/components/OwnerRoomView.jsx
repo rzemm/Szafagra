@@ -59,6 +59,7 @@ export function OwnerRoomView({
   toggleSection,
   startEditPlaylist,
   cancelEditPlaylist,
+  onSubmitMessage,
 }) {
   const voteCounts = nextOptionKeys.map((key) => Object.values(nextVotesData).filter((value) => value === key).length)
   const totalVotes = Object.values(nextVotesData).length
@@ -118,6 +119,7 @@ export function OwnerRoomView({
         importFromYouTube={songActions.importFromYouTube}
         collapsed={uiState.collapsed}
         toggleSection={toggleSection}
+        onSubmitMessage={onSubmitMessage}
       />
 
       <div className="player-area player-area-admin">

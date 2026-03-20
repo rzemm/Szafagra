@@ -3,6 +3,7 @@ import { seedSampleRooms } from '../dev/seedRooms'
 import { genId } from '../lib/jukebox'
 import {
   addSuggestion,
+  createContactMessage,
   createPrivateRoom,
   createPrivateRoomCopy,
   createPublicRoom,
@@ -259,6 +260,28 @@ export function useRoomScreen(route) {
     return done !== null
   }, [auth.roomId, executeAction, userId])
 
+  const submitContactMessage = useCallback(async ({
+    message,
+    authorName,
+    authorEmail,
+    source,
+    roomId = null,
+  }) => {
+    try {
+      await createContactMessage({
+        message,
+        authorName,
+        authorEmail,
+        source,
+        roomId,
+        userId,
+      })
+      return true
+    } catch (error) {
+      throw new Error(error?.message || 'Nie udalo sie wyslac wiadomosci.')
+    }
+  }, [userId])
+
   const approveSuggestion = useCallback(async (suggestion) => {
     if (!auth.roomId || !room) return
     const song = { id: genId(), title: suggestion.title, ytId: suggestion.ytId, url: suggestion.url }
@@ -355,6 +378,7 @@ export function useRoomScreen(route) {
     voteSkip,
     rateActivePlaylist,
     submitSuggestion,
+    submitContactMessage,
     approveSuggestion,
     rejectSuggestion,
     playlistActions,

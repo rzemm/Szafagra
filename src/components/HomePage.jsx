@@ -42,7 +42,7 @@ export function HomePage({
     <div className="homepage">
       <div className="homepage-top">
         <div className="homepage-logo">
-          <span className="homepage-logo-icon">🎵</span>
+          <span className="homepage-logo-icon">đźŽµ</span>
           <span className="header-logo">szafi.fi</span>
         </div>
         {isLoggedIn ? (
@@ -92,7 +92,7 @@ export function HomePage({
                   ownedRooms.map((ownedRoom) => (
                     <div key={ownedRoom.id} className={`home-room-card home-room-card--admin${ownedRoom.isPlaying ? ' home-room-card--playing' : ''}`}>
                       <a className="home-room-card-link" href={`/?room=${ownedRoom.id}`}>
-                        <span className="home-room-icon">🎛</span>
+                        <span className="home-room-icon">đźŽ›</span>
                         <ScrollText className="home-room-label">{ownedRoom.name || 'Pokoj prywatny'}</ScrollText>
                       </a>
                       <button
@@ -103,7 +103,7 @@ export function HomePage({
                           onDeleteRoom(ownedRoom)
                         }}
                       >
-                        🗑
+                        đź—‘
                       </button>
                     </div>
                   ))
@@ -115,7 +115,7 @@ export function HomePage({
               )}
             </div>
             <button className="homepage-btn homepage-btn--primary" onClick={onCreateRoom} disabled={creatingRoom}>
-              <span className="homepage-btn-icon">✦</span>
+              <span className="homepage-btn-icon">âś¦</span>
               {creatingRoom ? 'Tworzenie...' : 'Utworz nowy pokoj'}
             </button>
           </div>
@@ -152,21 +152,21 @@ export function HomePage({
                         <div className="home-room-stats">
                           {avgRating !== null && (
                             <span className="home-room-stat home-room-stat--rating">
-                              <span className="home-stat-icon">★</span>
+                              <span className="home-stat-icon">â…</span>
                               <span className="home-stat-val">{avgRating}</span>
                               <span className="home-stat-sub">/{ratingsArr.length}</span>
                             </span>
                           )}
                           <span className="home-room-stat">
-                            <span className="home-stat-icon">▶</span>
+                            <span className="home-stat-icon">â–¶</span>
                             <span className="home-stat-val">{recentRoom.totalPlays ?? 0}</span>
                           </span>
                           <span className="home-room-stat">
-                            <span className="home-stat-icon">✔</span>
+                            <span className="home-stat-icon">âś”</span>
                             <span className="home-stat-val">{recentRoom.totalVotes ?? 0}</span>
                           </span>
                           <span className="home-room-stat">
-                            <span className="home-stat-icon">♪</span>
+                            <span className="home-stat-icon">â™Ş</span>
                             <span className="home-stat-val">{recentRoom.songs?.length ?? 0}</span>
                           </span>
                         </div>

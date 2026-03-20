@@ -125,6 +125,7 @@ export default function App() {
             toggleSection={screen.toggleSection}
             startEditPlaylist={screen.startEditPlaylist}
             cancelEditPlaylist={screen.cancelEditPlaylist}
+            onSubmitMessage={screen.submitContactMessage}
           />
         ) : (
           <GuestRoomView
@@ -151,6 +152,7 @@ export default function App() {
             onRate={screen.rateActivePlaylist}
             showThumbnails={screen.showThumbnails}
             jukeboxState={screen.room}
+            onSubmitMessage={screen.submitContactMessage}
           />
         )}
       </main>

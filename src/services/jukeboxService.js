@@ -1,4 +1,5 @@
 import {
+  addDoc,
   collection,
   deleteDoc,
   deleteField,
@@ -24,6 +25,9 @@ const suggestionRef = (roomId, id) => doc(db, 'rooms', roomId, 'suggestions', id
 const tokenRef = token => doc(db, 'tokenIndex', token)
 const userRoomsRef = uid => doc(db, 'userRooms', uid)
 const publicAccessRef = (uid, roomId) => doc(db, 'publicAccess', uid, 'rooms', roomId)
+const contactMessagesRef = collection(db, 'contactMessages')
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function defaultSettings() {
   return {
@@ -284,6 +288,41 @@ export function incrementRoomVotes(roomId) {
     totalVotes: increment(1),
     updatedAt: serverTimestamp(),
   })
+}
+
+export async function createContactMessage({
+  message,
+  authorName = '',
+  authorEmail = '',
+  source,
+  roomId = null,
+  userId = null,
+}) {
+  const trimmedMessage = message?.trim() ?? ''
+  const trimmedAuthorName = authorName?.trim() ?? ''
+  const trimmedAuthorEmail = authorEmail?.trim() ?? ''
+
+  if (!trimmedMessage) {
+    throw new Error('Wiadomosc nie moze byc pusta.')
+  }
+
+  if (trimmedAuthorEmail && !EMAIL_REGEX.test(trimmedAuthorEmail)) {
+    throw new Error('Podaj poprawny adres email.')
+  }
+
+  const payload = {
+    message: trimmedMessage,
+    authorName: trimmedAuthorName,
+    authorEmail: trimmedAuthorEmail,
+    source,
+    status: 'new',
+    createdAt: serverTimestamp(),
+  }
+
+  if (roomId) payload.roomId = roomId
+  if (userId) payload.userId = userId
+
+  return addDoc(contactMessagesRef, payload)
 }
 
 export async function deleteRoom(roomId, guestToken) {
