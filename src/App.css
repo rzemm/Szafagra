@@ -2916,10 +2916,26 @@ body.disco-mode .app {
 
 .homepage-body {
   display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 1rem;
+  width: 100%;
+  max-width: 960px;
+  overflow: hidden;
+}
+
+.homepage-join-row {
+  display: flex;
+  flex-direction: row;
+  gap: 0.75rem;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.homepage-cols-row {
+  display: flex;
   flex: 1;
   gap: 1.5rem;
-  width: 100%;
-  max-width: 860px;
   overflow: hidden;
 }
 
@@ -3028,42 +3044,31 @@ body.disco-mode .app {
   transform: none;
 }
 
-.homepage-divider {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  gap: 0.75rem;
-  color: var(--text-dim);
-  font-size: 0.85rem;
+.homepage-btn--join {
+  background: var(--surface2);
+  color: var(--text);
+  border-color: var(--border);
+  width: auto;
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding: 0.9rem 1.4rem;
+  font-size: 1rem;
 }
 
-.homepage-divider::before,
-.homepage-divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--border);
-}
-
-.homepage-join {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  width: 100%;
-}
-
-.homepage-join .homepage-btn {
-  width: 100%;
+.homepage-btn--join:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .homepage-join-input {
   flex: 1;
   padding: 0.9rem 1rem;
   font-size: 1rem;
-  background: var(--surface2);
+  background: var(--surface);
   color: var(--text);
-  border: 2px solid var(--border);
-  border-radius: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   outline: none;
   font-family: monospace;
   transition: border-color 0.15s;
@@ -3296,10 +3301,9 @@ body.disco-mode .app {
   display: flex;
   flex-direction: column;
   border-radius: 10px;
-  border: 1.5px solid var(--border);
   background: var(--surface2);
   color: var(--text);
-  transition: border-color 0.15s, background 0.15s;
+  transition: background 0.15s;
   overflow: hidden;
 }
 
@@ -3309,8 +3313,7 @@ body.disco-mode .app {
 }
 
 .home-room-card:hover {
-  border-color: var(--accent);
-  background: var(--surface3, var(--surface2));
+  background: var(--surface3, color-mix(in srgb, var(--surface2) 80%, var(--accent) 20%));
 }
 
 .home-room-card-link {
@@ -3342,7 +3345,7 @@ body.disco-mode .app {
 }
 
 .home-room-card--playing {
-  border-color: var(--accent);
+  background: color-mix(in srgb, var(--surface2) 85%, var(--accent) 15%);
 }
 
 .home-room-icon {
@@ -3354,6 +3357,8 @@ body.disco-mode .app {
   flex: 1;
   font-size: 0.9rem;
   font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .home-room-token {
@@ -3373,11 +3378,40 @@ body.disco-mode .app {
 
 .home-room-stats {
   display: flex;
-  gap: 0.75rem;
-  padding: 0 1rem 0.55rem 1rem;
-  font-size: 0.75rem;
-  color: var(--text-dim);
+  gap: 0.35rem;
+  padding: 0 0.75rem 0.6rem;
   flex-wrap: wrap;
+}
+
+.home-room-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  background: var(--surface3, rgba(255,255,255,0.05));
+  border-radius: 5px;
+  padding: 0.15rem 0.45rem;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+.home-room-stat--rating {
+  color: #f5b942;
+}
+
+.home-stat-icon {
+  font-size: 0.65rem;
+  opacity: 0.8;
+}
+
+.home-stat-val {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.home-stat-sub {
+  opacity: 0.6;
+  font-size: 0.65rem;
 }
 
 .home-seed-btn {
@@ -3399,11 +3433,6 @@ body.disco-mode .app {
   color: var(--accent);
 }
 
-.home-room-status {
-  font-size: 0.75rem;
-  color: var(--text-dim);
-  white-space: nowrap;
-}
 
 /* ─── Homepage user bar ─────────────────────────────────────────────────────── */
 .home-user-bar {

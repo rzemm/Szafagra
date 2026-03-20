@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ScrollText } from './ScrollText.jsx'
 
 const GoogleLogoSvg = () => (
   <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true" style={{ flexShrink: 0 }}>
@@ -62,111 +63,123 @@ export function HomePage({
       </div>
 
       <div className="homepage-body">
-        <div className="homepage-col">
-          <p className="home-col-title">Twoje pokoje</p>
-          <div className="home-rooms-list">
-            {isLoggedIn ? (
-              ownedRooms.length > 0 ? (
-                ownedRooms.map((ownedRoom) => (
-                  <div key={ownedRoom.id} className={`home-room-card home-room-card--admin${ownedRoom.isPlaying ? ' home-room-card--playing' : ''}`}>
-                    <a className="home-room-card-link" href={`/?room=${ownedRoom.id}`}>
-                      <span className="home-room-icon">🎛</span>
-                      <span className="home-room-label">{ownedRoom.name || 'Pokoj prywatny'}</span>
-                    </a>
-                    <button
-                      className="home-room-delete"
-                      title="Usun pokoj"
-                      onClick={(event) => {
-                        event.preventDefault()
-                        onDeleteRoom(ownedRoom)
-                      }}
-                    >
-                      🗑
-                    </button>
-                  </div>
-                ))
-              ) : (
-                <p className="home-rooms-empty">Nie masz jeszcze zadnych pokojow</p>
-              )
-            ) : (
-              <p className="home-rooms-empty">Zaloguj sie, aby zobaczyc swoje pokoje</p>
-            )}
-          </div>
-          <button className="homepage-btn homepage-btn--primary" onClick={onCreateRoom} disabled={creatingRoom}>
-            <span className="homepage-btn-icon">✦</span>
-            {creatingRoom ? 'Tworzenie...' : 'Utworz nowy pokoj'}
+        <div className="homepage-join-row">
+          <input
+            className="homepage-join-input"
+            type="text"
+            placeholder="Wklej link, token albo ID pokoju..."
+            value={roomInput}
+            onChange={(event) => setRoomInput(event.target.value)}
+            onKeyDown={(event) => event.key === 'Enter' && handleJoin()}
+            autoComplete="off"
+            spellCheck={false}
+          />
+          <button
+            className="homepage-btn homepage-btn--join"
+            onClick={handleJoin}
+            disabled={!roomInput.trim()}
+          >
+            Dolacz
           </button>
         </div>
 
-        <div className="homepage-col">
-          <p className="home-col-title">Dolacz do pokoju</p>
-          <div className="homepage-join">
-            <input
-              className="homepage-join-input"
-              type="text"
-              placeholder="Wklej link, token albo ID pokoju..."
-              value={roomInput}
-              onChange={(event) => setRoomInput(event.target.value)}
-              onKeyDown={(event) => event.key === 'Enter' && handleJoin()}
-              autoComplete="off"
-              spellCheck={false}
-            />
-            <button
-              className="homepage-btn homepage-btn--secondary"
-              onClick={handleJoin}
-              disabled={!roomInput.trim()}
-            >
-              Dolacz
+        <div className="homepage-cols-row">
+          <div className="homepage-col">
+            <p className="home-col-title">Twoje pokoje</p>
+            <div className="home-rooms-list">
+              {isLoggedIn ? (
+                ownedRooms.length > 0 ? (
+                  ownedRooms.map((ownedRoom) => (
+                    <div key={ownedRoom.id} className={`home-room-card home-room-card--admin${ownedRoom.isPlaying ? ' home-room-card--playing' : ''}`}>
+                      <a className="home-room-card-link" href={`/?room=${ownedRoom.id}`}>
+                        <span className="home-room-icon">🎛</span>
+                        <ScrollText className="home-room-label">{ownedRoom.name || 'Pokoj prywatny'}</ScrollText>
+                      </a>
+                      <button
+                        className="home-room-delete"
+                        title="Usun pokoj"
+                        onClick={(event) => {
+                          event.preventDefault()
+                          onDeleteRoom(ownedRoom)
+                        }}
+                      >
+                        🗑
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <p className="home-rooms-empty">Nie masz jeszcze zadnych pokojow</p>
+                )
+              ) : (
+                <p className="home-rooms-empty">Zaloguj sie, aby zobaczyc swoje pokoje</p>
+              )}
+            </div>
+            <button className="homepage-btn homepage-btn--primary" onClick={onCreateRoom} disabled={creatingRoom}>
+              <span className="homepage-btn-icon">✦</span>
+              {creatingRoom ? 'Tworzenie...' : 'Utworz nowy pokoj'}
             </button>
           </div>
-        </div>
 
-        <div className="homepage-col">
-          <p className="home-col-title">Ostatnie listy</p>
-          {import.meta.env.DEV && (
-            <button className="home-seed-btn" onClick={handleSeed} disabled={seeding}>
-              {seeding ? 'Tworzenie...' : '+ Wygeneruj przykladowe listy'}
-            </button>
-          )}
-          <div className="home-rooms-list">
-            {isLoggedIn ? (
-              latestForeignRooms.length > 0 ? (
-                latestForeignRooms.map((recentRoom) => {
-                  const ratingsArr = Object.values(recentRoom.ratings ?? {})
-                  const avgRating = ratingsArr.length > 0
-                    ? (ratingsArr.reduce((sum, value) => sum + value, 0) / ratingsArr.length).toFixed(1)
-                    : null
-
-                  return (
-                    <a
-                      key={recentRoom.id}
-                      className={`home-room-card${recentRoom.isPlaying ? ' home-room-card--playing' : ''}`}
-                      href={`/?room=${recentRoom.id}`}
-                      onClick={(event) => {
-                        event.preventDefault()
-                        onPreviewRoom(recentRoom.id)
-                      }}
-                    >
-                      <div className="home-room-card-link">
-                        <span className="home-room-icon">♫</span>
-                        <span className="home-room-label">{recentRoom.name || 'Lista'}</span>
-                        <span className="home-room-status">Podejrzyj</span>
-                      </div>
-                      <div className="home-room-stats">
-                        {avgRating !== null && <span>★ {avgRating} ({ratingsArr.length})</span>}
-                        <span>{recentRoom.totalPlays ?? 0} odtw.</span>
-                        <span>{recentRoom.totalVotes ?? 0} gl.</span>
-                        <span>{recentRoom.songs?.length ?? 0} ut.</span>
-                      </div>
-                    </a>
-                  )
-                })
-              ) : (
-                <p className="home-rooms-empty">Brak list do pokazania</p>
-              )
-            ) : (
-              <p className="home-rooms-empty">Zaloguj sie, aby zobaczyc ostatnie listy</p>
+          <div className="homepage-col">
+            <p className="home-col-title">Ostatnie listy</p>
+            {import.meta.env.DEV && (
+              <button className="home-seed-btn" onClick={handleSeed} disabled={seeding}>
+                {seeding ? 'Tworzenie...' : '+ Wygeneruj przykladowe listy'}
+              </button>
             )}
+            <div className="home-rooms-list">
+              {isLoggedIn ? (
+                latestForeignRooms.length > 0 ? (
+                  latestForeignRooms.map((recentRoom) => {
+                    const ratingsArr = Object.values(recentRoom.ratings ?? {})
+                    const avgRating = ratingsArr.length > 0
+                      ? (ratingsArr.reduce((sum, value) => sum + value, 0) / ratingsArr.length).toFixed(1)
+                      : null
+
+                    return (
+                      <a
+                        key={recentRoom.id}
+                        className={`home-room-card${recentRoom.isPlaying ? ' home-room-card--playing' : ''}`}
+                        href={`/?room=${recentRoom.id}`}
+                        onClick={(event) => {
+                          event.preventDefault()
+                          onPreviewRoom(recentRoom.id)
+                        }}
+                      >
+                        <div className="home-room-card-link">
+                          <ScrollText className="home-room-label">{recentRoom.name || 'Lista'}</ScrollText>
+                        </div>
+                        <div className="home-room-stats">
+                          {avgRating !== null && (
+                            <span className="home-room-stat home-room-stat--rating">
+                              <span className="home-stat-icon">★</span>
+                              <span className="home-stat-val">{avgRating}</span>
+                              <span className="home-stat-sub">/{ratingsArr.length}</span>
+                            </span>
+                          )}
+                          <span className="home-room-stat">
+                            <span className="home-stat-icon">▶</span>
+                            <span className="home-stat-val">{recentRoom.totalPlays ?? 0}</span>
+                          </span>
+                          <span className="home-room-stat">
+                            <span className="home-stat-icon">✔</span>
+                            <span className="home-stat-val">{recentRoom.totalVotes ?? 0}</span>
+                          </span>
+                          <span className="home-room-stat">
+                            <span className="home-stat-icon">♪</span>
+                            <span className="home-stat-val">{recentRoom.songs?.length ?? 0}</span>
+                          </span>
+                        </div>
+                      </a>
+                    )
+                  })
+                ) : (
+                  <p className="home-rooms-empty">Brak list do pokazania</p>
+                )
+              ) : (
+                <p className="home-rooms-empty">Zaloguj sie, aby zobaczyc ostatnie listy</p>
+              )}
+            </div>
           </div>
         </div>
       </div>
