@@ -107,7 +107,6 @@ export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerSta
           <div className="disco-bar-info">
             {isPlaying && currentSong ? (
               <>
-                <span className="now-label">TERAZ GRA</span>
                 <span className="disco-bar-title">{currentSong.title}</span>
                 {remaining != null && <span className="now-timer">{formatTime(remaining)}</span>}
               </>

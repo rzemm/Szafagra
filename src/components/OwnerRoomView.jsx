@@ -82,7 +82,7 @@ export function OwnerRoomView({
         voteMode={voteMode}
         skipThreshold={skipThreshold}
         allowSuggestions={settings.allowSuggestions ?? true}
-        allowGuestListening={settings.allowGuestListening ?? true}
+        allowGuestListening={settings.allowGuestListening ?? false}
         tickerText={settings.tickerText ?? ''}
         tickerOnScreen={settings.tickerOnScreen ?? false}
         tickerForGuests={settings.tickerForGuests ?? false}
@@ -98,8 +98,10 @@ export function OwnerRoomView({
         onRenameRoom={renameRoom}
         showQr={panelOpen.qr}
         showQueueOverlay={panelOpen.showQueue}
+        showRoomCode={panelOpen.showRoomCode}
         onToggleQr={() => togglePanel('qr')}
         onToggleQueueOverlay={() => togglePanel('showQueue')}
+        onToggleShowRoomCode={() => togglePanel('showRoomCode')}
         isVisible={isVisible}
         canEditRoom={canEditRoom}
         isViewMode={isViewMode}
@@ -170,6 +172,9 @@ export function OwnerRoomView({
                   {copied === 'voter' && <div className="qr-copied-overlay">✓ Skopiowano</div>}
                 </div>
                 <p className="qr-hint">Kliknij QR, aby skopiowac link</p>
+                {panelOpen.showRoomCode && room?.guestToken && (
+                  <div className="admin-room-code">{room.guestToken}</div>
+                )}
               </div>
             )}
           </div>
@@ -189,8 +194,8 @@ export function OwnerRoomView({
               return (
                 <div key={key} className={`voting-bar-opt${isWinning ? ' winning' : ''}`}>
                   <div className="vbo-fill" style={{ height: `${pct}%` }} />
-                  <span className="vbo-num">{count}</span>
                   <span className="vbo-pct">{pct}%</span>
+                  <span className="vbo-num">{count}</span>
                 </div>
               )
             }) : (

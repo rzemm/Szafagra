@@ -143,7 +143,7 @@ export default function App() {
             mySkipVote={screen.mySkipVote}
             voteSkip={screen.voteSkip}
             allowSuggestions={screen.settings.allowSuggestions ?? true}
-            allowGuestListening={screen.settings.allowGuestListening ?? true}
+            allowGuestListening={screen.settings.allowGuestListening ?? false}
             tickerText={screen.settings.tickerText ?? ''}
             tickerForGuests={screen.settings.tickerForGuests ?? false}
             submitSuggestion={screen.submitSuggestion}

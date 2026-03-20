@@ -85,7 +85,7 @@ function resolveRoomInput(input) {
 
 export function useRoomScreen(route) {
   const [uiState, dispatch] = useReducer(uiReducer, initialUiState)
-  const [panelOpen, setPanelOpen] = useState({ qr: true, voting: false, showQueue: true })
+  const [panelOpen, setPanelOpen] = useState({ qr: true, voting: false, showQueue: true, showRoomCode: false })
   const [leftPanel, setLeftPanel] = useState('songs')
   const [creatingRoom, setCreatingRoom] = useState(false)
   const [copyingRoom, setCopyingRoom] = useState(false)

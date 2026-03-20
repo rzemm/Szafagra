@@ -55,7 +55,6 @@ export function RoomHeader({
             </button>
           </>
         )}
-        <span className="header-icon">Muzyka</span>
         <a href="/" className="header-logo">szafi.fi</a>
       </div>
 
