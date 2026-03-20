@@ -31,8 +31,6 @@ export function useRoomAuth() {
     }
   }
 
-  const [isViewMode] = useState(() => new URLSearchParams(window.location.search).get('view') === '1')
-
   useEffect(() => {
     const roomParam = new URLSearchParams(window.location.search).get('room')
 
@@ -77,9 +75,8 @@ export function useRoomAuth() {
         }
 
         const room = roomSnap.data()
-        const viewMode = new URLSearchParams(window.location.search).get('view') === '1'
         const owner = !currentUser.isAnonymous && room.ownerId === currentUser.uid
-        const canEdit = viewMode ? owner : (room.type === 'public' ? true : owner)
+        const canEdit = room.type === 'public' ? true : owner
 
         if (room.type === 'public') {
           await ensurePublicRoomAccess(currentUser.uid, resolvedRoomId)
@@ -106,5 +103,5 @@ export function useRoomAuth() {
     return () => unsub()
   }, [])
 
-  return { user, roomId, roomType, isOwner, canEditRoom, isViewMode, authReady, roomError, signInWithGoogle, signOutUser }
+  return { user, roomId, roomType, isOwner, canEditRoom, authReady, roomError, signInWithGoogle, signOutUser }
 }

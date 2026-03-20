@@ -319,7 +319,9 @@ export default function App() {
   const [creatingRoom, setCreatingRoom] = useState(false)
   const [copyingRoom, setCopyingRoom] = useState(false)
   const [localCurrentSongId, setLocalCurrentSongId] = useState(null)
-  const { user, roomId, roomType, isOwner, canEditRoom, isViewMode, authReady, roomError, signInWithGoogle, signOutUser } = useRoomAuth()
+  const { user, roomId, roomType, isOwner, canEditRoom: canEditBase, authReady, roomError, signInWithGoogle, signOutUser } = useRoomAuth()
+  const isViewMode = new URLSearchParams(window.location.search).get('view') === '1'
+  const canEditRoom = isViewMode ? isOwner : canEditBase
   const { room, suggestions } = useRoomSubscriptions(roomId)
 
   const homepageEnabled = !hasRoomParam && !!user && !user.isAnonymous
@@ -410,6 +412,7 @@ export default function App() {
   const playback = useJukeboxPlayback({
     authReady,
     canEditRoom,
+    isViewMode,
     roomId,
     room,
     settings,

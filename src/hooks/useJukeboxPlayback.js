@@ -3,7 +3,7 @@ import { chooseWinningOption, generateVotingOptions, moveToNextTrack, replaceSon
 import { incrementRoomPlays, patchMainState, setMainState, updatePlaybackSync } from '../services/jukeboxService'
 import { useYouTubePlayer } from './useYouTubePlayer'
 
-export function useJukeboxPlayback({ authReady, canEditRoom, roomId, room, settings }) {
+export function useJukeboxPlayback({ authReady, canEditRoom, isViewMode, roomId, room, settings }) {
   const [timerTick, setTimerTick] = useState(0)
 
   const prevSongIdRef = useRef(null)
@@ -61,7 +61,7 @@ export function useJukeboxPlayback({ authReady, canEditRoom, roomId, room, setti
     loadVideoById,
     stopVideo,
   } = useYouTubePlayer({
-    enabled: canEditRoom && authReady && !!room,
+    enabled: (canEditRoom || isViewMode) && authReady && !!room,
     currentVideoId: room?.isPlaying ? room?.currentSong?.ytId : null,
     onPlaying: handlePlayerPlaying,
     onEnded: handlePlayerEnded,
