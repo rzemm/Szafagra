@@ -1335,6 +1335,65 @@ body.disco-mode .sidebar {
   cursor: default;
 }
 
+.song-input-wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.song-input-wrapper .header-song-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.song-suggestions-dropdown {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  right: 0;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0.3rem 0;
+  z-index: 200;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+
+.song-suggestion-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.35rem 0.7rem;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.song-suggestion-item:hover {
+  background: var(--surface3);
+}
+
+.suggestion-thumb {
+  width: 60px;
+  height: 45px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+  background: var(--surface3);
+}
+
+.suggestion-title {
+  font-size: 0.82rem;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
 .btn-qr-copy {
   background: var(--surface3);
   border: 1px solid var(--border);

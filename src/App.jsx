@@ -56,6 +56,9 @@ export default function App() {
         setNewSongUrl={screen.handleSongUrlChange}
         handleUrlBlur={screen.songActions.handleUrlBlur}
         addSong={screen.songActions.addSong}
+        searchSuggestions={screen.songActions.suggestions}
+        selectSuggestion={screen.songActions.selectSuggestion}
+        clearSuggestions={screen.songActions.clearSuggestions}
         newSongTitle={screen.uiState.newSongTitle}
         fetchingTitle={screen.uiState.fetchingTitle}
         urlErr={screen.uiState.urlErr}

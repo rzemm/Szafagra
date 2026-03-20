@@ -1,5 +1,5 @@
-import { useCallback } from 'react'
-import { cleanTitle, extractYtId, extractYtPlaylistId, fetchYtPlaylistItems, fetchYtTitle } from '../lib/youtube'
+import { useCallback, useEffect, useState } from 'react'
+import { cleanTitle, extractYtId, extractYtPlaylistId, fetchYtPlaylistItems, fetchYtTitle, searchYouTube } from '../lib/youtube'
 import { replaceRoomSongs } from '../services/jukeboxService'
 
 export function useSongActions({
@@ -12,6 +12,47 @@ export function useSongActions({
   dispatch,
   genId,
 }) {
+  const [suggestions, setSuggestions] = useState([])
+  const [isSearching, setIsSearching] = useState(false)
+
+  useEffect(() => {
+    const isUrl = newSongUrl.includes('youtube.com') || newSongUrl.includes('youtu.be')
+    if (isUrl || newSongUrl.trim().length < 3) {
+      setSuggestions([])
+      return
+    }
+    const timer = setTimeout(async () => {
+      setIsSearching(true)
+      try {
+        const results = await searchYouTube(newSongUrl.trim())
+        setSuggestions(results)
+      } catch {
+        setSuggestions([])
+      } finally {
+        setIsSearching(false)
+      }
+    }, 400)
+    return () => clearTimeout(timer)
+  }, [newSongUrl])
+
+  const selectSuggestion = useCallback(async (suggestion) => {
+    if (!roomId || !room) return
+    setSuggestions([])
+    const song = {
+      id: genId(),
+      title: suggestion.title,
+      ytId: suggestion.ytId,
+      url: `https://youtu.be/${suggestion.ytId}`,
+    }
+    await executeAction(
+      () => replaceRoomSongs(roomId, [...(room.songs ?? []), song]),
+      'Nie udało się dodać utworu.',
+    )
+    dispatch({ type: 'songAdded' })
+  }, [dispatch, executeAction, genId, room, roomId])
+
+  const clearSuggestions = useCallback(() => setSuggestions([]), [])
+
   const handleUrlBlur = useCallback(async () => {
     const url = newSongUrl.trim()
     if (!url) return
@@ -117,5 +158,9 @@ export function useSongActions({
     addSong,
     deleteSong,
     deleteSongs,
+    suggestions,
+    isSearching,
+    selectSuggestion,
+    clearSuggestions,
   }
 }

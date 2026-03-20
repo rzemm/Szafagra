@@ -26,6 +26,9 @@ export function RoomHeader({
   onShareGuestLink,
   guestCopied,
   suggestions,
+  searchSuggestions = [],
+  selectSuggestion,
+  clearSuggestions,
 }) {
   return (
     <header className="header">
@@ -60,17 +63,34 @@ export function RoomHeader({
 
       {showOwnerUI && canEditRoom && (
         <div className="header-add-song">
-          <input
-            className="header-song-input"
-            value={newSongUrl}
-            onChange={(event) => setNewSongUrl(event.target.value)}
-            onBlur={handleUrlBlur}
-            onKeyDown={(event) => event.key === 'Enter' && addSong()}
-            placeholder={fetchingTitle ? 'Pobieranie tytulu...' : newSongTitle ? `Muzyka ${newSongTitle}` : 'Dodaj piosenke lub liste - wklej link z YouTube'}
-            title={urlErr || undefined}
-            style={urlErr ? { borderColor: 'var(--accent)' } : undefined}
-            disabled={!room}
-          />
+          <div className="song-input-wrapper">
+            <input
+              className="header-song-input"
+              value={newSongUrl}
+              onChange={(event) => setNewSongUrl(event.target.value)}
+              onBlur={handleUrlBlur}
+              onKeyDown={(event) => event.key === 'Enter' && addSong()}
+              placeholder={fetchingTitle ? 'Pobieranie tytulu...' : newSongTitle ? `Muzyka ${newSongTitle}` : 'Dodaj piosenke lub liste - wklej link z YouTube albo wpisz tytul'}
+              title={urlErr || undefined}
+              style={urlErr ? { borderColor: 'var(--accent)' } : undefined}
+              disabled={!room}
+            />
+            {searchSuggestions.length > 0 && (
+              <ul className="song-suggestions-dropdown">
+                {searchSuggestions.map((s) => (
+                  <li
+                    key={s.ytId}
+                    className="song-suggestion-item"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => selectSuggestion(s)}
+                  >
+                    {s.thumbnail && <img src={s.thumbnail} className="suggestion-thumb" alt="" />}
+                    <span className="suggestion-title">{s.title}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
           <button className="btn-header-add" onClick={addSong} disabled={!newSongUrl.trim() || !room}>+</button>
         </div>
       )}

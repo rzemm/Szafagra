@@ -73,6 +73,24 @@ export function cleanTitle(title) {
     .trim()
 }
 
+export async function searchYouTube(query, maxResults = 3) {
+  if (!YT_API_KEY || !query.trim()) return []
+  const endpoint = new URL('https://www.googleapis.com/youtube/v3/search')
+  endpoint.searchParams.set('part', 'snippet')
+  endpoint.searchParams.set('type', 'video')
+  endpoint.searchParams.set('maxResults', String(maxResults))
+  endpoint.searchParams.set('q', query.trim())
+  endpoint.searchParams.set('key', YT_API_KEY)
+  const res = await fetch(endpoint.toString())
+  if (!res.ok) return []
+  const data = await res.json()
+  return (data.items ?? []).map((item) => ({
+    ytId: item.id.videoId,
+    title: cleanTitle(item.snippet.title),
+    thumbnail: item.snippet.thumbnails?.default?.url ?? null,
+  }))
+}
+
 export async function fetchYtTitle(url) {
   try {
     const res = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`)
