@@ -165,13 +165,17 @@ export function OwnerRoomView({
               canEditRoom={canEditRoom}
             />
 
-            {shareLinks.voterUrl && panelOpen.qr && (
+            {shareLinks.voterUrl && (panelOpen.qr || panelOpen.showRoomCode) && (
               <div className="admin-qr-panel">
-                <div className="qr-clickable" onClick={shareLinks.copyVoterLink} title="Kliknij aby skopiowac link">
-                  <QRCodeSVG value={shareLinks.voterUrl} size={150} bgColor="#000000" fgColor="#ffffff" />
-                  {copied === 'voter' && <div className="qr-copied-overlay">✓ Skopiowano</div>}
-                </div>
-                <p className="qr-hint">Kliknij QR, aby skopiowac link</p>
+                {panelOpen.qr && (
+                  <>
+                    <div className="qr-clickable" onClick={shareLinks.copyVoterLink} title="Kliknij aby skopiowac link">
+                      <QRCodeSVG value={shareLinks.voterUrl} size={150} bgColor="#000000" fgColor="#ffffff" />
+                      {copied === 'voter' && <div className="qr-copied-overlay">✓ Skopiowano</div>}
+                    </div>
+                    <p className="qr-hint">Kliknij QR, aby skopiowac link</p>
+                  </>
+                )}
                 {panelOpen.showRoomCode && room?.guestToken && (
                   <div className="admin-room-code">{room.guestToken}</div>
                 )}
