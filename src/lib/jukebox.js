@@ -1,5 +1,3 @@
-import { resolveVoting } from './voting'
-
 const JOIN_CODE_ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ'
 const JOIN_CODE_LENGTH = 8
 
@@ -11,28 +9,6 @@ export function createJoinCode(length = JOIN_CODE_LENGTH) {
   const randomBytes = crypto.getRandomValues(new Uint8Array(length))
 
   return Array.from(randomBytes, (byte) => JOIN_CODE_ALPHABET[byte % JOIN_CODE_ALPHABET.length]).join('')
-}
-
-function pickRandom(pool, count, exclude = []) {
-  const excludedIds = new Set(exclude.map(s => s.id))
-  return [...pool.filter(s => !excludedIds.has(s.id))]
-    .sort(() => Math.random() - 0.5)
-    .slice(0, count)
-}
-
-export function generateNextOptions(playlist, groupSize, exclude = []) {
-  const nextOptions = {}
-  const used = [...exclude]
-  for (let i = 0; i < 3; i++) {
-    const songs = pickRandom(playlist?.songs ?? [], groupSize, used)
-    nextOptions[String(i)] = songs
-    used.push(...songs)
-  }
-  return { nextOptions, nextVotes: {} }
-}
-
-export function resolveOption(keys, votes, voteMode) {
-  return resolveVoting(keys, votes, voteMode).winnerKey
 }
 
 export function formatTime(sec) {

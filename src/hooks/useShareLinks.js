@@ -1,21 +1,15 @@
 import { useCallback, useMemo } from 'react'
 
-export function useShareLinks({ roomId, roomType, guestToken, onCopied }) {
+export function useShareLinks({ roomId, roomType, guestToken, buildRoomUrl, fallbackGuestUrl, onCopied }) {
   const guestUrl = useMemo(() => {
-    if (!guestToken) return null
-
-    const url = new URL(window.location.origin + window.location.pathname)
-    url.searchParams.set('room', guestToken)
-    return url.toString()
-  }, [guestToken])
+    if (guestToken) return buildRoomUrl(guestToken)
+    return fallbackGuestUrl ?? null
+  }, [buildRoomUrl, fallbackGuestUrl, guestToken])
 
   const adminUrl = useMemo(() => {
     if (!roomId) return null
-
-    const url = new URL(window.location.origin + window.location.pathname)
-    url.searchParams.set('room', roomId)
-    return url.toString()
-  }, [roomId])
+    return buildRoomUrl(roomId)
+  }, [buildRoomUrl, roomId])
 
   const copyAdminLink = useCallback(() => {
     const link = roomType === 'public' ? guestUrl : adminUrl
@@ -31,6 +25,7 @@ export function useShareLinks({ roomId, roomType, guestToken, onCopied }) {
   return {
     voterUrl: guestUrl,
     adminUrl,
+    guestUrl,
     copyAdminLink,
     copyVoterLink,
   }

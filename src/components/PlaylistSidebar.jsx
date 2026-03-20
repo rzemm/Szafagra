@@ -1,74 +1,52 @@
 import { useState } from 'react'
+import { NotePicker } from './NotePicker'
 import { ScrollText } from './ScrollText'
 
-function NotePickerInline({ value, onChange }) {
-  const [hover, setHover] = useState(0)
-  return (
-    <div className="note-picker-notes">
-      {[1, 2, 3, 4, 5].map(n => (
-        <button
-          key={n}
-          className={`note-icon-btn${(hover ? hover >= n : value >= n) ? ' active' : ''}`}
-          onClick={() => onChange(n)}
-          onMouseEnter={() => setHover(n)}
-          onMouseLeave={() => setHover(0)}
-          title={`${n} utw${n === 1 ? 'ór' : 'ory'} w grupie`}
-        >♪</button>
-      ))}
-    </div>
-  )
-}
-
-export function PlaylistSidebar(props) {
-  const {
-    leftPanel,
-    showOwnerUI,
-    isPlaying,
-    room,
-    currentSong,
-    playSongNow,
-    deleteSong,
-    suggestions,
-    approveSuggestion,
-    rejectSuggestion,
-    showThumbnails,
-    queue,
-    voteThreshold,
-    voteMode,
-    skipThreshold,
-    allowSuggestions,
-    queueSize,
-    saveSettings,
-    importPlaylist,
-    exportPlaylist,
-    queueSong,
-    removeFromQueue,
-    copyAdminLink,
-    copied,
-    roomType,
-    onRenameRoom,
-    showQr,
-    showQueueOverlay,
-    onToggleQr,
-    onToggleQueueOverlay,
-    isVisible,
-    canEditRoom,
-    isViewMode,
-    onLocalPlay,
-    localCurrentSongId,
-  } = props
-
+export function PlaylistSidebar({
+  leftPanel,
+  isPlaying,
+  room,
+  currentSong,
+  playSongNow,
+  deleteSong,
+  suggestions,
+  approveSuggestion,
+  rejectSuggestion,
+  showThumbnails,
+  queue,
+  voteThreshold,
+  voteMode,
+  skipThreshold,
+  allowSuggestions,
+  queueSize,
+  saveSettings,
+  importPlaylist,
+  exportPlaylist,
+  queueSong,
+  removeFromQueue,
+  copyAdminLink,
+  copied,
+  roomType,
+  onRenameRoom,
+  showQr,
+  showQueueOverlay,
+  onToggleQr,
+  onToggleQueueOverlay,
+  isVisible,
+  canEditRoom,
+  isViewMode,
+  onLocalPlay,
+  localCurrentSongId,
+}) {
   const [searchQuery, setSearchQuery] = useState('')
-  const [roomNameInput, setRoomNameInput] = useState(room?.name ?? '')
-
   const handleImportChange = async (event) => {
     const [file] = event.target.files ?? []
     if (file) await importPlaylist(file)
     event.target.value = ''
   }
 
-  const handleRoomNameSave = () => {
-    const trimmed = roomNameInput.trim()
+  const handleRoomNameSave = (value) => {
+    const trimmed = value.trim()
     if (trimmed && trimmed !== room?.name) onRenameRoom(trimmed)
   }
 
@@ -79,8 +57,6 @@ export function PlaylistSidebar(props) {
 
   return (
     <aside className={`sidebar${leftPanel ? '' : ' sidebar-hidden'}`}>
-
-      {/* ── Lista piosenek ───────────────────────────────── */}
       {leftPanel === 'songs' && room && (
         <div className="section songs-section">
           <div className="sidebar-search-bar">
@@ -89,7 +65,7 @@ export function PlaylistSidebar(props) {
               type="text"
               placeholder="Szukaj piosenek..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(event) => setSearchQuery(event.target.value)}
             />
             {searchQuery && (
               <button className="sidebar-search-clear" onClick={() => setSearchQuery('')} title="Wyczysc">✕</button>
@@ -121,8 +97,6 @@ export function PlaylistSidebar(props) {
         </div>
       )}
 
-
-      {/* ── Kolejka ──────────────────────────────────────── */}
       {leftPanel === 'queue' && (
         <div className="section songs-section">
           <div className="sidebar-queue-header">
@@ -160,7 +134,6 @@ export function PlaylistSidebar(props) {
         </div>
       )}
 
-      {/* ── Ustawienia ───────────────────────────────────── */}
       {leftPanel === 'settings' && suggestions?.length > 0 && (
         <div className="section">
           <div className="section-title-row">
@@ -183,16 +156,15 @@ export function PlaylistSidebar(props) {
 
       {leftPanel === 'settings' && (
         <div className="section sidebar-settings-list">
-
           <div className="setting-row setting-row--rename">
             <span className="setting-label">Nazwa pokoju</span>
             <div className="setting-rename-group">
               <input
                 className="setting-rename-input"
-                value={roomNameInput}
-                onChange={(e) => setRoomNameInput(e.target.value)}
-                onBlur={handleRoomNameSave}
-                onKeyDown={(e) => e.key === 'Enter' && e.target.blur()}
+                key={room?.id ?? 'room-name'}
+                defaultValue={room?.name ?? ''}
+                onBlur={(event) => handleRoomNameSave(event.target.value)}
+                onKeyDown={(event) => event.key === 'Enter' && event.target.blur()}
                 placeholder="Nazwa pokoju..."
                 disabled={!canEditRoom}
               />
@@ -213,7 +185,7 @@ export function PlaylistSidebar(props) {
 
           <div className="setting-row">
             <span className="setting-label">Utworow w grupie</span>
-            <NotePickerInline value={queueSize} onChange={(n) => canEditRoom && saveSettings('queueSize', n)} />
+            <NotePicker value={queueSize} onChange={(value) => canEditRoom && saveSettings('queueSize', value)} />
           </div>
 
           <div className="setting-row">
@@ -235,7 +207,7 @@ export function PlaylistSidebar(props) {
               min="0"
               max="99"
               value={skipThreshold}
-              onChange={(e) => saveSettings('skipThreshold', Math.max(0, parseInt(e.target.value) || 0))}
+              onChange={(event) => saveSettings('skipThreshold', Math.max(0, parseInt(event.target.value, 10) || 0))}
               disabled={!canEditRoom}
             />
           </div>
@@ -306,21 +278,22 @@ export function PlaylistSidebar(props) {
               const ratingValues = Object.values(ratingsMap)
               const ratingCount = ratingValues.length
               const avgRating = ratingCount > 0
-                ? (ratingValues.reduce((s, v) => s + v, 0) / ratingCount).toFixed(1)
-                : '–'
+                ? (ratingValues.reduce((sum, value) => sum + value, 0) / ratingCount).toFixed(1)
+                : '-'
+
               return (
                 <div className="settings-stats">
                   <div className="settings-stat">
                     <span className="settings-stat-value">{avgRating}</span>
-                    <span className="settings-stat-label">Ocena{ratingCount > 0 ? ` (${ratingCount} głosów)` : ''}</span>
+                    <span className="settings-stat-label">Ocena{ratingCount > 0 ? ` (${ratingCount} glosow)` : ''}</span>
                   </div>
                   <div className="settings-stat">
                     <span className="settings-stat-value">{room?.totalPlays ?? 0}</span>
-                    <span className="settings-stat-label">Odtworzeń</span>
+                    <span className="settings-stat-label">Odtworzen</span>
                   </div>
                   <div className="settings-stat">
                     <span className="settings-stat-value">{room?.totalVotes ?? 0}</span>
-                    <span className="settings-stat-label">Głosów</span>
+                    <span className="settings-stat-label">Glosow</span>
                   </div>
                 </div>
               )
@@ -347,7 +320,6 @@ export function PlaylistSidebar(props) {
               </label>
             )}
           </div>
-
         </div>
       )}
     </aside>

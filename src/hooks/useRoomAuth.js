@@ -6,7 +6,7 @@ import { ensurePublicRoomAccess, recordGuestVisit } from '../services/jukeboxSer
 
 const googleProvider = new GoogleAuthProvider()
 
-export function useRoomAuth() {
+export function useRoomAuth(roomParam) {
   const [user, setUser] = useState(null)
   const [roomId, setRoomId] = useState(null)
   const [roomType, setRoomType] = useState(null)
@@ -32,8 +32,6 @@ export function useRoomAuth() {
   }
 
   useEffect(() => {
-    const roomParam = new URLSearchParams(window.location.search).get('room')
-
     const unsub = onAuthStateChanged(auth, async currentUser => {
       setRoomError('')
 
@@ -101,7 +99,7 @@ export function useRoomAuth() {
     })
 
     return () => unsub()
-  }, [])
+  }, [roomParam])
 
   return { user, roomId, roomType, isOwner, canEditRoom, authReady, roomError, signInWithGoogle, signOutUser }
 }
