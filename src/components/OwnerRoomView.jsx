@@ -138,18 +138,8 @@ export function OwnerRoomView({
       />
 
       <div className="player-area player-area-admin">
-        {panelOpen.showQueue && queue.length > 0 && (
-          <div className="queue-overlay">
-            {queue.map((song) => (
-              <div key={song.id} className="queue-overlay-item">
-                <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="queue-overlay-thumb" />
-                <ScrollText className="queue-overlay-title">{song.title}</ScrollText>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div className="admin-scroll-area">
+        <div className="scroll-ticker-wrap">
+          <div className="admin-scroll-area">
           {isViewMode && (
             <div className="view-mode-banner">
               <span className="view-mode-label">Tryb podgladu - lista tylko do odczytu</span>
@@ -223,9 +213,20 @@ export function OwnerRoomView({
           </div>
         </div>
 
-        {settings.tickerOnScreen && settings.tickerText && (
-          <div className="admin-ticker">📢 {settings.tickerText}</div>
-        )}
+          {panelOpen.showQueue && queue.length > 0 && (
+            <div className="queue-overlay">
+              {queue.map((song) => (
+                <div key={song.id} className="queue-overlay-item">
+                  <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="queue-overlay-thumb" />
+                  <ScrollText className="queue-overlay-title">{song.title}</ScrollText>
+                </div>
+              ))}
+            </div>
+          )}
+          {settings.tickerOnScreen && settings.tickerText && (
+            <div className="admin-ticker">📢 {settings.tickerText}</div>
+          )}
+        </div>
 
         <div className="voting-panel-bottom">
           <div className="voting-bottom-bar" onClick={() => togglePanel('voting')}>
@@ -237,8 +238,9 @@ export function OwnerRoomView({
               return (
                 <div key={key} className={`voting-bar-opt${isWinning ? ' winning' : ''}`}>
                   <div className="vbo-fill" style={{ height: `${pct}%` }} />
+                  <span className="vbo-num">👍 {count}</span>
+                  <span className="vbo-sep"> – </span>
                   <span className="vbo-pct">{pct}%</span>
-                  <span className="vbo-num">{count}</span>
                 </div>
               )
             }) : (
@@ -254,8 +256,6 @@ export function OwnerRoomView({
                   nextOptionKeys={nextOptionKeys}
                   nextOptions={nextOptions}
                   nextVotesData={nextVotesData}
-                  userId={userId}
-                  onVote={vote}
                   showPlayNow
                   onPlayNow={playSongNow}
                   onQueueSong={queueSong}

@@ -707,6 +707,15 @@ textarea:focus { outline: none; border-color: var(--accent); }
   padding: 0;
 }
 
+.scroll-ticker-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
 .admin-scroll-area {
   flex: 1;
   overflow-y: auto;
@@ -933,7 +942,7 @@ textarea:focus { outline: none; border-color: var(--accent); }
   position: absolute;
   top: 1rem;
   left: 1rem;
-  z-index: 20;
+  z-index: 5;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -1007,10 +1016,10 @@ textarea:focus { outline: none; border-color: var(--accent); }
   flex: 1;
   position: relative;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 0.05rem;
+  gap: 0.3rem;
   border-left: 1px solid var(--border);
   padding: 0.4rem 0.5rem;
   overflow: hidden;
@@ -1036,16 +1045,25 @@ textarea:focus { outline: none; border-color: var(--accent); }
 
 .vbo-num {
   position: relative;
-  font-size: 0.65rem;
+  font-size: 1rem;
+  color: var(--text);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.vbo-sep {
+  position: relative;
+  font-size: 1rem;
   color: var(--text-dim);
-  font-weight: 600;
+  font-weight: 400;
+  line-height: 1;
 }
 
 .vbo-pct {
   position: relative;
-  font-size: 1.1rem;
-  font-weight: 800;
-  color: var(--text);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-dim);
   line-height: 1;
 }
 
@@ -2922,11 +2940,9 @@ body.disco-mode .sidebar {
 
 .vote-option-header {
   display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 0;
   overflow: hidden;
-  padding: 0.5rem 0.75rem;
   background: var(--surface3);
   border-bottom: 1px solid var(--border);
 }
@@ -2979,16 +2995,17 @@ body.disco-mode .sidebar {
 }
 
 .btn-choose-option {
-  padding: 0.25rem 0.7rem;
-  border-radius: 20px;
-  font-size: 0.78rem;
+  flex: 1;
+  padding: 0.5rem;
+  border-radius: 0;
+  font-size: 1.1rem;
   font-weight: 700;
-  border: 1.5px solid var(--gold);
+  border: none;
+  border-right: 1px solid var(--border);
   background: var(--surface);
   color: var(--gold);
   cursor: pointer;
   transition: all 0.15s;
-  white-space: nowrap;
 }
 
 .btn-choose-option:hover {
@@ -2997,22 +3014,22 @@ body.disco-mode .sidebar {
 }
 
 .btn-remove-option {
-  padding: 0.25rem 0.55rem;
-  border-radius: 20px;
-  font-size: 0.82rem;
+  flex: 1;
+  padding: 0.5rem;
+  border-radius: 0;
+  font-size: 1.1rem;
   font-weight: 700;
-  border: 1.5px solid var(--border);
+  border: none;
   background: var(--surface);
   color: var(--text-dim);
   cursor: pointer;
   transition: all 0.15s;
-  white-space: nowrap;
   line-height: 1;
 }
 
 .btn-remove-option:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  background: var(--accent);
+  color: #fff;
 }
 
 .btn-icon.queue {
@@ -3964,6 +3981,11 @@ body.disco-mode .app {
 }
 
 .admin-ticker {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
   padding: 0.6rem 1rem;
   background: var(--surface2);
   border-top: 1px solid var(--border);
