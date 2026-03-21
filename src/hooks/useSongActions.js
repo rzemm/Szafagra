@@ -24,7 +24,7 @@ export function useSongActions({
     const timer = setTimeout(async () => {
       setIsSearching(true)
       try {
-        const results = await searchYouTube(newSongUrl.trim())
+        const results = await searchYouTube(newSongUrl.trim(), 5)
         setSuggestions(results)
       } catch {
         setSuggestions([])

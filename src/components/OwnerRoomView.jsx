@@ -204,7 +204,6 @@ export function OwnerRoomView({
               room={room}
               canEditRoom={canEditRoom}
             />
-
             {shareLinks.voterUrl && (panelOpen.qr || panelOpen.showRoomCode) && (
               <div className="admin-qr-panel">
                 {panelOpen.qr && (

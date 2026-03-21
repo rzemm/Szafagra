@@ -152,7 +152,7 @@ export function PlaylistSidebar({
                     />
                   )}
                   {showThumbnails && <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="song-thumb" />}
-                  <span className="song-title">{song.title}</span>
+                  <ScrollText className="song-title">{song.title}</ScrollText>
                   {!bulkDeleteMode && canEditRoom && (
                     <>
                       <button className="btn-icon queue-add" onClick={(event) => { event.stopPropagation(); queueSong(song) }} title="Dodaj do kolejki">+</button>

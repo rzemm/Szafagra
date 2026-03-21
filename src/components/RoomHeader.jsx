@@ -69,7 +69,10 @@ export function RoomHeader({
               value={newSongUrl}
               onChange={(event) => setNewSongUrl(event.target.value)}
               onBlur={handleUrlBlur}
-              onKeyDown={(event) => event.key === 'Enter' && addSong()}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') addSong()
+                if (event.key === 'Escape') clearSuggestions()
+              }}
               placeholder={fetchingTitle ? 'Pobieranie tytulu...' : newSongTitle ? `Muzyka ${newSongTitle}` : 'Dodaj piosenke lub liste - wklej link z YouTube albo wpisz tytul'}
               title={urlErr || undefined}
               style={urlErr ? { borderColor: 'var(--accent)' } : undefined}

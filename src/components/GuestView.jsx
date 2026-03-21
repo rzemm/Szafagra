@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 const IconStar = () => (
   <svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor" aria-hidden="true">
@@ -6,7 +6,7 @@ const IconStar = () => (
   </svg>
 )
 import { formatTime } from '../lib/jukebox'
-import { extractYtId, fetchYtTitle } from '../lib/youtube'
+import { extractYtId, fetchYtTitle, searchYouTube } from '../lib/youtube'
 import { useGuestPlayer } from '../hooks/useGuestPlayer'
 import { ContactMessageForm } from './ContactMessageForm'
 import { ScrollText } from './ScrollText'
@@ -46,6 +46,24 @@ export function GuestView({
   const [fetchingTitle, setFetchingTitle] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [suggestSearchResults, setSuggestSearchResults] = useState([])
+
+  useEffect(() => {
+    const isUrl = suggestUrl.includes('youtube.com') || suggestUrl.includes('youtu.be')
+    if (isUrl || suggestUrl.trim().length < 3) {
+      setSuggestSearchResults([])
+      return
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const results = await searchYouTube(suggestUrl.trim(), 5)
+        setSuggestSearchResults(results)
+      } catch {
+        setSuggestSearchResults([])
+      }
+    }, 400)
+    return () => clearTimeout(timer)
+  }, [suggestUrl])
 
   const handleSuggestBlur = async () => {
     const url = suggestUrl.trim()
@@ -75,6 +93,20 @@ export function GuestView({
     const ok = await submitSuggestion({ title: suggestTitle, ytId, url: `https://youtu.be/${ytId}` })
     setSubmitting(false)
 
+    if (ok) {
+      setSuggestUrl('')
+      setSuggestTitle('')
+      setSuggestErr('')
+      setSubmitted(true)
+      setTimeout(() => setSubmitted(false), 3000)
+    }
+  }
+
+  const handleSelectSuggestion = async (suggestion) => {
+    setSuggestSearchResults([])
+    setSubmitting(true)
+    const ok = await submitSuggestion({ title: suggestion.title, ytId: suggestion.ytId, url: `https://youtu.be/${suggestion.ytId}` })
+    setSubmitting(false)
     if (ok) {
       setSuggestUrl('')
       setSuggestTitle('')
@@ -223,17 +255,35 @@ export function GuestView({
             <p className="guest-suggest-ok">Propozycja wyslana!</p>
           ) : (
             <>
-              <input
-                className="guest-suggest-input"
-                value={suggestUrl}
-                onChange={(event) => {
-                  setSuggestUrl(event.target.value)
-                  setSuggestTitle('')
-                  setSuggestErr('')
-                }}
-                onBlur={handleSuggestBlur}
-                placeholder="Link YouTube..."
-              />
+              <div className="song-input-wrapper">
+                <input
+                  className="guest-suggest-input"
+                  value={suggestUrl}
+                  onChange={(event) => {
+                    setSuggestUrl(event.target.value)
+                    setSuggestTitle('')
+                    setSuggestErr('')
+                  }}
+                  onBlur={handleSuggestBlur}
+                  onKeyDown={(event) => { if (event.key === 'Escape') setSuggestSearchResults([]) }}
+                  placeholder="Wpisz tytul lub wklej link YouTube..."
+                />
+                {suggestSearchResults.length > 0 && (
+                  <ul className="song-suggestions-dropdown">
+                    {suggestSearchResults.map((s) => (
+                      <li
+                        key={s.ytId}
+                        className="song-suggestion-item"
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => handleSelectSuggestion(s)}
+                      >
+                        {s.thumbnail && <img src={s.thumbnail} className="suggestion-thumb" alt="" />}
+                        <span className="suggestion-title">{s.title}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
               {fetchingTitle && <p className="guest-suggest-hint">Pobieranie tytulu...</p>}
               {suggestTitle && <p className="guest-suggest-hint">{suggestTitle}</p>}
               {suggestErr && <p className="guest-suggest-err">{suggestErr}</p>}
