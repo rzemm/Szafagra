@@ -246,7 +246,7 @@ export function PlaylistSidebar({
       {leftPanel === 'settings' && (
         <div className="section sidebar-settings-list">
           <div className="settings-group">
-            <span className="settings-group-title">Glosowanie</span>
+            <span className="settings-group-title">Opcje głosowania</span>
 
             <div className="setting-row">
               <span className="setting-label">Rodzaj glosowania</span>

@@ -23,7 +23,7 @@ export function VotingPanel({ nextOptionKeys, nextOptions, nextVotesData, onPlay
             <div key={key} className={`vote-option${isWinning ? ' winning' : ''}`}>
               <div className="vote-option-header">
                 {onChooseOption && (
-                  <button className="btn-choose-option" onClick={() => onChooseOption(key)} title="Wybierz tę opcję">★</button>
+                  <button className="btn-choose-option" onClick={() => onChooseOption(key)} title="Wybierz tę opcję">▶</button>
                 )}
                 {onRemoveOption && (
                   <button className="btn-remove-option" onClick={() => onRemoveOption(key)} title="Wylosuj nową opcję">↺</button>
@@ -37,6 +37,7 @@ export function VotingPanel({ nextOptionKeys, nextOptions, nextVotesData, onPlay
                     <ScrollText className="slot-title">{song.title}</ScrollText>
                     {onPlayNow && <button className="btn-icon play" onClick={() => onPlayNow(song)} title="Puść teraz">▶</button>}
                     {onQueueSong && <button className="btn-icon queue" onClick={() => onQueueSong(song)} title="Dodaj do kolejki">▤</button>}
+                    {onRemoveOption && <button className="btn-icon" onClick={() => onRemoveOption(key)} title="Wylosuj nową opcję">↺</button>}
                   </div>
                 ))}
               </div>

@@ -244,7 +244,7 @@ export function OwnerRoomView({
                 </div>
               )
             }) : (
-              <h2 className="section-title" style={{ flex: 1, padding: '0 1rem' }}>Glosowanie</h2>
+              <h2 className="section-title" style={{ flex: 1, padding: '0 1rem' }}>Opcje głosowania</h2>
             )}
             <span className="section-arrow" style={{ padding: '0 1rem' }}>{panelOpen.voting ? '▼' : '▲'}</span>
           </div>

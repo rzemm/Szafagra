@@ -987,7 +987,7 @@ textarea:focus { outline: none; border-color: var(--accent); }
   z-index: 101;
   flex-shrink: 0;
   max-height: 55vh;
-  background: var(--surface);
+  background: transparent;
   border-top: 2px solid var(--accent);
   display: flex;
   flex-direction: column-reverse;
@@ -1000,6 +1000,7 @@ textarea:focus { outline: none; border-color: var(--accent); }
   flex-shrink: 0;
   cursor: pointer;
   user-select: none;
+  background: var(--surface);
   transition: background 0.12s;
   border-top: 1px solid var(--border);
 }
@@ -1195,7 +1196,7 @@ body.disco-mode .sidebar {
 
 /* ─── Voting panel ──────────────────────────────────────────────────────────── */
 .voting-card {
-  background: var(--surface);
+  background: transparent;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 1.25rem;
@@ -3020,7 +3021,7 @@ body.disco-mode .sidebar {
   font-size: 1.1rem;
   font-weight: 700;
   border: none;
-  background: var(--surface);
+  background: transparent;
   color: var(--text-dim);
   cursor: pointer;
   transition: all 0.15s;
