@@ -31,6 +31,7 @@ export function RoomHeader({
   searchSuggestions = [],
   selectSuggestion,
   clearSuggestions,
+  onOpenCookieSettings,
 }) {
   return (
     <header className="header">
@@ -101,6 +102,10 @@ export function RoomHeader({
       )}
 
       <div className="header-actions">
+        <button className="header-utility-link" onClick={onOpenCookieSettings}>
+          Cookies
+        </button>
+
         {user?.isAnonymous ? (
           <button className="header-google-btn" onClick={signInWithGoogle} title="Zaloguj sie przez Google">
             <GoogleIcon />

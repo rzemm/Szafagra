@@ -34,6 +34,7 @@ export function HomePage({
   onSeedRooms,
   onSignIn,
   onSignOut,
+  onOpenCookieSettings,
 }) {
   const [roomInput, setRoomInput] = useState('')
   const [seeding, setSeeding] = useState(false)
@@ -61,6 +62,7 @@ export function HomePage({
           <div className="home-user-bar">
             {user.photoURL && <img src={user.photoURL} alt="" className="home-user-avatar" referrerPolicy="no-referrer" />}
             <span className="home-user-name">{user.displayName}</span>
+            <button className="home-user-link" onClick={onOpenCookieSettings}>Cookies</button>
             <button className="home-user-logout" onClick={onSignOut}>Wyloguj</button>
           </div>
         ) : (
@@ -70,6 +72,7 @@ export function HomePage({
               Zaloguj sie przez Google
             </button>
             <p className="home-google-hint">aby zobaczyc swoje prywatne szafy</p>
+            <button className="home-cookie-link" onClick={onOpenCookieSettings}>Ustawienia cookies</button>
           </div>
         )}
       </div>
