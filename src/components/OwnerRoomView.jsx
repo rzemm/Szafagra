@@ -41,6 +41,7 @@ export function OwnerRoomView({
   vote,
   playSongNow,
   queueSong,
+  replaceSong,
   removeVotingOption,
   advanceToOption,
   shareLinks,
@@ -260,6 +261,7 @@ export function OwnerRoomView({
                   onPlayNow={playSongNow}
                   onQueueSong={queueSong}
                   onRemoveOption={removeVotingOption}
+                  onReplaceSong={replaceSong}
                   columns
                   onChooseOption={advanceToOption}
                   showThumbnails={showThumbnails}

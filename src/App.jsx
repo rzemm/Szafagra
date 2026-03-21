@@ -114,6 +114,7 @@ export default function App() {
               vote={screen.vote}
               playSongNow={screen.playSongNow}
               queueSong={screen.queueSong}
+              replaceSong={screen.replaceSong}
               removeVotingOption={screen.removeVotingOption}
               advanceToOption={screen.advanceToOption}
               shareLinks={screen.shareLinks}

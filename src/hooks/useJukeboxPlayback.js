@@ -185,6 +185,23 @@ export function useJukeboxPlayback({ authReady, canEditRoom, isViewMode, roomId,
     await patchMainState(roomId, { queue: newQueue })
   }, [room, roomId])
 
+  const replaceSong = useCallback(async (optionKey, song) => {
+    if (!roomId || !room) return
+    const options = room.nextOptions ?? {}
+    const allSongs = room.songs ?? []
+    const alreadyUsed = [room.currentSong, ...(room.queue ?? [])].filter(Boolean)
+
+    const usedIds = new Set([
+      ...alreadyUsed.map(s => s.id),
+      ...Object.values(options).flat().map(s => s.id),
+    ])
+    const pool = allSongs.filter(s => !usedIds.has(s.id))
+    const pick = pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : null
+
+    const newGroup = (options[optionKey] ?? []).map(s => s.id === song.id ? (pick ?? s) : s)
+    await patchMainState(roomId, { nextOptions: { ...options, [optionKey]: newGroup } })
+  }, [room, roomId])
+
   const removeVotingOption = useCallback(async (optionKey) => {
     if (!roomId || !room) return
 
@@ -331,6 +348,7 @@ export function useJukeboxPlayback({ authReady, canEditRoom, isViewMode, roomId,
     playSongNow,
     queueSong,
     removeFromQueue,
+    replaceSong,
     removeVotingOption,
     advanceToWinner,
     advanceToOption,

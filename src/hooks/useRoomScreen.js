@@ -424,6 +424,7 @@ export function useRoomScreen(route) {
     playSongNow: playback.playSongNow,
     queueSong: playback.queueSong,
     removeFromQueue: playback.removeFromQueue,
+    replaceSong: playback.replaceSong,
     removeVotingOption: playback.removeVotingOption,
     advanceToWinner: playback.advanceToWinner,
     advanceToOption: playback.advanceToOption,

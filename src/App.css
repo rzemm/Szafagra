@@ -330,6 +330,7 @@ button {
   border-radius: 5px;
   font-size: 0.85rem;
   line-height: 1;
+  flex-shrink: 0;
 }
 
 .btn-icon:hover { background: var(--surface3); color: var(--text); }
@@ -988,7 +989,7 @@ textarea:focus { outline: none; border-color: var(--accent); }
   flex-shrink: 0;
   max-height: 55vh;
   background: transparent;
-  border-top: 2px solid var(--accent);
+  border-top: none;
   display: flex;
   flex-direction: column-reverse;
 }
@@ -1197,7 +1198,7 @@ body.disco-mode .sidebar {
 /* ─── Voting panel ──────────────────────────────────────────────────────────── */
 .voting-card {
   background: transparent;
-  border: 1px solid var(--border);
+  border: none;
   border-radius: var(--radius);
   padding: 1.25rem;
 }

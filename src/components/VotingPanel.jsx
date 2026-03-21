@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { ScrollText } from './ScrollText'
 
-export function VotingPanel({ nextOptionKeys, nextOptions, nextVotesData, onPlayNow, onQueueSong, onRemoveOption, columns = false, onChooseOption, showThumbnails = true }) {
+export function VotingPanel({ nextOptionKeys, nextOptions, nextVotesData, onPlayNow, onQueueSong, onRemoveOption, onReplaceSong, columns = false, onChooseOption, showThumbnails = true }) {
   const countsByOption = useMemo(() => {
     const counts = Object.fromEntries(nextOptionKeys.map(key => [key, 0]))
     for (const vote of Object.values(nextVotesData)) {
@@ -26,18 +26,16 @@ export function VotingPanel({ nextOptionKeys, nextOptions, nextVotesData, onPlay
                   <button className="btn-choose-option" onClick={() => onChooseOption(key)} title="Wybierz tę opcję">▶</button>
                 )}
                 {onRemoveOption && (
-                  <button className="btn-remove-option" onClick={() => onRemoveOption(key)} title="Wylosuj nową opcję">↺</button>
+                  <button className="btn-remove-option" onClick={() => onRemoveOption(key)} title="Wylosuj nową opcję">🎲</button>
                 )}
               </div>
               <div className="option-songs">
                 {songs.map((song, i) => (
-                  <div key={song.id} className="option-song-item">
-                    <span className="option-song-pos">{i + 1}</span>
+                  <div key={song.id} className="option-song-item" onClick={() => onPlayNow && onPlayNow(song)} style={onPlayNow ? { cursor: 'pointer' } : {}}>
                     {showThumbnails && <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="slot-thumb" />}
                     <ScrollText className="slot-title">{song.title}</ScrollText>
-                    {onPlayNow && <button className="btn-icon play" onClick={() => onPlayNow(song)} title="Puść teraz">▶</button>}
-                    {onQueueSong && <button className="btn-icon queue" onClick={() => onQueueSong(song)} title="Dodaj do kolejki">▤</button>}
-                    {onRemoveOption && <button className="btn-icon" onClick={() => onRemoveOption(key)} title="Wylosuj nową opcję">↺</button>}
+                    {onQueueSong && <button className="btn-icon queue" onClick={e => { e.stopPropagation(); onQueueSong(song) }} title="Dodaj do kolejki">▤</button>}
+                    {onReplaceSong && <button className="btn-icon" onClick={e => { e.stopPropagation(); onReplaceSong(key, song) }} title="Wylosuj nową piosenkę">🎲</button>}
                   </div>
                 ))}
               </div>
