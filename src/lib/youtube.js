@@ -84,11 +84,13 @@ export async function searchYouTube(query, maxResults = 3) {
   const res = await fetch(endpoint.toString())
   if (!res.ok) return []
   const data = await res.json()
-  return (data.items ?? []).map((item) => ({
-    ytId: item.id.videoId,
-    title: cleanTitle(item.snippet.title),
-    thumbnail: item.snippet.thumbnails?.default?.url ?? null,
-  }))
+  return (data.items ?? [])
+    .filter((item) => item.id?.videoId)
+    .map((item) => ({
+      ytId: item.id.videoId,
+      title: cleanTitle(item.snippet.title),
+      thumbnail: item.snippet.thumbnails?.default?.url ?? null,
+    }))
 }
 
 export async function fetchYtTitle(url) {

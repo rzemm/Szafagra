@@ -297,12 +297,25 @@ export function useRoomScreen(route) {
 
   const approveSuggestion = useCallback(async (suggestion) => {
     if (!auth.roomId || !room) return
-    const song = { id: genId(), title: suggestion.title, ytId: suggestion.ytId, url: suggestion.url }
+    const isDuplicate = (room.songs ?? []).some((s) => s.ytId === suggestion.ytId)
+    if (isDuplicate) {
+      dispatch({ type: 'setField', field: 'uiError', value: `"${suggestion.title}" jest już na liście.` })
+      setTimeout(() => dispatch({ type: 'setField', field: 'uiError', value: '' }), 3000)
+      return
+    }
+    const addedBy = suggestion.userId ? { uid: suggestion.userId } : null
+    const song = {
+      id: genId(),
+      title: suggestion.title,
+      ytId: suggestion.ytId,
+      url: suggestion.url,
+      ...(addedBy ? { addedBy } : {}),
+    }
     await executeAction(async () => {
       await replaceRoomSongs(auth.roomId, [...(room.songs ?? []), song])
       await deleteSuggestion(auth.roomId, suggestion.id)
     }, 'Nie udalo sie zatwierdzic propozycji.')
-  }, [auth.roomId, executeAction, room])
+  }, [auth.roomId, dispatch, executeAction, room])
 
   const rejectSuggestion = useCallback(async (suggestionId) => {
     if (!auth.roomId) return
@@ -327,6 +340,7 @@ export function useRoomScreen(route) {
     executeAction,
     dispatch,
     genId,
+    user: auth.user,
   })
 
   const shareLinks = useShareLinks({

@@ -278,7 +278,7 @@ export function GuestView({
                         onClick={() => handleSelectSuggestion(s)}
                       >
                         {s.thumbnail && <img src={s.thumbnail} className="suggestion-thumb" alt="" />}
-                        <span className="suggestion-title">{s.title}</span>
+                        <ScrollText className="suggestion-title">{s.title}</ScrollText>
                       </li>
                     ))}
                   </ul>

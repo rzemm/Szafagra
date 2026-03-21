@@ -11,6 +11,7 @@ export function useSongActions({
   executeAction,
   dispatch,
   genId,
+  user,
 }) {
   const [suggestions, setSuggestions] = useState([])
   const [isSearching, setIsSearching] = useState(false)
@@ -38,18 +39,27 @@ export function useSongActions({
   const selectSuggestion = useCallback(async (suggestion) => {
     if (!roomId || !room) return
     setSuggestions([])
+    const isDuplicate = (room.songs ?? []).some((s) => s.ytId === suggestion.ytId)
+    if (isDuplicate) {
+      dispatch({ type: 'setField', field: 'urlErr', value: 'Ten utwór jest już na liście.' })
+      return
+    }
+    const addedBy = user && !user.isAnonymous
+      ? { uid: user.uid, name: user.displayName || user.email || null }
+      : null
     const song = {
       id: genId(),
       title: suggestion.title,
       ytId: suggestion.ytId,
       url: `https://youtu.be/${suggestion.ytId}`,
+      ...(addedBy ? { addedBy } : {}),
     }
     await executeAction(
       () => replaceRoomSongs(roomId, [...(room.songs ?? []), song]),
       'Nie udało się dodać utworu.',
     )
     dispatch({ type: 'songAdded' })
-  }, [dispatch, executeAction, genId, room, roomId])
+  }, [dispatch, executeAction, genId, room, roomId, user])
 
   const clearSuggestions = useCallback(() => setSuggestions([]), [])
 
@@ -116,6 +126,12 @@ export function useSongActions({
       return
     }
 
+    const isDuplicate = (room?.songs ?? []).some((s) => s.ytId === ytId)
+    if (isDuplicate) {
+      dispatch({ type: 'setField', field: 'urlErr', value: 'Ten utwór jest już na liście.' })
+      return
+    }
+
     const cleanUrl = `https://youtu.be/${ytId}`
     let title = newSongTitle.trim()
     if (!title) {
@@ -124,7 +140,16 @@ export function useSongActions({
       dispatch({ type: 'songTitleFetchEnd' })
     }
 
-    const song = { id: genId(), url: cleanUrl, title: cleanTitle(title) || cleanUrl, ytId }
+    const addedBy = user && !user.isAnonymous
+      ? { uid: user.uid, name: user.displayName || user.email || null }
+      : null
+    const song = {
+      id: genId(),
+      url: cleanUrl,
+      title: cleanTitle(title) || cleanUrl,
+      ytId,
+      ...(addedBy ? { addedBy } : {}),
+    }
     const done = await executeAction(
       () => replaceRoomSongs(roomId, [...(room?.songs ?? []), song]),
       'Nie udało się dodać utworu.',
@@ -132,7 +157,7 @@ export function useSongActions({
     if (done === null) return
 
     dispatch({ type: 'songAdded' })
-  }, [dispatch, executeAction, genId, newSongTitle, newSongUrl, room, roomId])
+  }, [dispatch, executeAction, genId, newSongTitle, newSongUrl, room, roomId, user])
 
   const deleteSong = useCallback(async (songId) => {
     if (!room || !roomId) return
