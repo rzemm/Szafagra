@@ -43,6 +43,11 @@ export default function App() {
         onSignIn={screen.auth.signInWithGoogle}
         onSignOut={screen.auth.signOutUser}
         onOpenCookieSettings={consent.openSettings}
+        onUpdateDisplayName={screen.auth.updateDisplayName}
+        onCreateRoomFromYt={screen.handleCreateRoomFromYt}
+        onAddYtToRoom={screen.handleAddYtToRoom}
+        onCopyForeignRoom={(sourceRoom) => screen.handleCreateRoomFromYt(sourceRoom.name || 'Kopia', sourceRoom.songs ?? [])}
+        onAppendForeignToRoom={screen.handleAddYtToRoom}
       />
     )
   } else if (screen.roomError) {

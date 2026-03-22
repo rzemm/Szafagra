@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ScrollText } from './ScrollText.jsx'
 import { useLanguage } from '../context/LanguageContext'
+import { UserProfileModal } from './UserProfileModal.jsx'
 
 const IconTrash = () => (
   <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
@@ -11,6 +12,12 @@ const IconTrash = () => (
 const IconMusic = () => (
   <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden="true">
     <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+  </svg>
+)
+
+const IconEye = () => (
+  <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true" style={{ flexShrink: 0, opacity: 0.55 }}>
+    <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
   </svg>
 )
 
@@ -36,10 +43,18 @@ export function HomePage({
   onSignIn,
   onSignOut,
   onOpenCookieSettings,
+  onUpdateDisplayName,
+  onCreateRoomFromYt,
+  onAddYtToRoom,
+  onCopyForeignRoom,
+  onAppendForeignToRoom,
 }) {
   const { t, lang, toggleLang } = useLanguage()
   const [roomInput, setRoomInput] = useState('')
   const [seeding, setSeeding] = useState(false)
+  const [showAccountSettings, setShowAccountSettings] = useState(false)
+  const [previewRoom, setPreviewRoom] = useState(null)
+  const [previewBusy, setPreviewBusy] = useState(false)
   const isLoggedIn = user && !user.isAnonymous
 
   const handleSeed = async () => {
@@ -54,31 +69,44 @@ export function HomePage({
   }
 
   return (
+    <>
     <div className="homepage">
       <div className="homepage-top">
-        <div className="homepage-logo">
-          <span className="homepage-logo-icon"><IconMusic /></span>
-          <span className="header-logo">szafi.fi</span>
+        <div className="homepage-top-left">
+          <div className="homepage-logo">
+            <span className="homepage-logo-icon"><IconMusic /></span>
+            <span className="header-logo">szafi.fi</span>
+          </div>
+          {isLoggedIn ? (
+            <div className="home-user-bar">
+              <button className="home-user-avatar-btn" onClick={() => setShowAccountSettings(true)} title={t('accountSettings')}>
+                {user.photoURL
+                  ? <img src={user.photoURL} alt="" className="home-user-avatar" referrerPolicy="no-referrer" />
+                  : <div className="home-user-avatar-initials">{(user.displayName || '?')[0].toUpperCase()}</div>
+                }
+                <span className="home-user-name">{user.displayName}</span>
+              </button>
+              <button className="home-user-link" onClick={onOpenCookieSettings}>{t('cookies')}</button>
+              <button className="lang-toggle" onClick={toggleLang}>{t('langToggle')}</button>
+              <button className="home-user-logout" onClick={onSignOut}>{t('signOut')}</button>
+            </div>
+          ) : (
+            <div className="home-google-signin">
+              <button className="home-google-btn" onClick={onSignIn}>
+                <GoogleLogoSvg />
+                {t('signInGoogle')}
+              </button>
+              <p className="home-google-hint">{t('toSeePrivateRooms')}</p>
+              <button className="home-cookie-link" onClick={onOpenCookieSettings}>{t('cookieSettings')}</button>
+              <button className="lang-toggle" onClick={toggleLang}>{t('langToggle')}</button>
+            </div>
+          )}
         </div>
-        {isLoggedIn ? (
-          <div className="home-user-bar">
-            {user.photoURL && <img src={user.photoURL} alt="" className="home-user-avatar" referrerPolicy="no-referrer" />}
-            <span className="home-user-name">{user.displayName}</span>
-            <button className="home-user-link" onClick={onOpenCookieSettings}>{t('cookies')}</button>
-            <button className="lang-toggle" onClick={toggleLang}>{t('langToggle')}</button>
-            <button className="home-user-logout" onClick={onSignOut}>{t('signOut')}</button>
-          </div>
-        ) : (
-          <div className="home-google-signin">
-            <button className="home-google-btn" onClick={onSignIn}>
-              <GoogleLogoSvg />
-              {t('signInGoogle')}
-            </button>
-            <p className="home-google-hint">{t('toSeePrivateRooms')}</p>
-            <button className="home-cookie-link" onClick={onOpenCookieSettings}>{t('cookieSettings')}</button>
-            <button className="lang-toggle" onClick={toggleLang}>{t('langToggle')}</button>
-          </div>
-        )}
+        <div className="homepage-top-right">
+          <button className="home-how-it-works" disabled>
+            {t('howItWorks')}
+          </button>
+        </div>
       </div>
 
       <div className="homepage-body">
@@ -88,7 +116,7 @@ export function HomePage({
             type="text"
             placeholder={t('enterRoomCode')}
             value={roomInput}
-            onChange={(event) => setRoomInput(event.target.value)}
+            onChange={(event) => setRoomInput(event.target.value.toUpperCase())}
             onKeyDown={(event) => event.key === 'Enter' && handleJoin()}
             autoComplete="off"
             spellCheck={false}
@@ -108,23 +136,54 @@ export function HomePage({
             <div className="home-rooms-list">
               {isLoggedIn ? (
                 ownedRooms.length > 0 ? (
-                  ownedRooms.map((ownedRoom) => (
-                    <div key={ownedRoom.id} className="home-room-card home-room-card--admin">
-                      <a className="home-room-card-link" href={`/?room=${ownedRoom.id}`}>
-                        <ScrollText className="home-room-label">{ownedRoom.name || t('privateRoom')}</ScrollText>
+                  ownedRooms.map((ownedRoom) => {
+                    const ratingsArr = Object.values(ownedRoom.ratings ?? {})
+                    const avgRating = ratingsArr.length > 0
+                      ? (ratingsArr.reduce((sum, v) => sum + v, 0) / ratingsArr.length).toFixed(1)
+                      : null
+                    const isPublic = ownedRoom.type === 'public'
+
+                    return (
+                      <a key={ownedRoom.id} className="home-room-card home-room-card--admin" href={`/?room=${ownedRoom.id}`}>
+                        <div className="home-room-card-body">
+                          <span className="home-room-card-link">
+                            {isPublic && <IconEye />}
+                            <ScrollText className="home-room-label">{ownedRoom.name || (isPublic ? t('publicRoom') : t('privateRoom'))}</ScrollText>
+                          </span>
+                          <div className="home-room-stats">
+                            <span className="home-room-stat home-room-stat--rating">
+                              <span className="home-stat-icon">{'\u2605'}</span>
+                              <span className="home-stat-val">{avgRating ?? 0}</span>
+                              <span className="home-stat-sub">/{ratingsArr.length}</span>
+                            </span>
+                            <span className="home-room-stat home-room-stat--songs">
+                              <span className="home-stat-icon">{'\u266A'}</span>
+                              <span className="home-stat-val">{ownedRoom.songs?.length ?? 0}</span>
+                            </span>
+                            <span className="home-room-stat home-room-stat--plays">
+                              <span className="home-stat-icon">{'\u25B6'}</span>
+                              <span className="home-stat-val">{ownedRoom.totalPlays ?? 0}</span>
+                            </span>
+                            <span className="home-room-stat home-room-stat--votes">
+                              <span className="home-stat-icon">{'\u2714'}</span>
+                              <span className="home-stat-val">{ownedRoom.totalVotes ?? 0}</span>
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          className="home-room-delete"
+                          title={t('deleteRoom')}
+                          onClick={(event) => {
+                            event.preventDefault()
+                            event.stopPropagation()
+                            onDeleteRoom(ownedRoom)
+                          }}
+                        >
+                          <IconTrash />
+                        </button>
                       </a>
-                      <button
-                        className="home-room-delete"
-                        title={t('deleteRoom')}
-                        onClick={(event) => {
-                          event.preventDefault()
-                          onDeleteRoom(ownedRoom)
-                        }}
-                      >
-                        <IconTrash />
-                      </button>
-                    </div>
-                  ))
+                    )
+                  })
                 ) : (
                   <p className="home-rooms-empty">{t('noRoomsYet')}</p>
                 )
@@ -132,10 +191,14 @@ export function HomePage({
                 <p className="home-rooms-empty">{t('signInToSeeRooms')}</p>
               )}
             </div>
-            <button className="homepage-btn homepage-btn--primary" onClick={onCreateRoom} disabled={creatingRoom}>
-              <span className="homepage-btn-icon">{'\u2726'}</span>
-              {creatingRoom ? t('creating') : t('createNewRoom')}
-            </button>
+            {isLoggedIn ? (
+              <button className="homepage-btn homepage-btn--primary" onClick={onCreateRoom} disabled={creatingRoom}>
+                <span className="homepage-btn-icon">{'\u2726'}</span>
+                {creatingRoom ? t('creating') : t('createNewRoom')}
+              </button>
+            ) : (
+              <p className="home-rooms-empty home-rooms-empty--create-hint">{t('signInToCreate')}</p>
+            )}
           </div>
 
           <div className="homepage-col">
@@ -155,40 +218,34 @@ export function HomePage({
                       : null
 
                     return (
-                      <a
+                      <button
                         key={recentRoom.id}
-                        className="home-room-card"
-                        href={`/?room=${recentRoom.id}`}
-                        onClick={(event) => {
-                          event.preventDefault()
-                          onPreviewRoom(recentRoom.id)
-                        }}
+                        className="home-room-card home-room-card--clickable"
+                        onClick={() => setPreviewRoom(recentRoom)}
                       >
                         <div className="home-room-card-link">
                           <ScrollText className="home-room-label">{recentRoom.name || t('defaultRoomName')}</ScrollText>
                         </div>
                         <div className="home-room-stats">
-                          {avgRating !== null && (
-                            <span className="home-room-stat home-room-stat--rating">
-                              <span className="home-stat-icon">{'\u2605'}</span>
-                              <span className="home-stat-val">{avgRating}</span>
-                              <span className="home-stat-sub">/{ratingsArr.length}</span>
-                            </span>
-                          )}
-                          <span className="home-room-stat">
-                            <span className="home-stat-icon">{'\u25B6'}</span>
-                            <span className="home-stat-val">{recentRoom.totalPlays ?? 0}</span>
+                          <span className="home-room-stat home-room-stat--rating">
+                            <span className="home-stat-icon">{'\u2605'}</span>
+                            <span className="home-stat-val">{avgRating ?? 0}</span>
+                            <span className="home-stat-sub">/{ratingsArr.length}</span>
                           </span>
-                          <span className="home-room-stat">
-                            <span className="home-stat-icon">{'\u2714'}</span>
-                            <span className="home-stat-val">{recentRoom.totalVotes ?? 0}</span>
-                          </span>
-                          <span className="home-room-stat">
+                          <span className="home-room-stat home-room-stat--songs">
                             <span className="home-stat-icon">{'\u266A'}</span>
                             <span className="home-stat-val">{recentRoom.songs?.length ?? 0}</span>
                           </span>
+                          <span className="home-room-stat home-room-stat--plays">
+                            <span className="home-stat-icon">{'\u25B6'}</span>
+                            <span className="home-stat-val">{recentRoom.totalPlays ?? 0}</span>
+                          </span>
+                          <span className="home-room-stat home-room-stat--votes">
+                            <span className="home-stat-icon">{'\u2714'}</span>
+                            <span className="home-stat-val">{recentRoom.totalVotes ?? 0}</span>
+                          </span>
                         </div>
-                      </a>
+                      </button>
                     )
                   })
                 ) : (
@@ -202,5 +259,84 @@ export function HomePage({
         </div>
       </div>
     </div>
+
+    {previewRoom && (
+      <div className="room-preview-overlay" role="presentation" onClick={() => setPreviewRoom(null)}>
+        <div className="room-preview-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+          <div className="room-preview-header">
+            <div className="room-preview-header-info">
+              <span className="room-preview-title">{previewRoom.name || t('defaultRoomName')}</span>
+              <span className="room-preview-count">{t('songCount', previewRoom.songs?.length ?? 0)}</span>
+            </div>
+            <button className="room-preview-close" onClick={() => setPreviewRoom(null)}>✕</button>
+          </div>
+          <div className="room-preview-songs">
+            {(previewRoom.songs ?? []).map((song, i) => (
+              <div key={song.id ?? i} className="room-preview-song">
+                <span className="room-preview-song-num">{i + 1}</span>
+                <span className="room-preview-song-title">{song.title}</span>
+              </div>
+            ))}
+          </div>
+          <div className="room-preview-actions">
+            <button
+              className="room-preview-btn room-preview-btn--enter"
+              onClick={() => { setPreviewRoom(null); onPreviewRoom(previewRoom.id) }}
+            >
+              {t('enterRoom')}
+            </button>
+            {isLoggedIn && (
+              <>
+                <button
+                  className="room-preview-btn room-preview-btn--copy"
+                  disabled={previewBusy}
+                  onClick={async () => {
+                    setPreviewBusy(true)
+                    await onCopyForeignRoom(previewRoom)
+                    setPreviewBusy(false)
+                    setPreviewRoom(null)
+                  }}
+                >
+                  {previewBusy ? t('creating') : t('copyToNew')}
+                </button>
+                {ownedRooms.length > 0 && (
+                  <div className="room-preview-append-list">
+                    <span className="room-preview-append-label">{t('addTo')}</span>
+                    {ownedRooms.map((ownedRoom) => (
+                      <button
+                        key={ownedRoom.id}
+                        className="room-preview-btn room-preview-btn--append"
+                        disabled={previewBusy}
+                        onClick={async () => {
+                          setPreviewBusy(true)
+                          await onAppendForeignToRoom(ownedRoom.id, previewRoom.songs ?? [])
+                          setPreviewBusy(false)
+                          setPreviewRoom(null)
+                        }}
+                      >
+                        {ownedRoom.name || t('privateRoom')}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
+
+    {showAccountSettings && isLoggedIn && (
+      <UserProfileModal
+        user={user}
+        onClose={() => setShowAccountSettings(false)}
+        onUpdateDisplayName={onUpdateDisplayName}
+        onCreateRoomFromYt={onCreateRoomFromYt}
+        onAddYtToRoom={onAddYtToRoom}
+        currentRoomId={null}
+        ownedRooms={ownedRooms}
+      />
+    )}
+    </>
   )
 }

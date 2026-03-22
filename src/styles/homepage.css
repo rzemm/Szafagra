@@ -12,9 +12,26 @@
 
 .homepage-top {
   display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 960px;
+}
+
+.homepage-top-left {
+  display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.75rem;
+}
+
+.homepage-top-right {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
 }
 
@@ -106,6 +123,26 @@
   color: var(--text-dim);
   padding: 0.5rem 0;
 }
+
+.home-rooms-empty--create-hint {
+  text-align: center;
+  padding: 0.75rem 0;
+  font-style: italic;
+}
+
+.home-how-it-works {
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  border: 2px dashed var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: not-allowed;
+  opacity: 0.55;
+  white-space: nowrap;
+}
+
 
 .homepage-btn {
   display: flex;
@@ -430,8 +467,27 @@
 
 .home-room-card--admin {
   flex-direction: row;
-  align-items: center;
+  align-items: stretch;
+  text-decoration: none;
+  color: inherit;
 }
+
+.home-room-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.home-room-card--clickable {
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+  font: inherit;
+}
+
 
 .home-room-card:hover {
   background: var(--surface3, color-mix(in srgb, var(--surface2) 80%, var(--accent) 20%));
@@ -440,15 +496,16 @@
 .home-room-card-link {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
   flex: 1;
   padding: 0.75rem 1rem;
   color: var(--text);
   text-decoration: none;
+  min-width: 0;
 }
 
 .home-room-delete {
-  padding: 0.75rem 0.75rem;
+  padding: 0 0.75rem;
   background: none;
   border: none;
   border-left: 1.5px solid var(--border);
@@ -458,6 +515,9 @@
   line-height: 1;
   transition: color 0.15s, background 0.15s;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .home-room-delete:hover {
@@ -520,6 +580,18 @@
   color: #f5b942;
 }
 
+.home-room-stat--songs {
+  color: #a78bfa;
+}
+
+.home-room-stat--plays {
+  color: #f87171;
+}
+
+.home-room-stat--votes {
+  color: #6ee7b7;
+}
+
 .home-stat-icon {
   font-size: 0.65rem;
   opacity: 0.8;
@@ -560,6 +632,37 @@
   display: flex;
   align-items: center;
   gap: 0.55rem;
+}
+
+.home-user-avatar-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: none;
+  border: none;
+  padding: 0.2rem 0.4rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.home-user-avatar-btn:hover {
+  background: var(--surface2);
+}
+
+.home-user-avatar-initials {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .home-user-avatar {
@@ -605,10 +708,12 @@
   }
 
   .homepage-top {
+    gap: 0.75rem;
+  }
+
+  .homepage-top-left {
     flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
+    gap: 0.75rem;
   }
 
   .homepage-logo .header-logo {
@@ -617,6 +722,11 @@
 
   .homepage-logo-icon {
     font-size: 1.5rem;
+  }
+
+  .home-how-it-works {
+    padding: 0.5rem 0.9rem;
+    font-size: 0.85rem;
   }
 
   .homepage-cols-row {
@@ -757,6 +867,208 @@
   .guest-contact-form .contact-form-panel,
   .settings-contact-form .contact-form-panel {
     width: 100%;
+  }
+}
+
+/* ─── Room preview popup ─────────────────────────────────────────────────────── */
+.room-preview-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 1rem;
+}
+
+.room-preview-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  width: min(100%, 480px);
+  max-height: min(85svh, 640px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
+}
+
+.room-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.1rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.room-preview-header-info {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.room-preview-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.room-preview-count {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.room-preview-close {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  border-radius: 6px;
+  flex-shrink: 0;
+  line-height: 1;
+  transition: color 0.12s, background 0.12s;
+}
+
+.room-preview-close:hover {
+  color: var(--text);
+  background: var(--surface2);
+}
+
+.room-preview-songs {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.4rem 0;
+}
+
+.room-preview-songs::-webkit-scrollbar { width: 4px; }
+.room-preview-songs::-webkit-scrollbar-track { background: transparent; }
+.room-preview-songs::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+.room-preview-song {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.35rem 1.1rem;
+  transition: background 0.1s;
+}
+
+.room-preview-song:hover {
+  background: var(--surface2);
+}
+
+.room-preview-song-num {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  min-width: 1.4rem;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.room-preview-song-title {
+  font-size: 0.85rem;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.room-preview-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.85rem 1rem;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.room-preview-btn {
+  width: 100%;
+  padding: 0.55rem 0.9rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  transition: background 0.12s;
+}
+
+.room-preview-btn:hover:not(:disabled) {
+  background: var(--surface3, color-mix(in srgb, var(--surface2) 80%, var(--accent) 20%));
+}
+
+.room-preview-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.room-preview-btn--enter {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.room-preview-btn--enter:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+.room-preview-btn--copy {
+  background: transparent;
+  color: var(--text-dim);
+}
+
+.room-preview-append-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.room-preview-append-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  padding: 0 0.2rem;
+}
+
+.room-preview-btn--append {
+  font-size: 0.82rem;
+  font-weight: 500;
+  background: transparent;
+  color: var(--text-dim);
+}
+
+.room-preview-btn--append:hover:not(:disabled) {
+  background: var(--surface2);
+  color: var(--text);
+}
+
+@media (max-width: 640px) {
+  .room-preview-overlay {
+    align-items: flex-end;
+    padding: 0.75rem;
+  }
+  .room-preview-modal {
+    width: 100%;
+    border-radius: 16px 16px 12px 12px;
+    max-height: min(90svh, 600px);
   }
 }
 
