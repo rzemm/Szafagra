@@ -86,6 +86,7 @@ export const pl = {
   nowPlaying: 'TERAZ GRA',
   discoModeTitle: 'Tryb disco',
   blurLabel: 'Rozmycie',
+  blurOff: 'wył',
   exitDisco: '\u2715 Disco',
   votesToSkip: 'glosow na pominiecie',
 

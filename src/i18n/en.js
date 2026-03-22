@@ -86,6 +86,7 @@ export const en = {
   nowPlaying: 'NOW PLAYING',
   discoModeTitle: 'Disco mode',
   blurLabel: 'Blur',
+  blurOff: 'off',
   exitDisco: '\u2715 Disco',
   votesToSkip: 'votes to skip',
 

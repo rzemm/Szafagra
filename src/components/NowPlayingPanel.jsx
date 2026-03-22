@@ -6,6 +6,7 @@ import { useLanguage } from '../context/LanguageContext'
 export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerState, loadProgress, playerRef, playerDivRef, playerReady, advanceToWinner, skipThreshold, skipCount, startJukebox, stopJukebox, room, canEditRoom }) {
   const { t } = useLanguage()
   const [volume, setVolume] = useState(80)
+  const [prevVolume, setPrevVolume] = useState(80)
   const [discoMode, setDiscoMode] = useState(true)
   const [blurAmount, setBlurAmount] = useState(8)
 
@@ -17,7 +18,20 @@ export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerSta
   const handleVolumeChange = (e) => {
     const val = Number(e.target.value)
     setVolume(val)
+    if (val > 0) setPrevVolume(val)
     playerRef.current?.setVolume(val)
+  }
+
+  const toggleMute = () => {
+    if (volume > 0) {
+      setPrevVolume(volume)
+      setVolume(0)
+      playerRef.current?.setVolume(0)
+    } else {
+      const restore = prevVolume > 0 ? prevVolume : 80
+      setVolume(restore)
+      playerRef.current?.setVolume(restore)
+    }
   }
 
   const playPauseClick = () => ytPlayerState === 1
@@ -83,7 +97,9 @@ export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerSta
 
           {!discoMode && (
             <div className="volume-row">
-              <span className="volume-icon">🔈</span>
+              <button className="volume-icon volume-mute-btn" onClick={toggleMute} title={volume === 0 ? 'Włącz dźwięk' : 'Wycisz'}>
+                {volume === 0 ? '🔇' : '🔈'}
+              </button>
               <input
                 type="range"
                 min="0"
@@ -118,6 +134,9 @@ export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerSta
           </div>
 
           <div className="disco-bar-controls">
+            {canEditRoom && isPlaying && skipThreshold > 0 && (
+              <span className="disco-skip-count">{skipCount}/{skipThreshold}</span>
+            )}
             {canEditRoom && (!isPlaying ? (
               <button
                 className="btn-ctrl btn-ctrl-start"
@@ -138,7 +157,9 @@ export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerSta
           </div>
 
           <div className="disco-bar-extras">
-            <span className="volume-icon">🔈</span>
+            <button className="volume-icon volume-mute-btn" onClick={toggleMute} title={volume === 0 ? 'Włącz dźwięk' : 'Wycisz'}>
+              {volume === 0 ? '🔇' : '🔈'}
+            </button>
             <input
               type="range"
               min="0"
@@ -148,11 +169,10 @@ export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerSta
               className="volume-slider disco-slider"
             />
             <span className="volume-icon">🔊</span>
-            <span
-              className="disco-blur-label"
-              style={{ cursor: 'pointer', userSelect: 'none' }}
+            <button
+              className="btn-ctrl disco-blur-btn"
               onClick={() => setBlurAmount((v) => v === 0 ? 8 : 0)}
-            >{t('blurLabel')}</span>
+            >{t('blurLabel')}: {blurAmount === 0 ? t('blurOff') : blurAmount}</button>
             <input
               type="range"
               min="0"
