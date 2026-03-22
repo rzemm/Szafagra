@@ -48,7 +48,7 @@ function uiReducer(state, action) {
 export function useRoomUiState() {
   const [uiState, dispatch] = useReducer(uiReducer, initialUiState)
   const [panelOpen, setPanelOpen] = useState({ qr: true, voting: false, showQueue: true, showRoomCode: false })
-  const [leftPanel, setLeftPanel] = useState('songs')
+  const [leftPanel, setLeftPanel] = useState(null)
   const [creatingRoom, setCreatingRoom] = useState(false)
   const [copyingRoom, setCopyingRoom] = useState(false)
   const [appendingRoom, setAppendingRoom] = useState(false)

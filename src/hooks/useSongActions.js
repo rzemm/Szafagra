@@ -185,12 +185,24 @@ export function useSongActions({
     )
   }, [executeAction, room, roomId])
 
+  const updateSong = useCallback(async (songId, updates) => {
+    if (!room || !roomId) return
+    const updatedSongs = room.songs.map((song) =>
+      song.id === songId ? { ...song, ...updates } : song
+    )
+    await executeAction(
+      () => replaceRoomSongs(roomId, updatedSongs),
+      'Nie udalo sie zaktualizowac utworu.',
+    )
+  }, [executeAction, room, roomId])
+
   return {
     handleUrlBlur,
     importFromYouTube,
     addSong,
     deleteSong,
     deleteSongs,
+    updateSong,
     suggestions,
     isSearching,
     selectSuggestion,

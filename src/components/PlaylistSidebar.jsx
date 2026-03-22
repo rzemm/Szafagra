@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { SongsPanel } from './sidebar/SongsPanel'
 import { QueuePanel } from './sidebar/QueuePanel'
 import { SettingsPanel } from './sidebar/SettingsPanel'
@@ -10,6 +11,7 @@ export function PlaylistSidebar({
   playSongNow,
   deleteSong,
   deleteSongs,
+  updateSong,
   suggestions,
   approveSuggestion,
   rejectSuggestion,
@@ -46,8 +48,45 @@ export function PlaylistSidebar({
   localCurrentSongId,
   onSubmitMessage,
 }) {
+  const [sidebarWidth, setSidebarWidth] = useState(360)
+  const isResizing = useRef(false)
+  const startX = useRef(0)
+  const startWidth = useRef(360)
+
+  const handleResizeMouseDown = useCallback((e) => {
+    isResizing.current = true
+    startX.current = e.clientX
+    startWidth.current = sidebarWidth
+    document.body.style.userSelect = 'none'
+    document.body.style.cursor = 'ew-resize'
+  }, [sidebarWidth])
+
+  useEffect(() => {
+    const onMouseMove = (e) => {
+      if (!isResizing.current) return
+      const delta = e.clientX - startX.current
+      setSidebarWidth(Math.min(600, Math.max(200, startWidth.current + delta)))
+    }
+    const onMouseUp = () => {
+      if (!isResizing.current) return
+      isResizing.current = false
+      document.body.style.userSelect = ''
+      document.body.style.cursor = ''
+    }
+    document.addEventListener('mousemove', onMouseMove)
+    document.addEventListener('mouseup', onMouseUp)
+    return () => {
+      document.removeEventListener('mousemove', onMouseMove)
+      document.removeEventListener('mouseup', onMouseUp)
+    }
+  }, [])
+
   return (
-    <aside className={`sidebar${leftPanel ? '' : ' sidebar-hidden'}`}>
+    <>
+    <aside
+      className={`sidebar${leftPanel ? '' : ' sidebar-hidden'}`}
+      style={leftPanel ? { width: sidebarWidth } : undefined}
+    >
       {leftPanel === 'songs' && room && (
         <SongsPanel
           room={room}
@@ -56,6 +95,7 @@ export function PlaylistSidebar({
           playSongNow={playSongNow}
           deleteSong={deleteSong}
           deleteSongs={deleteSongs}
+          updateSong={updateSong}
           showThumbnails={showThumbnails}
           queueSong={queueSong}
           canEditRoom={canEditRoom}
@@ -113,5 +153,9 @@ export function PlaylistSidebar({
         />
       )}
     </aside>
+    {leftPanel && (
+      <div className="sidebar-resize-handle" onMouseDown={handleResizeMouseDown} />
+    )}
+    </>
   )
 }

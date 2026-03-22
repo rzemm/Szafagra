@@ -43,6 +43,7 @@ export function OwnerRoomView({
         playSongNow={voting.playSongNow}
         deleteSong={sidebar.songActions.deleteSong}
         deleteSongs={sidebar.songActions.deleteSongs}
+        updateSong={sidebar.songActions.updateSong}
         suggestions={sidebar.suggestions}
         approveSuggestion={sidebar.approveSuggestion}
         rejectSuggestion={sidebar.rejectSuggestion}

@@ -106,7 +106,7 @@ export function useJukeboxPlayback({ authReady, canEditRoom, isViewMode, roomId,
     if (!finalized) return
 
     prevSongIdRef.current = finalized.currentSong.id
-    loadVideoById(finalized.currentSong.ytId)
+    loadVideoById(finalized.currentSong.ytId, finalized.currentSong.startOffset)
     incrementRoomPlays(rid).catch(() => {})
 
     await setMainState(rid, {
@@ -143,7 +143,7 @@ export function useJukeboxPlayback({ authReady, canEditRoom, isViewMode, roomId,
     if (!roomId || !room) return
 
     prevSongIdRef.current = song.id
-    loadVideoById(song.ytId)
+    loadVideoById(song.ytId, song.startOffset)
     incrementRoomPlays(roomId).catch(() => {})
 
     const nextState = buildImmediatePlayState(room, song)
@@ -221,10 +221,10 @@ export function useJukeboxPlayback({ authReady, canEditRoom, isViewMode, roomId,
 
   useEffect(() => {
     if (!canEditRoom || !room?.isPlaying || !room?.currentSong) return
-    const { id, ytId } = room.currentSong
+    const { id, ytId, startOffset } = room.currentSong
     if (prevSongIdRef.current === id) return
     prevSongIdRef.current = id
-    loadVideoById(ytId)
+    loadVideoById(ytId, startOffset)
   }, [canEditRoom, loadVideoById, room?.currentSong, room?.isPlaying])
 
   const startJukebox = useCallback(async () => {
@@ -234,7 +234,7 @@ export function useJukeboxPlayback({ authReady, canEditRoom, isViewMode, roomId,
     if (!initialState.currentSong) return
 
     prevSongIdRef.current = initialState.currentSong.id
-    loadVideoById(initialState.currentSong.ytId)
+    loadVideoById(initialState.currentSong.ytId, initialState.currentSong.startOffset)
     incrementRoomPlays(roomId).catch(() => {})
 
     await setMainState(roomId, {
@@ -266,7 +266,7 @@ export function useJukeboxPlayback({ authReady, canEditRoom, isViewMode, roomId,
     if (!nextState) return
 
     prevSongIdRef.current = nextState.currentSong.id
-    loadVideoById(nextState.currentSong.ytId)
+    loadVideoById(nextState.currentSong.ytId, nextState.currentSong.startOffset)
 
     await setMainState(rid, {
       isPlaying: true,

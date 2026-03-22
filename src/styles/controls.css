@@ -375,33 +375,56 @@ textarea:focus { outline: none; border-color: var(--accent); }
   flex-direction: column;
   gap: 0.35rem;
   flex: 1;
-  overflow-y: auto;
-  padding-right: 6px;
-  scrollbar-width: auto;
-  scrollbar-color: var(--border) transparent;
+  overflow-y: scroll;
+  padding-right: 0;
+  scrollbar-width: thin;
+  scrollbar-color: #5a6090 var(--bg);
 }
 
 .song-list::-webkit-scrollbar {
-  width: 8px;
+  width: 12px;
 }
 
 .song-list::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--bg);
 }
 
 .song-list::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 4px;
+  background: #5a6090;
+  border-radius: 6px;
+  border: 3px solid var(--bg);
+}
+
+.song-list::-webkit-scrollbar-thumb:hover {
+  background: #7a82b8;
 }
 
 .song-item {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  align-items: stretch;
+  gap: 0.25rem;
   background: var(--surface2);
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
-  padding: 0.35rem 0.5rem;
+  padding: 0.2rem 0.2rem 0.2rem 0.4rem;
+}
+
+.song-item .song-thumb {
+  align-self: center;
+}
+
+.song-item .song-title-col {
+  align-self: center;
+  padding: 0.15rem 0;
+}
+
+.song-item .btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.3rem;
+  border-radius: 5px;
+  min-width: 1.5rem;
 }
 
 .song-item.song-playing {
@@ -436,7 +459,7 @@ textarea:focus { outline: none; border-color: var(--accent); }
 
 .song-title {
   flex: 1;
-  font-size: 0.82rem;
+  font-size: 0.76rem;
   overflow: hidden;
   white-space: nowrap;
   min-width: 0;
