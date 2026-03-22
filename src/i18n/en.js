@@ -239,5 +239,8 @@ export const en = {
   ytImportAddToOther: 'Add to another room...',
 
   // Language toggle
-  langToggle: '🇵🇱',
+  langToggle: '🇬🇧',
+  showAddedBy: 'Show who added song',
+  notFoundOnList: 'Not on the list — results from YouTube:',
+  searchingYt: 'Searching YouTube...',
 }

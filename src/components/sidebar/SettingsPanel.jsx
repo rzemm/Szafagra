@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { ContactMessageForm } from '../ContactMessageForm'
 import { NotePicker } from '../NotePicker'
 import { useLanguage } from '../../context/LanguageContext'
@@ -39,6 +40,7 @@ export function SettingsPanel({
   approveSuggestion,
   rejectSuggestion,
   showThumbnails,
+  showAddedBy,
   voteThreshold,
   voteMode,
   skipThreshold,
@@ -66,6 +68,8 @@ export function SettingsPanel({
   onSubmitMessage,
 }) {
   const { t } = useLanguage()
+  const [openGroup, setOpenGroup] = useState('voting')
+  const toggleGroup = (key) => setOpenGroup((current) => current === key ? null : key)
 
   const handleImportChange = async (event) => {
     const [file] = event.target.files ?? []
@@ -96,8 +100,12 @@ export function SettingsPanel({
 
       <div className="section sidebar-settings-list">
         <div className="settings-group">
-          <span className="settings-group-title">{t('votingOptionsGroup')}</span>
+          <span className="settings-group-title settings-group-title--clickable" onClick={() => toggleGroup('voting')}>
+            {t('votingOptionsGroup')}
+            <span className="settings-group-arrow">{openGroup === 'voting' ? '▾' : '▸'}</span>
+          </span>
 
+          {openGroup === 'voting' && <>
           <div className="setting-row">
             <span className="setting-label">{t('voteType')}</span>
             <div className="setting-toggle-group">
@@ -150,11 +158,16 @@ export function SettingsPanel({
               <span className="toggle-slider" />
             </label>
           </div>
+          </>}
         </div>
 
         <div className="settings-group">
-          <span className="settings-group-title">{t('displayGroup')}</span>
+          <span className="settings-group-title settings-group-title--clickable" onClick={() => toggleGroup('display')}>
+            {t('displayGroup')}
+            <span className="settings-group-arrow">{openGroup === 'display' ? '▾' : '▸'}</span>
+          </span>
 
+          {openGroup === 'display' && <>
           <div className="setting-row" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '0.4rem' }}>
             <span className="setting-label">{t('textTicker')}</span>
             <input
@@ -175,6 +188,14 @@ export function SettingsPanel({
             <span className="setting-label">{t('thumbnails')}</span>
             <label className="toggle-switch">
               <input type="checkbox" checked={!!showThumbnails} onChange={(event) => saveSettings('showThumbnails', event.target.checked)} disabled={!canEditRoom} />
+              <span className="toggle-slider" />
+            </label>
+          </div>
+
+          <div className="setting-row">
+            <span className="setting-label">{t('showAddedBy')}</span>
+            <label className="toggle-switch">
+              <input type="checkbox" checked={!!showAddedBy} onChange={(event) => saveSettings('showAddedBy', event.target.checked)} disabled={!canEditRoom} />
               <span className="toggle-slider" />
             </label>
           </div>
@@ -202,11 +223,16 @@ export function SettingsPanel({
               <span className="toggle-slider" />
             </label>
           </div>
+          </>}
         </div>
 
         <div className="settings-group">
-          <span className="settings-group-title">{t('roomOptionsGroup')}</span>
+          <span className="settings-group-title settings-group-title--clickable" onClick={() => toggleGroup('room')}>
+            {t('roomOptionsGroup')}
+            <span className="settings-group-arrow">{openGroup === 'room' ? '▾' : '▸'}</span>
+          </span>
 
+          {openGroup === 'room' && <>
           <div className="setting-row">
             <span className="setting-label">{t('nameSetting')}</span>
             <input
@@ -275,6 +301,7 @@ export function SettingsPanel({
               onSubmit={(payload) => onSubmitMessage({ ...payload, source: 'guest_room', roomId: room?.id ?? null })}
             />
           </div>
+          </>}
         </div>
       </div>
     </>

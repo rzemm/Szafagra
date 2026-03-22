@@ -12,10 +12,12 @@ export function PlaylistSidebar({
   deleteSong,
   deleteSongs,
   updateSong,
+  addSong,
   suggestions,
   approveSuggestion,
   rejectSuggestion,
   showThumbnails,
+  showAddedBy,
   queue,
   voteThreshold,
   voteMode,
@@ -96,7 +98,9 @@ export function PlaylistSidebar({
           deleteSong={deleteSong}
           deleteSongs={deleteSongs}
           updateSong={updateSong}
+          addSong={addSong}
           showThumbnails={showThumbnails}
+          showAddedBy={showAddedBy}
           queueSong={queueSong}
           canEditRoom={canEditRoom}
           isViewMode={isViewMode}
@@ -125,6 +129,7 @@ export function PlaylistSidebar({
           approveSuggestion={approveSuggestion}
           rejectSuggestion={rejectSuggestion}
           showThumbnails={showThumbnails}
+          showAddedBy={showAddedBy}
           voteThreshold={voteThreshold}
           voteMode={voteMode}
           skipThreshold={skipThreshold}

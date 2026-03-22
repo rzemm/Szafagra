@@ -148,7 +148,11 @@ export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerSta
               className="volume-slider disco-slider"
             />
             <span className="volume-icon">🔊</span>
-            <span className="disco-blur-label">{t('blurLabel')}</span>
+            <span
+              className="disco-blur-label"
+              style={{ cursor: 'pointer', userSelect: 'none' }}
+              onClick={() => setBlurAmount((v) => v === 0 ? 8 : 0)}
+            >{t('blurLabel')}</span>
             <input
               type="range"
               min="0"

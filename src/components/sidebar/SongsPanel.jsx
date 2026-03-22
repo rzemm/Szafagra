@@ -1,6 +1,7 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { ScrollText } from '../ScrollText'
 import { useLanguage } from '../../context/LanguageContext'
+import { searchYouTube } from '../../lib/youtube'
 
 function TrashIcon() {
   return (
@@ -94,7 +95,9 @@ export function SongsPanel({
   deleteSong,
   deleteSongs,
   updateSong,
+  addSong,
   showThumbnails,
+  showAddedBy,
   queueSong,
   canEditRoom,
   isViewMode,
@@ -106,6 +109,9 @@ export function SongsPanel({
   const [bulkDeleteMode, setBulkDeleteMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState(new Set())
   const [editingSong, setEditingSong] = useState(null)
+  const [ytResults, setYtResults] = useState([])
+  const [ytSearching, setYtSearching] = useState(false)
+  const [addingYtId, setAddingYtId] = useState(null)
 
   const toggleBulkDelete = useCallback(() => {
     setBulkDeleteMode((prev) => !prev)
@@ -133,6 +139,25 @@ export function SongsPanel({
   const filteredSongs = searchQuery.trim()
     ? songs.filter((song) => song.title.toLowerCase().includes(searchQuery.toLowerCase()))
     : songs
+
+  useEffect(() => {
+    if (!searchQuery.trim() || searchQuery.trim().length < 3 || filteredSongs.length > 0) {
+      setYtResults([])
+      return
+    }
+    setYtSearching(true)
+    const timer = setTimeout(async () => {
+      try {
+        const results = await searchYouTube(searchQuery.trim(), 5)
+        setYtResults(results)
+      } catch {
+        setYtResults([])
+      } finally {
+        setYtSearching(false)
+      }
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [searchQuery, filteredSongs.length])
 
   return (
     <div className="section songs-section">
@@ -185,21 +210,50 @@ export function SongsPanel({
               {showThumbnails && <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="song-thumb" />}
               <div className="song-title-col">
                 <ScrollText className="song-title">{song.title}</ScrollText>
-                {song.addedBy && (
+                {showAddedBy && song.addedBy && (
                   <span className="song-added-by">{song.addedBy.name || t('guestName')}</span>
                 )}
               </div>
               {!bulkDeleteMode && canEditRoom && (
                 <>
                   <button className="btn-icon queue-add" onClick={(event) => { event.stopPropagation(); queueSong(song) }} title={t('addToList')}>+</button>
-                  <button className="btn-icon" onClick={(event) => { event.stopPropagation(); setEditingSong(song) }} title={t('songSettings')}><GearIcon /></button>
                   <button className="btn-icon danger" onClick={(event) => { event.stopPropagation(); if (window.confirm(t('confirmDeleteSong', song.title))) deleteSong(song.id) }} title={t('deleteSongBtn')}><TrashIcon /></button>
+                  <button className="btn-icon" onClick={(event) => { event.stopPropagation(); setEditingSong(song) }} title={t('songSettings')}><GearIcon /></button>
                 </>
               )}
             </div>
           ))}
           {searchQuery && filteredSongs.length === 0 && (
-            <p className="sidebar-search-empty">{t('noResultsFor')} "{searchQuery}"</p>
+            <div className="sidebar-yt-search">
+              <p className="sidebar-search-empty">
+                {t('noResultsFor')} "{searchQuery}"
+              </p>
+              {ytSearching && <p className="sidebar-search-empty">{t('searchingYt')}</p>}
+              {!ytSearching && ytResults.length > 0 && (
+                <>
+                  <p className="sidebar-yt-hint">{t('notFoundOnList')}</p>
+                  {ytResults.map((r) => (
+                    <div key={r.ytId} className="sidebar-yt-result">
+                      {r.thumbnail && <img src={r.thumbnail} alt="" className="song-thumb" />}
+                      <span className="sidebar-yt-title">{r.title}</span>
+                      {canEditRoom && (
+                        <button
+                          className="btn-icon queue-add"
+                          disabled={addingYtId === r.ytId}
+                          onClick={async () => {
+                            setAddingYtId(r.ytId)
+                            await addSong({ ytId: r.ytId, title: r.title })
+                            setAddingYtId(null)
+                            setSearchQuery('')
+                          }}
+                          title={t('addToList')}
+                        >{addingYtId === r.ytId ? '…' : '+'}</button>
+                      )}
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
           )}
         </div>
         {bulkDeleteMode && (

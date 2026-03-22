@@ -97,12 +97,14 @@ export default function App() {
                 leftPanel: screen.leftPanel,
                 panelOpen: screen.panelOpen,
                 togglePanel: screen.togglePanel,
+                toggleLeftPanel: screen.toggleLeftPanel,
               }}
               sidebar={{
                 roomType: screen.auth.roomType,
                 saveSettings: screen.saveSettings,
                 suggestions: screen.suggestions,
                 showThumbnails: screen.showThumbnails,
+                showAddedBy: screen.settings.showAddedBy ?? false,
                 playlistActions: screen.playlistActions,
                 songActions: screen.songActions,
                 settings: screen.settings,

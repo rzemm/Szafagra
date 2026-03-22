@@ -196,6 +196,17 @@ export function useSongActions({
     )
   }, [executeAction, room, roomId])
 
+  const addSongDirect = useCallback(async ({ ytId, title }) => {
+    if (!roomId || !room) return
+    const isDuplicate = (room.songs ?? []).some((s) => s.ytId === ytId)
+    if (isDuplicate) return
+    const song = createSong({ genId, title, ytId, addedBy: createAddedByUser(user) })
+    await executeAction(
+      () => replaceRoomSongs(roomId, [...(room.songs ?? []), song]),
+      'Nie udalo sie dodac utworu.',
+    )
+  }, [executeAction, genId, room, roomId, user])
+
   return {
     handleUrlBlur,
     importFromYouTube,
@@ -207,5 +218,6 @@ export function useSongActions({
     isSearching,
     selectSuggestion,
     clearSuggestions,
+    addSongDirect,
   }
 }

@@ -239,5 +239,8 @@ export const pl = {
   ytImportAddToOther: 'Dodaj do innej szafy...',
 
   // Language toggle
-  langToggle: '🇬🇧',
+  langToggle: '🇵🇱',
+  showAddedBy: 'Pokazuj kto dodał piosenkę',
+  notFoundOnList: 'Nie ma na liście — wyniki z YouTube:',
+  searchingYt: 'Szukam na YouTube...',
 }

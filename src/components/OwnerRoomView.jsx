@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import { NowPlayingPanel } from './NowPlayingPanel'
 import { PlaylistSidebar } from './PlaylistSidebar'
@@ -19,6 +19,15 @@ export function OwnerRoomView({
   const { t } = useLanguage()
   const [appendTargetId, setAppendTargetId] = useState('')
   const [appendDone, setAppendDone] = useState(false)
+
+  const handlePlayerAreaClick = useCallback((e) => {
+    if (e.target.closest('button, input, select, a, label, [role="button"], .qr-clickable')) return
+    if (ui.leftPanel) {
+      ui.toggleLeftPanel(ui.leftPanel)
+    } else {
+      ui.toggleLeftPanel('songs')
+    }
+  }, [ui])
 
   const handleAppend = async () => {
     if (!appendTargetId) return
@@ -44,10 +53,12 @@ export function OwnerRoomView({
         deleteSong={sidebar.songActions.deleteSong}
         deleteSongs={sidebar.songActions.deleteSongs}
         updateSong={sidebar.songActions.updateSong}
+        addSong={sidebar.songActions.addSongDirect}
         suggestions={sidebar.suggestions}
         approveSuggestion={sidebar.approveSuggestion}
         rejectSuggestion={sidebar.rejectSuggestion}
         showThumbnails={sidebar.showThumbnails}
+        showAddedBy={sidebar.showAddedBy}
         queue={playback.queue}
         voteThreshold={voting.voteThreshold}
         voteMode={voting.voteMode}
@@ -81,7 +92,7 @@ export function OwnerRoomView({
         onSubmitMessage={sidebar.onSubmitMessage}
       />
 
-      <div className="player-area player-area-admin">
+      <div className="player-area player-area-admin" onClick={handlePlayerAreaClick}>
         <div className="scroll-ticker-wrap">
           <div className="admin-scroll-area">
             {viewMode.isViewMode && (
@@ -191,6 +202,7 @@ export function OwnerRoomView({
               return (
                 <div key={key} className={`voting-bar-opt${isWinning ? ' winning' : ''}`}>
                   <div className="vbo-fill" style={{ height: `${pct}%` }} />
+                  <span className="vbo-thumb">👍</span>
                   <span className="vbo-num">{count}</span>
                   <span className="vbo-sep"> - </span>
                   <span className="vbo-pct">{pct}%</span>
