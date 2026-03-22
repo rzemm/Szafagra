@@ -1,4 +1,18 @@
 import { useRef, useState } from 'react'
+
+const IconYouTube = () => (
+  <svg width="28" height="20" viewBox="0 0 28 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <rect width="28" height="20" rx="4" fill="#FF0000"/>
+    <path d="M11.5 6l6 4-6 4V6z" fill="#fff"/>
+  </svg>
+)
+
+const IconSpotify = () => (
+  <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <circle cx="11" cy="11" r="11" fill="#1DB954"/>
+    <path d="M15.5 14.5c-2.5-1.5-5.5-1.6-9-0.9-0.4 0.1-0.5-0.5-0.1-0.6 3.7-0.8 7-0.6 9.7 1 0.3 0.2 0.1 0.7-0.6 0.5zm1-2.5c-2.9-1.8-7.3-2.3-10.7-1.3-0.4 0.1-0.7-0.3-0.4-0.6 3.8-1.1 8.5-0.6 11.7 1.4 0.4 0.2 0.1 0.8-0.6 0.5zm0.1-2.6C13.2 7.5 8 7.4 5 8.3c-0.5 0.1-0.8-0.4-0.4-0.7 3.4-1 9-0.9 12.5 1.2 0.4 0.3 0.1 0.9-0.5 0.6z" fill="#fff"/>
+  </svg>
+)
 import { ContactMessageForm } from '../ContactMessageForm'
 import { NotePicker } from '../NotePicker'
 import { YouTubeImportModal } from '../YouTubeImportModal'
@@ -237,14 +251,6 @@ export function SettingsPanel({
           </div>
 
           <div className="setting-row">
-            <span className="setting-label">{t('showAddedBy')}</span>
-            <label className="toggle-switch">
-              <input type="checkbox" checked={!!showAddedBy} onChange={(event) => saveSettings('showAddedBy', event.target.checked)} disabled={!canEditRoom} />
-              <span className="toggle-slider" />
-            </label>
-          </div>
-
-          <div className="setting-row">
             <span className="setting-label">{t('showQrCode')}</span>
             <label className="toggle-switch">
               <input type="checkbox" checked={!!showQr} onChange={onToggleQr} />
@@ -298,57 +304,46 @@ export function SettingsPanel({
             </label>
           </div>
 
-          <div className="setting-row setting-row--service">
-            <div className="service-info">
-              <span className="service-name">YouTube</span>
-              <span className="service-desc">{t('connectYouTubeDesc')}</span>
-            </div>
+          <div className="setting-row setting-row--service-icon">
+            <IconYouTube />
             {yt.accessToken ? (
-              <div className="service-btns">
+              <div className="service-btns-inline">
                 <button className="btn-setting-action" onClick={() => setShowYtImport(true)}>{t('ytImportOpen')}</button>
                 <button className="btn-setting-action" onClick={() => { yt.disconnect(); yt.connect() }}>{t('ytSwitchAccount')}</button>
                 <button className="btn-setting-action btn-setting-action--dim" onClick={yt.disconnect}>{t('ytDisconnect')}</button>
               </div>
             ) : (
-              <button className="btn-setting-action" onClick={yt.connect} disabled={yt.connecting}>
+              <button className="btn-setting-action" style={{ flex: 1 }} onClick={yt.connect} disabled={yt.connecting}>
                 {yt.connecting ? t('ytConnecting') : t('ytConnect')}
               </button>
             )}
             {yt.error && <span className="code-error-msg">{yt.error}</span>}
           </div>
 
-          <div className="setting-row setting-row--service setting-row--service-disabled">
-            <div className="service-info">
-              <span className="service-name">Spotify</span>
-              <span className="service-desc">{t('connectSpotifyDesc')}</span>
-            </div>
+          <div className="setting-row setting-row--service-disabled">
+            <IconSpotify />
             <span className="service-soon">{t('comingSoon')}</span>
           </div>
 
           <div className="setting-row setting-row--stats">
             <div className="settings-stats">
-              <div className="settings-stat">
+              <div className="settings-stat settings-stat--rating">
+                <span className="settings-stat-icon">★</span>
                 <span className="settings-stat-value">{avgRating}</span>
-                <span className="settings-stat-label">{t('ratingLabel')}{ratingCount > 0 ? ` (${ratingCount} ${t('votesCount')})` : ''}</span>
+                <span className="settings-stat-label">{t('ratingLabel')}{ratingCount > 0 ? ` (${ratingCount})` : ''}</span>
               </div>
-              <div className="settings-stat">
+              <div className="settings-stat settings-stat--plays">
+                <span className="settings-stat-icon">▶</span>
                 <span className="settings-stat-value">{room?.totalPlays ?? 0}</span>
                 <span className="settings-stat-label">{t('playsLabel')}</span>
               </div>
-              <div className="settings-stat">
+              <div className="settings-stat settings-stat--votes">
+                <span className="settings-stat-icon">✔</span>
                 <span className="settings-stat-value">{room?.totalVotes ?? 0}</span>
                 <span className="settings-stat-label">{t('votesLabel')}</span>
               </div>
             </div>
           </div>
-
-          {canEditRoom && (
-            <div className="setting-row">
-              <button className="btn-setting-action" style={{ flex: 1 }} onClick={copyAdminLink}>
-                {copied === 'admin' ? t('copiedLink') : roomType === 'public' ? t('copyRoomLink') : t('copyAdminLink')}
-              </button>
-            </div>
-          )}
 
           {canEditRoom && (
             <div className="setting-row">
