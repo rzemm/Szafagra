@@ -9,6 +9,7 @@ import { RoomHeader } from './components/RoomHeader'
 import { useConsentManager } from './hooks/useConsentManager'
 import { useRoomRoute } from './hooks/useRoomRoute'
 import { useRoomScreen } from './hooks/useRoomScreen'
+import { useLanguage } from './context/LanguageContext'
 import './App.css'
 
 function SplashScreen({ message }) {
@@ -19,9 +20,10 @@ export default function App() {
   const route = useRoomRoute()
   const screen = useRoomScreen(route)
   const consent = useConsentManager()
+  const { t } = useLanguage()
 
   if (!screen.authReady) {
-    return <SplashScreen message="Laczenie..." />
+    return <SplashScreen message={t('connecting')} />
   }
 
   let content
@@ -46,7 +48,7 @@ export default function App() {
   } else if (screen.roomError) {
     content = <SplashScreen message={screen.roomError} />
   } else if (!screen.room) {
-    content = <SplashScreen message="Ladowanie szafy..." />
+    content = <SplashScreen message={t('loadingRoom')} />
   } else {
     content = (
       <>
@@ -70,6 +72,7 @@ export default function App() {
           user={screen.auth.user}
           signInWithGoogle={screen.auth.signInWithGoogle}
           signOutUser={screen.auth.signOutUser}
+          updateDisplayName={screen.auth.updateDisplayName}
           onShareGuestLink={screen.shareLinks.copyVoterLink}
           guestCopied={screen.uiState.copied === 'voter'}
           suggestions={screen.suggestions}

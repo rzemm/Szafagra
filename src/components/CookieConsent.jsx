@@ -1,13 +1,15 @@
 import { useState } from 'react'
+import { useLanguage } from '../context/LanguageContext'
 
 function ConsentCategory({ title, description, detail, alwaysOn, checked, onChange }) {
+  const { t } = useLanguage()
   return (
     <div className="cookie-category">
       <div className="cookie-category-copy">
         <div className="cookie-category-head">
           <h3>{title}</h3>
           <span className={`cookie-badge${alwaysOn ? ' cookie-badge--locked' : ''}`}>
-            {alwaysOn ? 'Zawsze aktywne' : checked ? 'Aktywne' : 'Wylaczone'}
+            {alwaysOn ? t('alwaysActive') : checked ? t('active') : t('inactive')}
           </span>
         </div>
         <p>{description}</p>
@@ -23,49 +25,38 @@ function ConsentCategory({ title, description, detail, alwaysOn, checked, onChan
 }
 
 function CookiePolicyContent({ onOpenSettings }) {
+  const { t } = useLanguage()
   return (
     <div className="cookie-policy">
       <div className="cookie-policy-block">
-        <h3>Polityka cookies</h3>
-        <p>
-          Szafagra zapisuje informacje w przegladarce tylko wtedy, gdy sa potrzebne do dzialania aplikacji
-          lub gdy uzytkownik wyrazil na to zgode. Zgode mozesz zmienic w dowolnym momencie.
-        </p>
+        <h3>{t('cookiePolicy')}</h3>
+        <p>{t('cookiePolicyText')}</p>
       </div>
 
       <div className="cookie-policy-grid">
         <article className="cookie-policy-card">
-          <h4>Niezbedne</h4>
-          <p>
-            Obejmuja mechanizmy potrzebne do logowania, utrzymania sesji, ochrony bezpieczenstwa
-            i dzialania podstawowych funkcji Firebase.
-          </p>
-          <span>Podstawa: uzasadnione technicznie dzialanie uslugi.</span>
+          <h4>{t('essential')}</h4>
+          <p>{t('essentialDesc')}</p>
+          <span>{t('essentialNote')}</span>
         </article>
 
         <article className="cookie-policy-card">
-          <h4>Analityczne</h4>
-          <p>
-            Ta kategoria jest przygotowana pod przyszle wlaczenie Firebase Analytics.
-            Domyslnie pozostaje wylaczona i nie uruchamia sie bez Twojej zgody.
-          </p>
-          <span>Podstawa: zgoda uzytkownika.</span>
+          <h4>{t('analytics')}</h4>
+          <p>{t('analyticsDesc')}</p>
+          <span>{t('analyticsNote')}</span>
         </article>
       </div>
 
       <div className="cookie-policy-block">
-        <h4>Czas przechowywania</h4>
-        <p>
-          Decyzje dotyczace cookies przechowujemy lokalnie w przegladarce, aby nie pytac o nie przy kazdej wizycie.
-          Szczegolowe czasy zycia mechanizmow technicznych zaleza od Firebase i ustawien przegladarki.
-        </p>
+        <h4>{t('storageTime')}</h4>
+        <p>{t('storageTimeDesc')}</p>
       </div>
 
       <div className="cookie-policy-block">
-        <h4>Zmiana decyzji</h4>
+        <h4>{t('changeDecision')}</h4>
         <p>
-          Uzyj przycisku <button type="button" className="cookie-inline-link" onClick={onOpenSettings}>Ustawienia cookies</button>,
-          aby ponownie otworzyc panel i zmienic swoja decyzje.
+          {t('changeDecisionText')} <button type="button" className="cookie-inline-link" onClick={onOpenSettings}>{t('changeDecisionLink')}</button>,{' '}
+          {t('changeDecisionText2')}
         </p>
       </div>
     </div>
@@ -73,22 +64,20 @@ function CookiePolicyContent({ onOpenSettings }) {
 }
 
 export function CookieConsentBanner({ onAcceptAll, onRejectOptional, onOpenSettings }) {
+  const { t } = useLanguage()
   return (
-    <div className="cookie-banner" role="dialog" aria-live="polite" aria-label="Informacja o cookies">
+    <div className="cookie-banner" role="dialog" aria-live="polite" aria-label={t('cookieBannerLabel')}>
       <div className="cookie-banner-glow" />
       <div className="cookie-banner-copy">
         <span className="cookie-kicker">Cookies</span>
-        <h2>Szafagra korzysta z cookies i pamieci przegladarki</h2>
-        <p>
-          Niezbedne mechanizmy pomagaja w logowaniu, bezpieczenstwie i dzialaniu aplikacji.
-          Analityka pozostaje wylaczona, dopoki jej nie zaakceptujesz.
-        </p>
+        <h2>{t('cookieBannerTitle')}</h2>
+        <p>{t('cookieBannerDesc')}</p>
       </div>
 
       <div className="cookie-banner-actions">
-        <button className="cookie-btn cookie-btn--ghost" onClick={onRejectOptional}>Odrzuc dodatkowe</button>
-        <button className="cookie-btn cookie-btn--soft" onClick={onOpenSettings}>Ustawienia</button>
-        <button className="cookie-btn cookie-btn--primary" onClick={onAcceptAll}>Akceptuj</button>
+        <button className="cookie-btn cookie-btn--ghost" onClick={onRejectOptional}>{t('rejectOptional')}</button>
+        <button className="cookie-btn cookie-btn--soft" onClick={onOpenSettings}>{t('cookieSettingsTitle')}</button>
+        <button className="cookie-btn cookie-btn--primary" onClick={onAcceptAll}>{t('acceptAll')}</button>
       </div>
     </div>
   )
@@ -102,6 +91,7 @@ function CookieSettingsDialog({
   onSavePreferences,
   onOpenSettings,
 }) {
+  const { t } = useLanguage()
   const [analyticsEnabled, setAnalyticsEnabled] = useState(Boolean(consentState.analytics))
 
   return (
@@ -115,34 +105,31 @@ function CookieSettingsDialog({
       >
         <div className="cookie-modal-header">
           <div>
-            <span className="cookie-kicker">Prywatnosc</span>
-            <h2 id="cookie-settings-title">Ustawienia cookies</h2>
+            <span className="cookie-kicker">{t('privacy')}</span>
+            <h2 id="cookie-settings-title">{t('cookieSettingsTitle')}</h2>
           </div>
-          <button type="button" className="cookie-close-btn" onClick={onClose} aria-label="Zamknij ustawienia cookies">
+          <button type="button" className="cookie-close-btn" onClick={onClose} aria-label={t('closeCookieSettings')}>
             x
           </button>
         </div>
 
         <div className="cookie-modal-body">
-          <p className="cookie-modal-intro">
-            Tutaj ustawiasz, ktore kategorie mozemy uruchomic. Niezbedne mechanizmy pozostaja aktywne,
-            bo bez nich logowanie i czesc funkcji aplikacji nie zadzialaja poprawnie.
-          </p>
+          <p className="cookie-modal-intro">{t('cookieModalIntro')}</p>
 
           <div className="cookie-categories">
             <ConsentCategory
-              title="Niezbedne"
-              description="Logowanie, bezpieczenstwo, podstawowe dzialanie Firebase i ustawienia sesji."
-              detail="Te mechanizmy sa wymagane do poprawnego dzialania aplikacji."
+              title={t('essential')}
+              description={t('necessaryDesc')}
+              detail={t('necessaryDetail')}
               alwaysOn
               checked
               onChange={() => {}}
             />
 
             <ConsentCategory
-              title="Analityczne"
-              description="Przyszle pomiary odwiedzin i uzycia aplikacji po wlaczeniu Firebase Analytics."
-              detail="Dzis ta kategoria sluzy jako bezpieczny punkt integracji pod przyszla analityke."
+              title={t('analytics')}
+              description={t('analyticsModalDesc')}
+              detail={t('analyticsModalDetail')}
               checked={analyticsEnabled}
               onChange={() => setAnalyticsEnabled((current) => !current)}
             />
@@ -152,11 +139,11 @@ function CookieSettingsDialog({
         </div>
 
         <div className="cookie-modal-actions">
-          <button className="cookie-btn cookie-btn--ghost" onClick={onRejectOptional}>Odrzuc dodatkowe</button>
+          <button className="cookie-btn cookie-btn--ghost" onClick={onRejectOptional}>{t('rejectOptional')}</button>
           <button className="cookie-btn cookie-btn--soft" onClick={() => onSavePreferences({ analytics: analyticsEnabled })}>
-            Zapisz wybor
+            {t('savePreferences')}
           </button>
-          <button className="cookie-btn cookie-btn--primary" onClick={onAcceptAll}>Akceptuj wszystko</button>
+          <button className="cookie-btn cookie-btn--primary" onClick={onAcceptAll}>{t('acceptAllFull')}</button>
         </div>
       </section>
     </div>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ScrollText } from './ScrollText.jsx'
+import { useLanguage } from '../context/LanguageContext'
 
 const IconTrash = () => (
   <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
@@ -36,6 +37,7 @@ export function HomePage({
   onSignOut,
   onOpenCookieSettings,
 }) {
+  const { t, lang, toggleLang } = useLanguage()
   const [roomInput, setRoomInput] = useState('')
   const [seeding, setSeeding] = useState(false)
   const isLoggedIn = user && !user.isAnonymous
@@ -62,17 +64,19 @@ export function HomePage({
           <div className="home-user-bar">
             {user.photoURL && <img src={user.photoURL} alt="" className="home-user-avatar" referrerPolicy="no-referrer" />}
             <span className="home-user-name">{user.displayName}</span>
-            <button className="home-user-link" onClick={onOpenCookieSettings}>Cookies</button>
-            <button className="home-user-logout" onClick={onSignOut}>Wyloguj</button>
+            <button className="home-user-link" onClick={onOpenCookieSettings}>{t('cookies')}</button>
+            <button className="lang-toggle" onClick={toggleLang}>{t('langToggle')}</button>
+            <button className="home-user-logout" onClick={onSignOut}>{t('signOut')}</button>
           </div>
         ) : (
           <div className="home-google-signin">
             <button className="home-google-btn" onClick={onSignIn}>
               <GoogleLogoSvg />
-              Zaloguj sie przez Google
+              {t('signInGoogle')}
             </button>
-            <p className="home-google-hint">aby zobaczyc swoje prywatne szafy</p>
-            <button className="home-cookie-link" onClick={onOpenCookieSettings}>Ustawienia cookies</button>
+            <p className="home-google-hint">{t('toSeePrivateRooms')}</p>
+            <button className="home-cookie-link" onClick={onOpenCookieSettings}>{t('cookieSettings')}</button>
+            <button className="lang-toggle" onClick={toggleLang}>{t('langToggle')}</button>
           </div>
         )}
       </div>
@@ -82,7 +86,7 @@ export function HomePage({
           <input
             className="homepage-join-input"
             type="text"
-            placeholder="Podaj kod szafy"
+            placeholder={t('enterRoomCode')}
             value={roomInput}
             onChange={(event) => setRoomInput(event.target.value)}
             onKeyDown={(event) => event.key === 'Enter' && handleJoin()}
@@ -94,24 +98,24 @@ export function HomePage({
             onClick={handleJoin}
             disabled={!roomInput.trim()}
           >
-            Dolacz
+            {t('join')}
           </button>
         </div>
 
         <div className="homepage-cols-row">
           <div className="homepage-col">
-            <p className="home-col-title">Twoje szafy</p>
+            <p className="home-col-title">{t('yourRooms')}</p>
             <div className="home-rooms-list">
               {isLoggedIn ? (
                 ownedRooms.length > 0 ? (
                   ownedRooms.map((ownedRoom) => (
                     <div key={ownedRoom.id} className="home-room-card home-room-card--admin">
                       <a className="home-room-card-link" href={`/?room=${ownedRoom.id}`}>
-                        <ScrollText className="home-room-label">{ownedRoom.name || 'Szafa prywatna'}</ScrollText>
+                        <ScrollText className="home-room-label">{ownedRoom.name || t('privateRoom')}</ScrollText>
                       </a>
                       <button
                         className="home-room-delete"
-                        title="Usun szafe"
+                        title={t('deleteRoom')}
                         onClick={(event) => {
                           event.preventDefault()
                           onDeleteRoom(ownedRoom)
@@ -122,23 +126,23 @@ export function HomePage({
                     </div>
                   ))
                 ) : (
-                  <p className="home-rooms-empty">Nie masz jeszcze zadnych szaf</p>
+                  <p className="home-rooms-empty">{t('noRoomsYet')}</p>
                 )
               ) : (
-                <p className="home-rooms-empty">Zaloguj sie, aby zobaczyc swoje szafy</p>
+                <p className="home-rooms-empty">{t('signInToSeeRooms')}</p>
               )}
             </div>
             <button className="homepage-btn homepage-btn--primary" onClick={onCreateRoom} disabled={creatingRoom}>
               <span className="homepage-btn-icon">{'\u2726'}</span>
-              {creatingRoom ? 'Tworzenie...' : 'Utworz nowa szafe'}
+              {creatingRoom ? t('creating') : t('createNewRoom')}
             </button>
           </div>
 
           <div className="homepage-col">
-            <p className="home-col-title">Ostatnie listy</p>
+            <p className="home-col-title">{t('recentLists')}</p>
             {import.meta.env.DEV && (
               <button className="home-seed-btn" onClick={handleSeed} disabled={seeding}>
-                {seeding ? 'Tworzenie...' : '+ Wygeneruj przykladowe listy'}
+                {seeding ? t('creating') : t('generateSampleLists')}
               </button>
             )}
             <div className="home-rooms-list">
@@ -161,7 +165,7 @@ export function HomePage({
                         }}
                       >
                         <div className="home-room-card-link">
-                          <ScrollText className="home-room-label">{recentRoom.name || 'Lista'}</ScrollText>
+                          <ScrollText className="home-room-label">{recentRoom.name || t('defaultRoomName')}</ScrollText>
                         </div>
                         <div className="home-room-stats">
                           {avgRating !== null && (
@@ -188,10 +192,10 @@ export function HomePage({
                     )
                   })
                 ) : (
-                  <p className="home-rooms-empty">Brak list do pokazania</p>
+                  <p className="home-rooms-empty">{t('noListsToShow')}</p>
                 )
               ) : (
-                <p className="home-rooms-empty">Zaloguj sie, aby zobaczyc ostatnie szafy</p>
+                <p className="home-rooms-empty">{t('signInToSeeRecentRooms')}</p>
               )}
             </div>
           </div>

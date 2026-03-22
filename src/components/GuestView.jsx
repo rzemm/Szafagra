@@ -10,6 +10,7 @@ import { extractYtId, fetchYtTitle, searchYouTube } from '../lib/youtube'
 import { useGuestPlayer } from '../hooks/useGuestPlayer'
 import { ContactMessageForm } from './ContactMessageForm'
 import { ScrollText } from './ScrollText'
+import { useLanguage } from '../context/LanguageContext'
 
 export function GuestView({
   isOwner,
@@ -37,6 +38,7 @@ export function GuestView({
   tickerForGuests = false,
   onSubmitMessage,
 }) {
+  const { t } = useLanguage()
   const { listening, toggleListening, playerDivRef: guestPlayerDivRef } = useGuestPlayer({ jukeboxState, isPlaying })
   const [queueOpen, setQueueOpen] = useState(false)
   const [hoverStar, setHoverStar] = useState(0)
@@ -71,7 +73,7 @@ export function GuestView({
 
     const ytId = extractYtId(url)
     if (!ytId) {
-      setSuggestErr('Nieprawidlowy link YouTube')
+      setSuggestErr(t('invalidYouTubeLink'))
       return
     }
 
@@ -81,7 +83,7 @@ export function GuestView({
     setFetchingTitle(false)
 
     if (title) setSuggestTitle(title)
-    else setSuggestErr('Nie udalo sie pobrac tytulu')
+    else setSuggestErr(t('couldNotFetchTitle'))
   }
 
   const handleSubmitSuggestion = async () => {
@@ -145,7 +147,7 @@ export function GuestView({
       {!isOwner && allowGuestListening && isPlaying && currentSong && (
         <div className="guest-player">
           <button className={`guest-player-toggle${listening ? ' active' : ''}`} onClick={toggleListening}>
-            {listening ? 'Wylacz odsluch' : 'Sluchaj'}
+            {listening ? t('disableListening') : t('listen')}
           </button>
           {listening && (
             <div className="guest-player-yt">
@@ -158,14 +160,14 @@ export function GuestView({
       {isPlaying && currentSong && (
         <div className="guest-now-bar">
           <div className="guest-now-info">
-            <span className="guest-now-label">TERAZ GRA</span>
+            <span className="guest-now-label">{t('nowPlaying')}</span>
             <span className="guest-now-title">{currentSong.title}</span>
           </div>
           <div className="guest-now-right">
             {remaining != null && <span className="guest-now-timer">{formatTime(remaining)}</span>}
             {queue.length > 0 && (
               <button className="guest-queue-toggle" onClick={() => setQueueOpen((open) => !open)}>
-                {queueOpen ? 'Ukryj' : 'Pokaz'} {queue.length}
+                {queueOpen ? t('hide') : t('show')} {queue.length}
               </button>
             )}
           </div>
@@ -203,7 +205,7 @@ export function GuestView({
                   ))}
                 </div>
                 <div className={`guest-vote-btn${isVoted ? ' active' : ''}`}>
-                  <span>{isVoted ? 'Zaglosowano' : 'Glosuj'}</span>
+                  <span>{isVoted ? t('voted') : t('vote')}</span>
                   {voteCount > 0 && <span className="guest-vote-count">{voteCount}</span>}
                 </div>
               </div>
@@ -215,21 +217,21 @@ export function GuestView({
       {isPlaying && skipThreshold > 0 && (
         <div className="guest-skip-row">
           <button className={`guest-skip-btn${mySkipVote ? ' active' : ''}`} onClick={voteSkip}>
-            {mySkipVote ? 'Chce pominac te piosenke' : 'Pomin piosenke'}
+            {mySkipVote ? t('wantToSkip') : t('skipSong')}
           </button>
         </div>
       )}
 
       {!isPlaying && (
         <div className="guest-waiting">
-          <span className="guest-waiting-icon">Muzyka</span>
-          <p>Wlasciciel szafy jeszcze nie uruchomil jukeboxu...</p>
+          <span className="guest-waiting-icon">{t('musicIcon')}</span>
+          <p>{t('ownerHasntStarted')}</p>
         </div>
       )}
 
       {isPlaying && userId && (
         <div className="guest-rating">
-          <p className="guest-rating-label">{myRating > 0 ? 'Twoja ocena' : 'Ocen te playliste'}</p>
+          <p className="guest-rating-label">{myRating > 0 ? t('yourRating') : t('ratePlaylist')}</p>
           <div className="guest-rating-stars">
             {[1, 2, 3, 4, 5].map((star) => (
               <button
@@ -250,9 +252,9 @@ export function GuestView({
 
       {allowSuggestions && (
         <div className="guest-suggest">
-          <p className="guest-suggest-label">Zaproponuj utwor</p>
+          <p className="guest-suggest-label">{t('suggestSong')}</p>
           {submitted ? (
-            <p className="guest-suggest-ok">Propozycja wyslana!</p>
+            <p className="guest-suggest-ok">{t('suggestionSent')}</p>
           ) : (
             <>
               <div className="song-input-wrapper">
@@ -266,7 +268,7 @@ export function GuestView({
                   }}
                   onBlur={handleSuggestBlur}
                   onKeyDown={(event) => { if (event.key === 'Escape') setSuggestSearchResults([]) }}
-                  placeholder="Wpisz tytul lub wklej link YouTube..."
+                  placeholder={t('suggestPlaceholder')}
                 />
                 {suggestSearchResults.length > 0 && (
                   <ul className="song-suggestions-dropdown">
@@ -284,7 +286,7 @@ export function GuestView({
                   </ul>
                 )}
               </div>
-              {fetchingTitle && <p className="guest-suggest-hint">Pobieranie tytulu...</p>}
+              {fetchingTitle && <p className="guest-suggest-hint">{t('fetchingTitleShort')}</p>}
               {suggestTitle && <p className="guest-suggest-hint">{suggestTitle}</p>}
               {suggestErr && <p className="guest-suggest-err">{suggestErr}</p>}
               <button
@@ -292,7 +294,7 @@ export function GuestView({
                 onClick={handleSubmitSuggestion}
                 disabled={!suggestTitle || submitting}
               >
-                {submitting ? '...' : '+ Zaproponuj'}
+                {submitting ? '...' : t('suggestBtn')}
               </button>
             </>
           )}
@@ -300,14 +302,14 @@ export function GuestView({
       )}
 
       <div className="guest-footer">
-        <a className="guest-footer-btn" href="https://buycoffee.to/szafifi" target="_blank" rel="noreferrer">Postaw kawe</a>
+        <a className="guest-footer-btn" href="https://buycoffee.to/szafifi" target="_blank" rel="noreferrer">{t('buyCoffeeLink')}</a>
         <ContactMessageForm
           triggerClassName="guest-footer-btn guest-footer-btn--active"
-          triggerLabel="Napisz wiadomosc"
-          title="Napisz wiadomosc do tworcow"
-          description="Mozesz zglosic blad, pomysl albo szybki feedback dotyczacy tej szafy."
-          successMessage="Dzieki, wiadomosc zostala zapisana."
-          submitLabel="Wyslij"
+          triggerLabel={t('writeMessage')}
+          title={t('writeMessageToCreators')}
+          description={t('reportBugOrIdea')}
+          successMessage={t('thanksSaved')}
+          submitLabel={t('send')}
           panelClassName="guest-contact-form"
           onSubmit={(payload) => onSubmitMessage({ ...payload, source: 'guest_room', roomId: jukeboxState?.id ?? null })}
         />

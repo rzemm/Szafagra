@@ -4,6 +4,7 @@ import { NowPlayingPanel } from './NowPlayingPanel'
 import { PlaylistSidebar } from './PlaylistSidebar'
 import { ScrollText } from './ScrollText'
 import { VotingPanel } from './VotingPanel'
+import { useLanguage } from '../context/LanguageContext'
 
 export function OwnerRoomView({
   canEditRoom,
@@ -66,6 +67,7 @@ export function OwnerRoomView({
   cancelEditPlaylist,
   onSubmitMessage,
 }) {
+  const { t } = useLanguage()
   const [appendTargetId, setAppendTargetId] = useState('')
   const [appendDone, setAppendDone] = useState(false)
 
@@ -143,13 +145,13 @@ export function OwnerRoomView({
           <div className="admin-scroll-area">
           {isViewMode && (
             <div className="view-mode-banner">
-              <span className="view-mode-label">Tryb podgladu - lista tylko do odczytu</span>
+              <span className="view-mode-label">{t('viewModeLabel')}</span>
               <button
                 className="view-mode-copy-btn"
                 onClick={handleCopyRoom}
                 disabled={copyingRoom}
               >
-                {copyingRoom ? 'Kopiowanie...' : 'Skopiuj te liste do siebie'}
+                {copyingRoom ? t('copying') : t('copyThisList')}
               </button>
               {ownedRooms?.length > 0 && (
                 <div className="view-mode-append-row">
@@ -158,9 +160,9 @@ export function OwnerRoomView({
                     value={appendTargetId}
                     onChange={(event) => { setAppendTargetId(event.target.value); setAppendDone(false) }}
                   >
-                    <option value="">Dołącz piosenki do listy...</option>
+                    <option value="">{t('appendSongsTo')}</option>
                     {ownedRooms.map((r) => (
-                      <option key={r.id} value={r.id}>{r.name || 'Szafa prywatna'}</option>
+                      <option key={r.id} value={r.id}>{r.name || t('privateRoom')}</option>
                     ))}
                   </select>
                   {appendTargetId && (
@@ -169,7 +171,7 @@ export function OwnerRoomView({
                       onClick={handleAppend}
                       disabled={appendingRoom || appendDone}
                     >
-                      {appendDone ? 'Dołączono!' : appendingRoom ? 'Dołączanie...' : 'Dołącz'}
+                      {appendDone ? t('appended') : appendingRoom ? t('appending') : t('append')}
                     </button>
                   )}
                 </div>
@@ -199,11 +201,11 @@ export function OwnerRoomView({
               <div className="admin-qr-panel">
                 {panelOpen.qr && (
                   <>
-                    <div className="qr-clickable" onClick={shareLinks.copyVoterLink} title="Kliknij aby skopiowac link">
+                    <div className="qr-clickable" onClick={shareLinks.copyVoterLink} title={t('clickToCopyLink')}>
                       <QRCodeSVG value={shareLinks.voterUrl} size={150} bgColor="#000000" fgColor="#ffffff" />
-                      {copied === 'voter' && <div className="qr-copied-overlay">✓ Skopiowano</div>}
+                      {copied === 'voter' && <div className="qr-copied-overlay">✓ {t('copiedLabel')}</div>}
                     </div>
-                    <p className="qr-hint">Kliknij QR, aby skopiowac link</p>
+                    <p className="qr-hint">{t('clickQrToCopy')}</p>
                   </>
                 )}
                 {panelOpen.showRoomCode && room?.guestToken && (
@@ -245,7 +247,7 @@ export function OwnerRoomView({
                 </div>
               )
             }) : (
-              <h2 className="section-title" style={{ flex: 1, padding: '0 1rem' }}>Opcje głosowania</h2>
+              <h2 className="section-title" style={{ flex: 1, padding: '0 1rem' }}>{t('votingOptionsTitle')}</h2>
             )}
             <span className="section-arrow" style={{ padding: '0 1rem' }}>{panelOpen.voting ? '▼' : '▲'}</span>
           </div>

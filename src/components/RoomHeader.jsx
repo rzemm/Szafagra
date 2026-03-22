@@ -1,4 +1,7 @@
+import { useState } from 'react'
 import { ScrollText } from './ScrollText'
+import { UserProfileModal } from './UserProfileModal'
+import { useLanguage } from '../context/LanguageContext'
 
 const GoogleIcon = () => (
   <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true" style={{ flexShrink: 0 }}>
@@ -32,7 +35,11 @@ export function RoomHeader({
   selectSuggestion,
   clearSuggestions,
   onOpenCookieSettings,
+  updateDisplayName,
 }) {
+  const { t, toggleLang } = useLanguage()
+  const [profileOpen, setProfileOpen] = useState(false)
+
   return (
     <header className="header">
       <div className="header-inner">
@@ -41,23 +48,23 @@ export function RoomHeader({
             <button
               className={`btn-panel-toggle${leftPanel === 'songs' ? ' active' : ''}`}
               onClick={() => toggleLeftPanel('songs')}
-              title="Lista piosenek"
+              title={t('panelSongsTitle')}
             >
-              Lista
+              {t('panelSongs')}
             </button>
             <button
               className={`btn-panel-toggle${leftPanel === 'queue' ? ' active' : ''}`}
               onClick={() => toggleLeftPanel('queue')}
-              title="Kolejka odtwarzania"
+              title={t('panelQueueTitle')}
             >
-              Kolejka
+              {t('panelQueue')}
             </button>
             <button
               className={`btn-panel-toggle${leftPanel === 'settings' ? ' active' : ''}`}
               onClick={() => toggleLeftPanel('settings')}
-              title="Ustawienia szafy"
+              title={t('panelSettingsTitle')}
             >
-              Ustawienia{suggestions?.length > 0 ? ` (${suggestions.length})` : ''}
+              {t('panelSettings')}{suggestions?.length > 0 ? ` (${suggestions.length})` : ''}
             </button>
           </>
         )}
@@ -76,7 +83,7 @@ export function RoomHeader({
                 if (event.key === 'Enter') addSong()
                 if (event.key === 'Escape') clearSuggestions()
               }}
-              placeholder={fetchingTitle ? 'Pobieranie tytulu...' : newSongTitle ? `Muzyka ${newSongTitle}` : 'Dodaj piosenke lub liste - wklej link z YouTube albo wpisz tytul'}
+              placeholder={fetchingTitle ? t('fetchingTitlePlaceholder') : newSongTitle ? `${t('addSongTitlePrefix')} ${newSongTitle}` : t('addSongPlaceholder')}
               title={urlErr || undefined}
               style={urlErr ? { borderColor: 'var(--accent)' } : undefined}
               disabled={!room}
@@ -103,25 +110,46 @@ export function RoomHeader({
 
       <div className="header-actions">
         <button className="header-utility-link" onClick={onOpenCookieSettings}>
-          Cookies
+          {t('cookies')}
         </button>
 
+        <button className="lang-toggle" onClick={toggleLang}>{t('langToggle')}</button>
+
         {user?.isAnonymous ? (
-          <button className="header-google-btn" onClick={signInWithGoogle} title="Zaloguj sie przez Google">
+          <button className="header-google-btn" onClick={signInWithGoogle} title={t('signInGoogle2')}>
             <GoogleIcon />
-            <span>Zaloguj</span>
+            <span>{t('signIn')}</span>
           </button>
         ) : user ? (
           <div className="header-google-user">
-            {user.photoURL && <img src={user.photoURL} alt="" className="header-google-avatar" referrerPolicy="no-referrer" />}
-            <button className="header-google-logout" onClick={signOutUser}>Wyloguj</button>
+            <button
+              className="header-avatar-btn"
+              onClick={() => setProfileOpen(true)}
+              title={t('accountSettings')}
+            >
+              {user.photoURL ? (
+                <img src={user.photoURL} alt="" className="header-google-avatar" referrerPolicy="no-referrer" />
+              ) : (
+                <span className="header-avatar-initials">
+                  {(user.displayName || user.email || '?')[0].toUpperCase()}
+                </span>
+              )}
+            </button>
+            <button className="header-google-logout" onClick={signOutUser}>{t('signOut')}</button>
+            {profileOpen && (
+              <UserProfileModal
+                user={user}
+                onClose={() => setProfileOpen(false)}
+                onUpdateDisplayName={updateDisplayName}
+              />
+            )}
           </div>
         ) : null}
 
         {showOwnerUI ? (
-          <a className="btn-share" href="https://buycoffee.to/szafifi" target="_blank" rel="noreferrer">Postaw kawe</a>
+          <a className="btn-share" href="https://buycoffee.to/szafifi" target="_blank" rel="noreferrer">{t('buyCoffee')}</a>
         ) : (
-          <button className="btn-header-share" onClick={onShareGuestLink} title="Udostepnij link">
+          <button className="btn-header-share" onClick={onShareGuestLink} title={t('shareLink')}>
             {guestCopied ? 'OK' : 'Link'}
           </button>
         )}

@@ -1,8 +1,10 @@
 import { createPortal } from 'react-dom'
 import { useEffect, useState } from 'react'
 import { formatTime } from '../lib/jukebox'
+import { useLanguage } from '../context/LanguageContext'
 
 export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerState, loadProgress, playerRef, playerDivRef, playerReady, advanceToWinner, skipThreshold, skipCount, startJukebox, stopJukebox, room, canEditRoom }) {
+  const { t } = useLanguage()
   const [volume, setVolume] = useState(80)
   const [discoMode, setDiscoMode] = useState(true)
   const [blurAmount, setBlurAmount] = useState(8)
@@ -35,7 +37,7 @@ export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerSta
             {!isPlaying && !discoMode && (
               <div className="player-overlay">
                 <span className="vinyl-icon">🎵</span>
-                <p>{playerReady ? 'Dodaj utwory i nacisnij START' : 'Ladowanie odtwarzacza YouTube...'}</p>
+                <p>{playerReady ? t('addSongsAndStart') : t('loadingPlayer')}</p>
               </div>
             )}
           </div>
@@ -43,7 +45,7 @@ export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerSta
           {!discoMode && isPlaying && currentSong && (
             <div className="now-playing">
               <span className="now-label">
-                TERAZ GRA{ytPlayerState === 3 && loadProgress < 100 && <span className="load-pct"> · {loadProgress}%</span>}
+                {t('nowPlaying')}{ytPlayerState === 3 && loadProgress < 100 && <span className="load-pct"> · {loadProgress}%</span>}
               </span>
               <span className="now-title">{currentSong.title}</span>
               {remaining != null && <span className="now-timer">{formatTime(remaining)}</span>}
@@ -72,7 +74,7 @@ export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerSta
               <button
                 className="btn-ctrl btn-ctrl-disco"
                 onClick={() => setDiscoMode(true)}
-                title="Tryb disco"
+                title={t('discoModeTitle')}
               >
                 🪩
               </button>
@@ -97,7 +99,7 @@ export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerSta
 
         {!discoMode && isPlaying && skipThreshold > 0 && (
           <div className="skip-card">
-            <span className="skip-count">{skipCount}/{skipThreshold} głosów na pominięcie</span>
+            <span className="skip-count">{skipCount}/{skipThreshold} {t('votesToSkip')}</span>
           </div>
         )}
       </div>
@@ -146,7 +148,7 @@ export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerSta
               className="volume-slider disco-slider"
             />
             <span className="volume-icon">🔊</span>
-            <span className="disco-blur-label">Rozmycie</span>
+            <span className="disco-blur-label">{t('blurLabel')}</span>
             <input
               type="range"
               min="0"
@@ -156,7 +158,7 @@ export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerSta
               className="volume-slider disco-slider"
             />
             <button className="btn-ctrl btn-ctrl-disco-exit" onClick={() => setDiscoMode(false)}>
-              ✕ Disco
+              {t('exitDisco')}
             </button>
           </div>
         </div>,

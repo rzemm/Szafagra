@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { signInAnonymously, signInWithPopup, signOut, GoogleAuthProvider, onAuthStateChanged } from 'firebase/auth'
+import { signInAnonymously, signInWithPopup, signOut, updateProfile, GoogleAuthProvider, onAuthStateChanged } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import { auth, db } from '../firebase'
 import { ensurePublicRoomAccess, recordGuestVisit } from '../services/jukeboxService'
@@ -28,6 +28,16 @@ export function useRoomAuth(roomParam) {
       await signOut(auth)
     } catch (err) {
       console.error('Sign out failed', err)
+    }
+  }
+
+  const updateDisplayName = async (name) => {
+    if (!auth.currentUser) return
+    try {
+      await updateProfile(auth.currentUser, { displayName: name })
+      setUser((prev) => ({ ...prev, displayName: name }))
+    } catch (err) {
+      console.error('updateProfile failed', err)
     }
   }
 
@@ -101,5 +111,5 @@ export function useRoomAuth(roomParam) {
     return () => unsub()
   }, [roomParam])
 
-  return { user, roomId, roomType, isOwner, canEditRoom, authReady, roomError, signInWithGoogle, signOutUser }
+  return { user, roomId, roomType, isOwner, canEditRoom, authReady, roomError, signInWithGoogle, signOutUser, updateDisplayName }
 }

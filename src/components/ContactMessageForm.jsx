@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useLanguage } from '../context/LanguageContext'
 
 function initialFormState() {
   return {
@@ -10,14 +11,15 @@ function initialFormState() {
 
 export function ContactMessageForm({
   onSubmit,
-  title = 'Napisz wiadomosc',
+  title = '',
   description = '',
-  triggerLabel = 'Napisz wiadomosc',
-  submitLabel = 'Wyslij',
-  successMessage = 'Wiadomosc zostala wyslana.',
+  triggerLabel = '',
+  submitLabel = '',
+  successMessage = '',
   triggerClassName = 'contact-form-trigger',
   panelClassName = '',
 }) {
+  const { t } = useLanguage()
   const [isOpen, setIsOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [form, setForm] = useState(initialFormState)
@@ -35,7 +37,7 @@ export function ContactMessageForm({
 
     const trimmedMessage = form.message.trim()
     if (!trimmedMessage) {
-      setError('Wpisz tresc wiadomosci.')
+      setError(t('enterMessageContent'))
       return
     }
 
@@ -53,10 +55,10 @@ export function ContactMessageForm({
       if (!ok) return
 
       setForm(initialFormState())
-      setSuccess(successMessage)
+      setSuccess(successMessage || t('messageSaved'))
       setIsOpen(false)
     } catch (submitError) {
-      setError(submitError?.message ?? 'Nie udalo sie wyslac wiadomosci.')
+      setError(submitError?.message ?? t('failedToSend'))
     } finally {
       setIsSubmitting(false)
     }
@@ -73,34 +75,34 @@ export function ContactMessageForm({
           setSuccess('')
         }}
       >
-        {triggerLabel}
+        {triggerLabel || t('writeMessage')}
       </button>
 
       {isOpen && (
         <form className="contact-form-panel" onSubmit={handleSubmit}>
           <div className="contact-form-header">
-            <h3 className="contact-form-title">{title}</h3>
+            <h3 className="contact-form-title">{title || t('writeMessage')}</h3>
             {description && <p className="contact-form-description">{description}</p>}
           </div>
 
           <label className="contact-form-field">
-            <span>Wiadomosc</span>
+            <span>{t('messageLabel')}</span>
             <textarea
               className="contact-form-textarea"
               rows="4"
               value={form.message}
               onChange={(event) => handleChange('message', event.target.value)}
-              placeholder="Napisz, co warto poprawic albo dodac..."
+              placeholder={t('messagePlaceholder')}
             />
           </label>
 
           <label className="contact-form-field">
-            <span>Podpis</span>
+            <span>{t('signatureLabel')}</span>
             <input
               type="text"
               value={form.authorName}
               onChange={(event) => handleChange('authorName', event.target.value)}
-              placeholder="Opcjonalnie"
+              placeholder={t('optional')}
             />
           </label>
 
@@ -110,7 +112,7 @@ export function ContactMessageForm({
               type="email"
               value={form.authorEmail}
               onChange={(event) => handleChange('authorEmail', event.target.value)}
-              placeholder="Opcjonalnie"
+              placeholder={t('optional')}
             />
           </label>
 
@@ -127,10 +129,10 @@ export function ContactMessageForm({
               }}
               disabled={isSubmitting}
             >
-              Zamknij
+              {t('closeBtn')}
             </button>
             <button className="contact-form-submit" type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Wysylanie...' : submitLabel}
+              {isSubmitting ? t('sending') : (submitLabel || t('send'))}
             </button>
           </div>
         </form>
