@@ -34,8 +34,8 @@ export function extractYtPlaylistId(url) {
   }
 }
 
-export async function fetchYtPlaylistItems(playlistId) {
-  if (!YT_API_KEY) throw new Error('Brak klucza YouTube API (VITE_YOUTUBE_API_KEY)')
+export async function fetchYtPlaylistItems(playlistId, accessToken = null) {
+  if (!accessToken && !YT_API_KEY) throw new Error('Brak klucza YouTube API (VITE_YOUTUBE_API_KEY)')
   if (playlistId.startsWith('RD')) throw new Error('Listy "Mix" i "Polecane przez YouTube" nie są dostępne przez API. Dodaj utwory ręcznie lub użyj zwykłej playlisty YT.')
   const items = []
   let pageToken = ''
@@ -44,10 +44,11 @@ export async function fetchYtPlaylistItems(playlistId) {
     endpoint.searchParams.set('part', 'snippet')
     endpoint.searchParams.set('playlistId', playlistId)
     endpoint.searchParams.set('maxResults', '50')
-    endpoint.searchParams.set('key', YT_API_KEY)
+    if (!accessToken) endpoint.searchParams.set('key', YT_API_KEY)
     if (pageToken) endpoint.searchParams.set('pageToken', pageToken)
 
-    const res = await fetch(endpoint.toString())
+    const headers = accessToken ? { Authorization: `Bearer ${accessToken}` } : {}
+    const res = await fetch(endpoint.toString(), { headers })
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
       throw new Error(err?.error?.message ?? `YouTube API błąd ${res.status}`)
@@ -63,6 +64,37 @@ export async function fetchYtPlaylistItems(playlistId) {
     pageToken = data.nextPageToken ?? ''
   } while (pageToken)
   return items
+}
+
+export async function fetchUserYtPlaylists(accessToken) {
+  const playlists = []
+  let pageToken = ''
+  do {
+    const endpoint = new URL('https://www.googleapis.com/youtube/v3/playlists')
+    endpoint.searchParams.set('part', 'snippet,contentDetails')
+    endpoint.searchParams.set('mine', 'true')
+    endpoint.searchParams.set('maxResults', '50')
+    if (pageToken) endpoint.searchParams.set('pageToken', pageToken)
+
+    const res = await fetch(endpoint.toString(), {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      throw new Error(err?.error?.message ?? `YouTube API błąd ${res.status}`)
+    }
+    const data = await res.json()
+    for (const item of data.items ?? []) {
+      playlists.push({
+        id: item.id,
+        title: item.snippet?.title ?? 'Bez tytułu',
+        thumbnail: item.snippet?.thumbnails?.medium?.url ?? item.snippet?.thumbnails?.default?.url ?? null,
+        itemCount: item.contentDetails?.itemCount ?? 0,
+      })
+    }
+    pageToken = data.nextPageToken ?? ''
+  } while (pageToken)
+  return playlists
 }
 
 export function cleanTitle(title) {

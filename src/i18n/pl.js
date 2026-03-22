@@ -203,6 +203,24 @@ export const pl = {
   connectSpotify: 'Polacz ze Spotify',
   connectSpotifyDesc: 'Importuj playlisty ze Spotify i automatycznie znajdz je na YouTube.',
   comingSoon: 'Wkrotce',
+  ytConnect: 'Polacz',
+  ytConnecting: 'Laczenie...',
+  ytImportOpen: 'Importuj playlisty',
+  ytSwitchAccount: 'Zmien konto YT',
+  ytDisconnect: 'Odlacz',
+
+  // YouTubeImportModal
+  ytImportTitle: 'Importuj z YouTube',
+  ytImportBack: 'Wróć',
+  ytImportLoading: 'Pobieranie playlist...',
+  ytImportNoPlaylists: 'Brak playlist na tym koncie.',
+  ytImportVideos: 'filmów',
+  ytImportFetchingSongs: 'Pobieranie utworów...',
+  ytImportEmpty: 'Ta playlista nie zawiera dostępnych utworów.',
+  ytImportSongCount: (n) => `${n} utworów`,
+  ytImportCreate: 'Utwórz nową szafę',
+  ytImportAddToCurrent: 'Dodaj do bieżącej szafy',
+  ytImportAddToOther: 'Dodaj do innej szafy...',
 
   // Language toggle
   langToggle: 'EN',

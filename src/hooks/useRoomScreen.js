@@ -172,6 +172,33 @@ export function useRoomScreen(route) {
     if (ref?.id) route.navigateToRoom(ref.id)
   }, [auth.user, executeAction, route])
 
+  const handleCreateRoomFromYt = useCallback(async (name, songs) => {
+    if (!auth.user || auth.user.isAnonymous) return
+    const ref = await executeAction(async () => {
+      const roomRef = await createPrivateRoom(auth.user.uid, name)
+      if (songs.length > 0) {
+        const songsWithIds = songs.map((s) => ({ ...s, id: genId() }))
+        await replaceRoomSongs(roomRef.id, songsWithIds)
+      }
+      return roomRef
+    }, 'Nie udalo sie utworzyc szafy z YouTube.')
+    if (ref?.id) route.navigateToRoom(ref.id)
+  }, [auth.user, executeAction, route])
+
+  const handleAddYtToRoom = useCallback(async (targetRoomId, ytSongs) => {
+    const targetRoom = ownedRooms.find((r) => r.id === targetRoomId)
+    if (!targetRoom) return
+    const songsWithIds = ytSongs.map((s) => ({ ...s, id: genId() }))
+    const existingYtIds = new Set((targetRoom.songs ?? []).map((s) => s.ytId))
+    const newSongs = songsWithIds.filter((s) => !existingYtIds.has(s.ytId))
+    const merged = [...(targetRoom.songs ?? []), ...newSongs]
+    await executeAction(
+      () => replaceRoomSongs(targetRoomId, merged),
+      'Nie udało się dodać piosenek do szafy.'
+    )
+    route.navigateToRoom(targetRoomId)
+  }, [executeAction, genId, ownedRooms, route])
+
   const handleCopyRoom = useCallback(async () => {
     if (!auth.user || auth.user.isAnonymous || !room || canEditRoom) return
     setCopyingRoom(true)
@@ -395,6 +422,8 @@ export function useRoomScreen(route) {
     cancelEditPlaylist,
     handleSongUrlChange,
     handleCreateRoom,
+    handleCreateRoomFromYt,
+    handleAddYtToRoom,
     handleCopyRoom,
     handleAppendToRoom,
     handleDeleteRoom,

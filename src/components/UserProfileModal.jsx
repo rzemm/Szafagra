@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useLanguage } from '../context/LanguageContext'
+import { useYouTubeAuth } from '../hooks/useYouTubeAuth'
+import { YouTubeImportModal } from './YouTubeImportModal'
 
 const YouTubeIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -13,11 +15,13 @@ const SpotifyIcon = () => (
   </svg>
 )
 
-export function UserProfileModal({ user, onClose, onUpdateDisplayName }) {
+export function UserProfileModal({ user, onClose, onUpdateDisplayName, onCreateRoomFromYt, onAddYtToRoom, currentRoomId, ownedRooms }) {
   const { t } = useLanguage()
   const [name, setName] = useState(user?.displayName ?? '')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [showImport, setShowImport] = useState(false)
+  const yt = useYouTubeAuth()
 
   const handleSave = async () => {
     const trimmed = name.trim()
@@ -30,6 +34,25 @@ export function UserProfileModal({ user, onClose, onUpdateDisplayName }) {
   }
 
   const initials = (user?.displayName || user?.email || '?')[0].toUpperCase()
+
+  if (showImport && yt.accessToken) {
+    return (
+      <YouTubeImportModal
+        accessToken={yt.accessToken}
+        onClose={() => setShowImport(false)}
+        onCreateRoom={async (name, songs) => {
+          await onCreateRoomFromYt(name, songs)
+          yt.disconnect()
+        }}
+        onAddToRoom={async (roomId, songs) => {
+          await onAddYtToRoom(roomId, songs)
+          yt.disconnect()
+        }}
+        currentRoomId={currentRoomId}
+        ownedRooms={ownedRooms ?? []}
+      />
+    )
+  }
 
   return (
     <div className="upmodal-overlay" role="presentation" onClick={onClose}>
@@ -79,7 +102,7 @@ export function UserProfileModal({ user, onClose, onUpdateDisplayName }) {
           <div className="upmodal-integrations">
             <div className="upmodal-integrations-label">{t('integrations')}</div>
 
-            <div className="upmodal-integration-row upmodal-integration--disabled">
+            <div className="upmodal-integration-row">
               <div className="upmodal-integration-icon upmodal-integration-icon--yt">
                 <YouTubeIcon />
               </div>
@@ -87,8 +110,32 @@ export function UserProfileModal({ user, onClose, onUpdateDisplayName }) {
                 <div className="upmodal-integration-name">{t('connectYouTube')}</div>
                 <div className="upmodal-integration-desc">{t('connectYouTubeDesc')}</div>
               </div>
-              <span className="upmodal-coming-soon">{t('comingSoon')}</span>
+              {yt.accessToken ? (
+                <div className="upmodal-yt-connected-actions">
+                  <button className="upmodal-yt-btn" onClick={() => setShowImport(true)}>
+                    {t('ytImportOpen')}
+                  </button>
+                  <button
+                    className="upmodal-yt-btn upmodal-yt-btn--disconnect"
+                    onClick={() => { yt.disconnect(); yt.connect() }}
+                  >
+                    {t('ytSwitchAccount')}
+                  </button>
+                  <button className="upmodal-yt-btn upmodal-yt-btn--disconnect" onClick={yt.disconnect}>
+                    {t('ytDisconnect')}
+                  </button>
+                </div>
+              ) : (
+                <button
+                  className="upmodal-yt-btn"
+                  onClick={yt.connect}
+                  disabled={yt.connecting || !user || user.isAnonymous}
+                >
+                  {yt.connecting ? t('ytConnecting') : t('ytConnect')}
+                </button>
+              )}
             </div>
+            {yt.error && <div className="upmodal-yt-error">{yt.error}</div>}
 
             <div className="upmodal-integration-row upmodal-integration--disabled">
               <div className="upmodal-integration-icon upmodal-integration-icon--sp">

@@ -4719,3 +4719,329 @@ body.disco-mode .app {
     border-radius: 16px 16px 12px 12px;
   }
 }
+
+.upmodal-yt-btn {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.3rem 0.75rem;
+  border-radius: 20px;
+  border: 1px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.upmodal-yt-btn:hover:not(:disabled) {
+  background: var(--accent);
+  color: #fff;
+}
+
+.upmodal-yt-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.upmodal-yt-connected-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.upmodal-yt-btn--disconnect {
+  border-color: var(--text-dim);
+  color: var(--text-dim);
+  font-size: 0.68rem;
+}
+
+.upmodal-yt-btn--disconnect:hover {
+  background: var(--surface3);
+  color: var(--text);
+  border-color: var(--text);
+}
+
+.upmodal-yt-error {
+  font-size: 0.75rem;
+  color: var(--accent);
+  margin-top: 0.25rem;
+}
+
+/* ─── YouTube Import Modal ───────────────────────────────────────────────────── */
+
+.ytimport-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+  padding: 1rem;
+}
+
+.ytimport-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ytimport-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1.1rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.ytimport-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.ytimport-close {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  border-radius: 6px;
+  line-height: 1;
+}
+
+.ytimport-close:hover {
+  background: var(--surface2);
+  color: var(--text);
+}
+
+.ytimport-body {
+  overflow-y: auto;
+  flex: 1;
+  padding: 0.5rem 0;
+}
+
+.ytimport-status {
+  padding: 1.5rem 1.2rem;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  text-align: center;
+}
+
+.ytimport-error {
+  padding: 1rem 1.2rem;
+  font-size: 0.82rem;
+  color: var(--accent);
+}
+
+.ytimport-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ytimport-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.ytimport-item:hover {
+  background: var(--surface2);
+}
+
+.ytimport-thumb {
+  width: 80px;
+  height: 45px;
+  object-fit: cover;
+  border-radius: 5px;
+  flex-shrink: 0;
+  background: var(--surface3);
+}
+
+.ytimport-thumb--empty {
+  background: var(--surface3);
+}
+
+.ytimport-item-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.ytimport-item-title {
+  font-size: 0.87rem;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ytimport-item-count {
+  font-size: 0.74rem;
+  color: var(--text-dim);
+  margin-top: 0.15rem;
+}
+
+.ytimport-detail {
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ytimport-back {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  width: fit-content;
+}
+
+.ytimport-back:hover {
+  color: var(--text);
+}
+
+.ytimport-detail-card {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
+.ytimport-detail-thumb {
+  width: 100px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.ytimport-detail-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.ytimport-detail-name {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.ytimport-detail-count {
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  margin-top: 0.3rem;
+}
+
+.ytimport-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ytimport-action-btn {
+  width: 100%;
+  padding: 0.6rem 1rem;
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s;
+}
+
+.ytimport-action-btn em {
+  font-style: normal;
+  font-weight: 700;
+}
+
+.ytimport-action-btn:hover:not(:disabled) {
+  background: var(--surface3);
+}
+
+.ytimport-action-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.ytimport-action-btn--primary {
+  background: #ff0000;
+  color: #fff;
+  border-color: transparent;
+  font-weight: 600;
+}
+
+.ytimport-action-btn--primary:hover:not(:disabled) {
+  background: #cc0000;
+}
+
+.ytimport-action-btn--subtle {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+}
+
+.ytimport-room-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.ytimport-room-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.ytimport-room-item {
+  padding: 0.55rem 0.9rem;
+  font-size: 0.85rem;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.ytimport-room-item:not(:last-child) {
+  border-bottom: 1px solid var(--border);
+}
+
+.ytimport-room-item:hover {
+  background: var(--surface2);
+}
+
+@media (max-width: 640px) {
+  .ytimport-overlay {
+    align-items: flex-end;
+    padding: 0.75rem;
+  }
+
+  .ytimport-modal {
+    max-height: 85vh;
+    border-radius: 16px 16px 12px 12px;
+    width: 100%;
+    max-width: 100%;
+  }
+}

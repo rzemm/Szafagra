@@ -73,6 +73,10 @@ export default function App() {
           signInWithGoogle={screen.auth.signInWithGoogle}
           signOutUser={screen.auth.signOutUser}
           updateDisplayName={screen.auth.updateDisplayName}
+          onCreateRoomFromYt={screen.handleCreateRoomFromYt}
+          onAddYtToRoom={screen.handleAddYtToRoom}
+          currentRoomId={screen.auth.roomId}
+          ownedRooms={screen.ownedRooms}
           onShareGuestLink={screen.shareLinks.copyVoterLink}
           guestCopied={screen.uiState.copied === 'voter'}
           suggestions={screen.suggestions}

@@ -36,6 +36,10 @@ export function RoomHeader({
   clearSuggestions,
   onOpenCookieSettings,
   updateDisplayName,
+  onCreateRoomFromYt,
+  onAddYtToRoom,
+  currentRoomId,
+  ownedRooms,
 }) {
   const { t, toggleLang } = useLanguage()
   const [profileOpen, setProfileOpen] = useState(false)
@@ -141,6 +145,10 @@ export function RoomHeader({
                 user={user}
                 onClose={() => setProfileOpen(false)}
                 onUpdateDisplayName={updateDisplayName}
+                onCreateRoomFromYt={onCreateRoomFromYt}
+                onAddYtToRoom={onAddYtToRoom}
+                currentRoomId={currentRoomId}
+                ownedRooms={ownedRooms}
               />
             )}
           </div>

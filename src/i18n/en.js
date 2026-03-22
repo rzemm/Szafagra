@@ -203,6 +203,24 @@ export const en = {
   connectSpotify: 'Connect Spotify',
   connectSpotifyDesc: 'Import Spotify playlists and automatically find them on YouTube.',
   comingSoon: 'Coming soon',
+  ytConnect: 'Connect',
+  ytConnecting: 'Connecting...',
+  ytImportOpen: 'Import playlists',
+  ytSwitchAccount: 'Switch YT account',
+  ytDisconnect: 'Disconnect',
+
+  // YouTubeImportModal
+  ytImportTitle: 'Import from YouTube',
+  ytImportBack: 'Back',
+  ytImportLoading: 'Loading playlists...',
+  ytImportNoPlaylists: 'No playlists found on this account.',
+  ytImportVideos: 'videos',
+  ytImportFetchingSongs: 'Fetching songs...',
+  ytImportEmpty: 'This playlist has no available songs.',
+  ytImportSongCount: (n) => `${n} songs`,
+  ytImportCreate: 'Create new room',
+  ytImportAddToCurrent: 'Add to current room',
+  ytImportAddToOther: 'Add to another room...',
 
   // Language toggle
   langToggle: 'PL',
