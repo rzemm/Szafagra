@@ -7,65 +7,14 @@ import { VotingPanel } from './VotingPanel'
 import { useLanguage } from '../context/LanguageContext'
 
 export function OwnerRoomView({
-  canEditRoom,
-  roomType,
-  leftPanel,
-  panelOpen,
-  togglePanel,
   room,
-  currentSong,
-  isPlaying,
-  remaining,
-  ytPlayerState,
-  loadProgress,
-  playerRef,
-  playerDivRef,
-  playerReady,
-  advanceToWinner,
-  skipThreshold,
-  skipCount,
-  startJukebox,
-  stopJukebox,
-  voteMode,
-  queue,
-  voteThreshold,
-  saveSettings,
-  suggestions,
-  showThumbnails,
-  playlistActions,
-  songActions,
-  settings,
-  nextOptionKeys,
-  nextOptions,
-  nextVotesData,
-  userId,
-  vote,
-  playSongNow,
-  queueSong,
-  replaceSong,
-  removeVotingOption,
-  advanceToOption,
-  shareLinks,
-  copied,
-  renameRoom,
-  isVisible,
-  isViewMode,
-  handleCopyRoom,
-  copyingRoom,
-  handleAppendToRoom,
-  appendingRoom,
-  ownedRooms,
-  approveSuggestion,
-  rejectSuggestion,
-  removeFromQueue,
-  localCurrentSongId,
-  handleLocalPlay,
-  uiState,
-  setField,
-  toggleSection,
-  startEditPlaylist,
-  cancelEditPlaylist,
-  onSubmitMessage,
+  canEditRoom,
+  ui,
+  sidebar,
+  playback,
+  voting,
+  sharing,
+  viewMode,
 }) {
   const { t } = useLanguage()
   const [appendTargetId, setAppendTargetId] = useState('')
@@ -73,152 +22,152 @@ export function OwnerRoomView({
 
   const handleAppend = async () => {
     if (!appendTargetId) return
-    await handleAppendToRoom(appendTargetId)
+    await viewMode.handleAppendToRoom(appendTargetId)
     setAppendDone(true)
     setTimeout(() => setAppendDone(false), 3000)
   }
 
-  const voteCounts = nextOptionKeys.map((key) => Object.values(nextVotesData).filter((value) => value === key).length)
-  const totalVotes = Object.values(nextVotesData).length
+  const voteCounts = voting.nextOptionKeys.map((key) =>
+    Object.values(voting.nextVotesData).filter((value) => value === key).length
+  )
+  const totalVotes = Object.values(voting.nextVotesData).length
   const maxCount = Math.max(0, ...voteCounts)
 
   return (
     <>
       <PlaylistSidebar
-        leftPanel={leftPanel}
-        isPlaying={isPlaying}
+        leftPanel={ui.leftPanel}
+        isPlaying={playback.isPlaying}
         room={room}
-        currentSong={currentSong}
-        playSongNow={playSongNow}
-        deleteSong={songActions.deleteSong}
-        deleteSongs={songActions.deleteSongs}
-        suggestions={suggestions}
-        approveSuggestion={approveSuggestion}
-        rejectSuggestion={rejectSuggestion}
-        showThumbnails={showThumbnails}
-        queue={queue}
-        voteThreshold={voteThreshold}
-        voteMode={voteMode}
-        skipThreshold={skipThreshold}
-        allowSuggestions={settings.allowSuggestions ?? true}
-        allowGuestListening={settings.allowGuestListening ?? false}
-        tickerText={settings.tickerText ?? ''}
-        tickerOnScreen={settings.tickerOnScreen ?? false}
-        tickerForGuests={settings.tickerForGuests ?? false}
-        queueSize={Math.max(1, settings.queueSize ?? 1)}
-        saveSettings={saveSettings}
-        importPlaylist={playlistActions.importPlaylist}
-        exportPlaylist={playlistActions.exportPlaylist}
-        queueSong={queueSong}
-        removeFromQueue={removeFromQueue}
-        copyAdminLink={shareLinks.copyAdminLink}
-        copied={copied}
-        roomType={roomType}
-        onRenameRoom={renameRoom}
-        showQr={panelOpen.qr}
-        showQueueOverlay={panelOpen.showQueue}
-        showRoomCode={panelOpen.showRoomCode}
-        onToggleQr={() => togglePanel('qr')}
-        onToggleQueueOverlay={() => togglePanel('showQueue')}
-        onToggleShowRoomCode={() => togglePanel('showRoomCode')}
-        isVisible={isVisible}
+        currentSong={playback.currentSong}
+        playSongNow={voting.playSongNow}
+        deleteSong={sidebar.songActions.deleteSong}
+        deleteSongs={sidebar.songActions.deleteSongs}
+        suggestions={sidebar.suggestions}
+        approveSuggestion={sidebar.approveSuggestion}
+        rejectSuggestion={sidebar.rejectSuggestion}
+        showThumbnails={sidebar.showThumbnails}
+        queue={playback.queue}
+        voteThreshold={voting.voteThreshold}
+        voteMode={voting.voteMode}
+        skipThreshold={playback.skipThreshold}
+        allowSuggestions={sidebar.settings.allowSuggestions ?? true}
+        allowGuestListening={sidebar.settings.allowGuestListening ?? false}
+        tickerText={sidebar.settings.tickerText ?? ''}
+        tickerOnScreen={sidebar.settings.tickerOnScreen ?? false}
+        tickerForGuests={sidebar.settings.tickerForGuests ?? false}
+        queueSize={Math.max(1, sidebar.settings.queueSize ?? 1)}
+        saveSettings={sidebar.saveSettings}
+        importPlaylist={sidebar.playlistActions.importPlaylist}
+        exportPlaylist={sidebar.playlistActions.exportPlaylist}
+        queueSong={voting.queueSong}
+        removeFromQueue={playback.removeFromQueue}
+        copyAdminLink={sharing.shareLinks.copyAdminLink}
+        copied={sharing.copied}
+        roomType={sidebar.roomType}
+        onRenameRoom={sidebar.renameRoom}
+        showQr={ui.panelOpen.qr}
+        showQueueOverlay={ui.panelOpen.showQueue}
+        showRoomCode={ui.panelOpen.showRoomCode}
+        onToggleQr={() => ui.togglePanel('qr')}
+        onToggleQueueOverlay={() => ui.togglePanel('showQueue')}
+        onToggleShowRoomCode={() => ui.togglePanel('showRoomCode')}
+        isVisible={sidebar.isVisible}
         canEditRoom={canEditRoom}
-        isViewMode={isViewMode}
-        onLocalPlay={handleLocalPlay}
-        localCurrentSongId={localCurrentSongId}
-        editingId={uiState.editingId}
-        editingName={uiState.editingName}
-        startEditPlaylist={startEditPlaylist}
-        cancelEditPlaylist={cancelEditPlaylist}
-        setEditingName={(value) => setField('editingName', value)}
-        saveEditPlaylist={playlistActions.saveEditPlaylist}
-        ytPlaylistId={uiState.ytPlaylistId}
-        importingYtPlaylist={uiState.importingYtPlaylist}
-        importFromYouTube={songActions.importFromYouTube}
-        collapsed={uiState.collapsed}
-        toggleSection={toggleSection}
-        onSubmitMessage={onSubmitMessage}
+        isViewMode={viewMode.isViewMode}
+        onLocalPlay={viewMode.handleLocalPlay}
+        localCurrentSongId={viewMode.localCurrentSongId}
+        onSubmitMessage={sidebar.onSubmitMessage}
       />
 
       <div className="player-area player-area-admin">
         <div className="scroll-ticker-wrap">
           <div className="admin-scroll-area">
-          {isViewMode && (
-            <div className="view-mode-banner">
-              <span className="view-mode-label">{t('viewModeLabel')}</span>
-              <button
-                className="view-mode-copy-btn"
-                onClick={handleCopyRoom}
-                disabled={copyingRoom}
-              >
-                {copyingRoom ? t('copying') : t('copyThisList')}
-              </button>
-              {ownedRooms?.length > 0 && (
-                <div className="view-mode-append-row">
-                  <select
-                    className="view-mode-append-select"
-                    value={appendTargetId}
-                    onChange={(event) => { setAppendTargetId(event.target.value); setAppendDone(false) }}
-                  >
-                    <option value="">{t('appendSongsTo')}</option>
-                    {ownedRooms.map((r) => (
-                      <option key={r.id} value={r.id}>{r.name || t('privateRoom')}</option>
-                    ))}
-                  </select>
-                  {appendTargetId && (
-                    <button
-                      className="view-mode-append-btn"
-                      onClick={handleAppend}
-                      disabled={appendingRoom || appendDone}
+            {viewMode.isViewMode && (
+              <div className="view-mode-banner">
+                <span className="view-mode-label">{t('viewModeLabel')}</span>
+                <button
+                  className="view-mode-copy-btn"
+                  onClick={viewMode.handleCopyRoom}
+                  disabled={viewMode.copyingRoom}
+                >
+                  {viewMode.copyingRoom ? t('copying') : t('copyThisList')}
+                </button>
+                {viewMode.ownedRooms?.length > 0 && (
+                  <div className="view-mode-append-row">
+                    <select
+                      className="view-mode-append-select"
+                      value={appendTargetId}
+                      onChange={(event) => {
+                        setAppendTargetId(event.target.value)
+                        setAppendDone(false)
+                      }}
                     >
-                      {appendDone ? t('appended') : appendingRoom ? t('appending') : t('append')}
-                    </button>
+                      <option value="">{t('appendSongsTo')}</option>
+                      {viewMode.ownedRooms.map((ownedRoom) => (
+                        <option key={ownedRoom.id} value={ownedRoom.id}>
+                          {ownedRoom.name || t('privateRoom')}
+                        </option>
+                      ))}
+                    </select>
+                    {appendTargetId && (
+                      <button
+                        className="view-mode-append-btn"
+                        onClick={handleAppend}
+                        disabled={viewMode.appendingRoom || appendDone}
+                      >
+                        {appendDone
+                          ? t('appended')
+                          : viewMode.appendingRoom
+                            ? t('appending')
+                            : t('append')}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div className="admin-top-row">
+              <NowPlayingPanel
+                isPlaying={playback.isPlaying}
+                currentSong={playback.currentSong}
+                remaining={playback.remaining}
+                ytPlayerState={playback.ytPlayerState}
+                loadProgress={playback.loadProgress}
+                playerRef={playback.playerRef}
+                playerDivRef={playback.playerDivRef}
+                playerReady={playback.playerReady}
+                advanceToWinner={playback.advanceToWinner}
+                skipThreshold={playback.skipThreshold}
+                skipCount={playback.skipCount}
+                startJukebox={playback.startJukebox}
+                stopJukebox={playback.stopJukebox}
+                room={room}
+                canEditRoom={canEditRoom}
+              />
+              {sharing.shareLinks.voterUrl && (ui.panelOpen.qr || ui.panelOpen.showRoomCode) && (
+                <div className="admin-qr-panel">
+                  {ui.panelOpen.qr && (
+                    <>
+                      <div className="qr-clickable" onClick={sharing.shareLinks.copyVoterLink} title={t('clickToCopyLink')}>
+                        <QRCodeSVG value={sharing.shareLinks.voterUrl} size={150} bgColor="#000000" fgColor="#ffffff" />
+                        {sharing.copied === 'voter' && <div className="qr-copied-overlay">OK {t('copiedLabel')}</div>}
+                      </div>
+                      <p className="qr-hint">{t('clickQrToCopy')}</p>
+                    </>
+                  )}
+                  {ui.panelOpen.showRoomCode && room?.guestToken && (
+                    <div className="admin-room-code">{room.guestToken}</div>
                   )}
                 </div>
               )}
             </div>
-          )}
-
-          <div className="admin-top-row">
-            <NowPlayingPanel
-              isPlaying={isPlaying}
-              currentSong={currentSong}
-              remaining={remaining}
-              ytPlayerState={ytPlayerState}
-              loadProgress={loadProgress}
-              playerRef={playerRef}
-              playerDivRef={playerDivRef}
-              playerReady={playerReady}
-              advanceToWinner={advanceToWinner}
-              skipThreshold={skipThreshold}
-              skipCount={skipCount}
-              startJukebox={startJukebox}
-              stopJukebox={stopJukebox}
-              room={room}
-              canEditRoom={canEditRoom}
-            />
-            {shareLinks.voterUrl && (panelOpen.qr || panelOpen.showRoomCode) && (
-              <div className="admin-qr-panel">
-                {panelOpen.qr && (
-                  <>
-                    <div className="qr-clickable" onClick={shareLinks.copyVoterLink} title={t('clickToCopyLink')}>
-                      <QRCodeSVG value={shareLinks.voterUrl} size={150} bgColor="#000000" fgColor="#ffffff" />
-                      {copied === 'voter' && <div className="qr-copied-overlay">✓ {t('copiedLabel')}</div>}
-                    </div>
-                    <p className="qr-hint">{t('clickQrToCopy')}</p>
-                  </>
-                )}
-                {panelOpen.showRoomCode && room?.guestToken && (
-                  <div className="admin-room-code">{room.guestToken}</div>
-                )}
-              </div>
-            )}
           </div>
-        </div>
 
-          {panelOpen.showQueue && queue.length > 0 && (
+          {ui.panelOpen.showQueue && playback.queue.length > 0 && (
             <div className="queue-overlay">
-              {queue.map((song) => (
+              {playback.queue.map((song) => (
                 <div key={song.id} className="queue-overlay-item">
                   <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="queue-overlay-thumb" />
                   <ScrollText className="queue-overlay-title">{song.title}</ScrollText>
@@ -226,14 +175,14 @@ export function OwnerRoomView({
               ))}
             </div>
           )}
-          {settings.tickerOnScreen && settings.tickerText && (
-            <div className="admin-ticker">📢 {settings.tickerText}</div>
+          {sidebar.settings.tickerOnScreen && sidebar.settings.tickerText && (
+            <div className="admin-ticker">Info: {sidebar.settings.tickerText}</div>
           )}
         </div>
 
         <div className="voting-panel-bottom">
-          <div className="voting-bottom-bar" onClick={() => togglePanel('voting')}>
-            {isPlaying && nextOptionKeys.length > 0 ? nextOptionKeys.map((key, index) => {
+          <div className="voting-bottom-bar" onClick={() => ui.togglePanel('voting')}>
+            {playback.isPlaying && voting.nextOptionKeys.length > 0 ? voting.nextOptionKeys.map((key, index) => {
               const count = voteCounts[index]
               const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0
               const isWinning = count > 0 && count === maxCount
@@ -241,32 +190,32 @@ export function OwnerRoomView({
               return (
                 <div key={key} className={`voting-bar-opt${isWinning ? ' winning' : ''}`}>
                   <div className="vbo-fill" style={{ height: `${pct}%` }} />
-                  <span className="vbo-num">👍 {count}</span>
-                  <span className="vbo-sep"> – </span>
+                  <span className="vbo-num">{count}</span>
+                  <span className="vbo-sep"> - </span>
                   <span className="vbo-pct">{pct}%</span>
                 </div>
               )
             }) : (
               <h2 className="section-title" style={{ flex: 1, padding: '0 1rem' }}>{t('votingOptionsTitle')}</h2>
             )}
-            <span className="section-arrow" style={{ padding: '0 1rem' }}>{panelOpen.voting ? '▼' : '▲'}</span>
+            <span className="section-arrow" style={{ padding: '0 1rem' }}>{ui.panelOpen.voting ? 'v' : '^'}</span>
           </div>
 
-          {panelOpen.voting && (
+          {ui.panelOpen.voting && (
             <div className="voting-bottom-content">
-              {isPlaying && nextOptionKeys.length > 0 && (
+              {playback.isPlaying && voting.nextOptionKeys.length > 0 && (
                 <VotingPanel
-                  nextOptionKeys={nextOptionKeys}
-                  nextOptions={nextOptions}
-                  nextVotesData={nextVotesData}
+                  nextOptionKeys={voting.nextOptionKeys}
+                  nextOptions={voting.nextOptions}
+                  nextVotesData={voting.nextVotesData}
                   showPlayNow
-                  onPlayNow={playSongNow}
-                  onQueueSong={queueSong}
-                  onRemoveOption={removeVotingOption}
-                  onReplaceSong={replaceSong}
+                  onPlayNow={voting.playSongNow}
+                  onQueueSong={voting.queueSong}
+                  onRemoveOption={voting.removeVotingOption}
+                  onReplaceSong={voting.replaceSong}
                   columns
-                  onChooseOption={advanceToOption}
-                  showThumbnails={showThumbnails}
+                  onChooseOption={voting.advanceToOption}
+                  showThumbnails={sidebar.showThumbnails}
                 />
               )}
             </div>

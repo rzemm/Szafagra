@@ -86,65 +86,70 @@ export default function App() {
         <main className="main">
           {screen.showOwnerUI ? (
             <OwnerRoomView
-              canEditRoom={screen.canEditRoom}
-              roomType={screen.auth.roomType}
-              leftPanel={screen.leftPanel}
-              panelOpen={screen.panelOpen}
-              togglePanel={screen.togglePanel}
               room={screen.room}
-              currentSong={screen.currentSong}
-              isPlaying={screen.isPlaying}
-              remaining={screen.remaining}
-              ytPlayerState={screen.ytPlayerState}
-              loadProgress={screen.loadProgress}
-              playerRef={screen.playerRef}
-              playerDivRef={screen.playerDivRef}
-              playerReady={screen.playerReady}
-              advanceToWinner={screen.advanceToWinner}
-              skipThreshold={screen.skipThreshold}
-              skipCount={screen.skipCount}
-              startJukebox={screen.startJukebox}
-              stopJukebox={screen.stopJukebox}
-              voteMode={screen.voteMode}
-              queue={screen.queue}
-              voteThreshold={screen.voteThreshold}
-              saveSettings={screen.saveSettings}
-              suggestions={screen.suggestions}
-              showThumbnails={screen.showThumbnails}
-              playlistActions={screen.playlistActions}
-              songActions={screen.songActions}
-              settings={screen.settings}
-              nextOptionKeys={screen.nextOptionKeys}
-              nextOptions={screen.nextOptions}
-              nextVotesData={screen.nextVotesData}
-              userId={screen.userId}
-              vote={screen.vote}
-              playSongNow={screen.playSongNow}
-              queueSong={screen.queueSong}
-              replaceSong={screen.replaceSong}
-              removeVotingOption={screen.removeVotingOption}
-              advanceToOption={screen.advanceToOption}
-              shareLinks={screen.shareLinks}
-              copied={screen.uiState.copied}
-              renameRoom={screen.renameRoom}
-              isVisible={screen.isVisible}
-              isViewMode={route.isViewMode}
-              handleCopyRoom={screen.handleCopyRoom}
-              copyingRoom={screen.copyingRoom}
-              handleAppendToRoom={screen.handleAppendToRoom}
-              appendingRoom={screen.appendingRoom}
-              ownedRooms={screen.ownedRooms}
-              approveSuggestion={screen.approveSuggestion}
-              rejectSuggestion={screen.rejectSuggestion}
-              removeFromQueue={screen.removeFromQueue}
-              localCurrentSongId={screen.localCurrentSongId}
-              handleLocalPlay={screen.handleLocalPlay}
-              uiState={screen.uiState}
-              setField={screen.setField}
-              toggleSection={screen.toggleSection}
-              startEditPlaylist={screen.startEditPlaylist}
-              cancelEditPlaylist={screen.cancelEditPlaylist}
-              onSubmitMessage={screen.submitContactMessage}
+              canEditRoom={screen.canEditRoom}
+              ui={{
+                leftPanel: screen.leftPanel,
+                panelOpen: screen.panelOpen,
+                togglePanel: screen.togglePanel,
+              }}
+              sidebar={{
+                roomType: screen.auth.roomType,
+                saveSettings: screen.saveSettings,
+                suggestions: screen.suggestions,
+                showThumbnails: screen.showThumbnails,
+                playlistActions: screen.playlistActions,
+                songActions: screen.songActions,
+                settings: screen.settings,
+                renameRoom: screen.renameRoom,
+                isVisible: screen.isVisible,
+                approveSuggestion: screen.approveSuggestion,
+                rejectSuggestion: screen.rejectSuggestion,
+                onSubmitMessage: screen.submitContactMessage,
+              }}
+              playback={{
+                isPlaying: screen.isPlaying,
+                currentSong: screen.currentSong,
+                remaining: screen.remaining,
+                ytPlayerState: screen.ytPlayerState,
+                loadProgress: screen.loadProgress,
+                playerRef: screen.playerRef,
+                playerDivRef: screen.playerDivRef,
+                playerReady: screen.playerReady,
+                advanceToWinner: screen.advanceToWinner,
+                skipThreshold: screen.skipThreshold,
+                skipCount: screen.skipCount,
+                startJukebox: screen.startJukebox,
+                stopJukebox: screen.stopJukebox,
+                queue: screen.queue,
+                removeFromQueue: screen.removeFromQueue,
+              }}
+              voting={{
+                voteMode: screen.voteMode,
+                voteThreshold: screen.voteThreshold,
+                nextOptionKeys: screen.nextOptionKeys,
+                nextOptions: screen.nextOptions,
+                nextVotesData: screen.nextVotesData,
+                playSongNow: screen.playSongNow,
+                queueSong: screen.queueSong,
+                replaceSong: screen.replaceSong,
+                removeVotingOption: screen.removeVotingOption,
+                advanceToOption: screen.advanceToOption,
+              }}
+              sharing={{
+                shareLinks: screen.shareLinks,
+                copied: screen.uiState.copied,
+              }}
+              viewMode={{
+                isViewMode: route.isViewMode,
+                handleCopyRoom: screen.handleCopyRoom,
+                copyingRoom: screen.copyingRoom,
+                handleAppendToRoom: screen.handleAppendToRoom,
+                appendingRoom: screen.appendingRoom,
+                ownedRooms: screen.ownedRooms,
+                localCurrentSongId: screen.localCurrentSongId,
+                handleLocalPlay: screen.handleLocalPlay,
+              }}
             />
           ) : (
             <GuestRoomView

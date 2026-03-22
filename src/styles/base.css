@@ -1,0 +1,231 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* ─── Reset & Base ─────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg:       #0b0c14;
+  --surface:  #13141f;
+  --surface2: #1c1e2e;
+  --surface3: #252840;
+  --accent:   #e8415a;
+  --gold:     #f5a623;
+  --text:     #dde1f0;
+  --text-dim: #6b7199;
+  --border:   #282b45;
+  --radius:   12px;
+  --radius-sm: 8px;
+}
+
+/* ─── Layout ────────────────────────────────────────────────────────────────── */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100svh;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.error-banner {
+  background: rgba(232, 65, 90, 0.18);
+  border-bottom: 1px solid var(--accent);
+  color: #ffdfe4;
+  font-size: 0.85rem;
+  padding: 0.55rem 1rem;
+}
+
+.main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ─── Header ────────────────────────────────────────────────────────────────── */
+.header {
+  background: var(--surface);
+  border-bottom: 2px solid var(--accent);
+  padding: 0.9rem 1.5rem;
+  flex-shrink: 0;
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.header-icon {
+  font-size: 1.4rem;
+}
+
+.header h1 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: 0.3em;
+  color: var(--accent);
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.header-logo {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: 0.3em;
+  color: var(--accent);
+  text-transform: uppercase;
+  line-height: 1;
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+
+.header-logo:hover {
+  opacity: 0.8;
+}
+
+/* ─── Sidebar ───────────────────────────────────────────────────────────────── */
+.sidebar {
+  width: 360px;
+  min-width: 320px;
+  max-width: 420px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  flex-shrink: 0;
+  scrollbar-width: none;
+}
+
+.sidebar::-webkit-scrollbar { display: none; }
+
+.sidebar-hidden {
+  width: 0 !important;
+  min-width: 0 !important;
+  overflow: hidden;
+  border-right: none;
+}
+
+.section {
+  padding: 1.2rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.songs-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.songs-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0 1.2rem 1.2rem;
+}
+
+.section-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+  margin: -0.2rem -0.4rem 0;
+  padding: 0.2rem 0.4rem;
+  border-radius: 6px;
+  transition: background 0.12s;
+}
+
+.section-title-row:hover {
+  background: var(--surface2);
+}
+
+.section-title-row + * {
+  margin-top: 0.8rem;
+}
+
+.section-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 0;
+  line-height: 1;
+}
+
+.section-arrow {
+  font-size: 0.6rem;
+  color: var(--text-dim);
+  transition: color 0.12s;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.section-title-row:hover .section-arrow {
+  color: var(--accent);
+}
+
+.panel-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+  padding: 0.2rem 0.4rem;
+  margin: -0.2rem -0.4rem 0;
+  border-radius: 6px;
+  transition: background 0.12s;
+}
+
+.panel-title-row:hover {
+  background: rgba(255,255,255,0.06);
+}
+
+.panel-title-row:hover .section-arrow {
+  color: var(--accent);
+}
+
+.panel-title-row + * {
+  margin-top: 0.6rem;
+}
+
+.panel-title-with-setting {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.panel-header-setting {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--surface3);
+  border-radius: 20px;
+  padding: 0.2rem 0.6rem 0.2rem 0.5rem;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.panel-header-label {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.note-picker-sm .note-btn {
+  width: auto;
+  min-width: 1.6rem;
+  height: 1.5rem;
+  padding: 0 0.35rem;
+  font-size: 0.75rem;
+}
+

@@ -1,98 +1,17 @@
-import { useCallback, useEffect, useReducer, useState } from 'react'
-import { seedSampleRooms } from '../dev/seedRooms'
+import { useCallback } from 'react'
 import { genId } from '../lib/jukebox'
-import {
-  addSuggestion,
-  createContactMessage,
-  createPrivateRoom,
-  createPrivateRoomCopy,
-  createPublicRoom,
-  deleteRoom,
-  deleteSuggestion,
-  incrementRoomVotes,
-  rateRoom,
-  replaceRoomSongs,
-  saveRoomSetting,
-  setMainState,
-  toggleSkipVote,
-  voteNextOption,
-} from '../services/jukeboxService'
 import { useJukeboxPlayback } from './useJukeboxPlayback'
 import { useLatestForeignRooms, useOwnedRooms } from './useRoomListings'
 import { usePlaylistActions } from './usePlaylistActions'
 import { useRoomAuth } from './useRoomAuth'
+import { useRoomCommands } from './useRoomCommands'
 import { useRoomSubscriptions } from './useRoomSubscriptions'
+import { useRoomUiState } from './useRoomUiState'
 import { useShareLinks } from './useShareLinks'
 import { useSongActions } from './useSongActions'
 
-const initialUiState = {
-  newSongUrl: '',
-  newSongTitle: '',
-  urlErr: '',
-  fetchingTitle: false,
-  ytPlaylistId: null,
-  importingYtPlaylist: false,
-  editingId: null,
-  editingName: '',
-  copied: null,
-  collapsed: { settings: true, songs: false, suggestions: false },
-  uiError: '',
-}
-
-function uiReducer(state, action) {
-  switch (action.type) {
-    case 'setField':
-      return { ...state, [action.field]: action.value }
-    case 'toggleSection': {
-      const isCurrentlyOpen = !state.collapsed[action.key]
-      const allClosed = { settings: true, songs: true, suggestions: true }
-      return {
-        ...state,
-        collapsed: isCurrentlyOpen
-          ? allClosed
-          : { ...allClosed, [action.key]: false },
-      }
-    }
-    case 'startPlaylistEdit':
-      return { ...state, editingId: action.playlistId, editingName: action.name }
-    case 'cancelPlaylistEdit':
-      return { ...state, editingId: null, editingName: '' }
-    case 'setUrlInput':
-      return { ...state, newSongUrl: action.value, urlErr: '' }
-    case 'songTitleFetchStart':
-      return { ...state, fetchingTitle: true, urlErr: '' }
-    case 'songTitleFetchEnd':
-      return { ...state, fetchingTitle: false }
-    case 'songAdded':
-      return { ...state, newSongUrl: '', newSongTitle: '', urlErr: '' }
-    default:
-      return state
-  }
-}
-
-function resolveRoomInput(input) {
-  const rawInput = input.trim()
-  if (!rawInput) return null
-
-  try {
-    const parsedUrl = new URL(rawInput)
-    return parsedUrl.searchParams.get('room')?.trim()
-      || parsedUrl.pathname.replace(/^\/+|\/+$/g, '')
-      || rawInput
-  } catch {
-    return rawInput
-  }
-}
-
 export function useRoomScreen(route) {
-  const [uiState, dispatch] = useReducer(uiReducer, initialUiState)
-  const [panelOpen, setPanelOpen] = useState({ qr: true, voting: false, showQueue: true, showRoomCode: false })
-  const [leftPanel, setLeftPanel] = useState('songs')
-  const [creatingRoom, setCreatingRoom] = useState(false)
-  const [copyingRoom, setCopyingRoom] = useState(false)
-  const [appendingRoom, setAppendingRoom] = useState(false)
-  const [localCurrentSongId, setLocalCurrentSongId] = useState(null)
-
+  const ui = useRoomUiState()
   const auth = useRoomAuth(route.roomParam)
   const canEditRoom = route.isViewMode ? auth.isOwner : auth.canEditRoom
   const { room, suggestions } = useRoomSubscriptions(auth.roomId)
@@ -102,139 +21,16 @@ export function useRoomScreen(route) {
   const ownedRooms = useOwnedRooms(auth.user?.uid, isLoggedIn)
   const latestForeignRooms = useLatestForeignRooms(auth.user?.uid, homepageEnabled)
 
-  useEffect(() => {
-    if (!uiState.copied) return
-    const timeoutId = setTimeout(() => {
-      dispatch({ type: 'setField', field: 'copied', value: null })
-    }, 2500)
-    return () => clearTimeout(timeoutId)
-  }, [uiState.copied])
-
-  const setField = useCallback((field, value) => {
-    dispatch({ type: 'setField', field, value })
-  }, [])
-
-  const toggleSection = useCallback((key) => {
-    dispatch({ type: 'toggleSection', key })
-  }, [])
-
-  const toggleLeftPanel = useCallback((panel) => {
-    setLeftPanel((current) => current === panel ? null : panel)
-  }, [])
-
-  const startEditPlaylist = useCallback((playlistId, name) => {
-    dispatch({ type: 'startPlaylistEdit', playlistId, name })
-  }, [])
-
-  const cancelEditPlaylist = useCallback(() => {
-    dispatch({ type: 'cancelPlaylistEdit' })
-  }, [])
-
-  const handleSongUrlChange = useCallback((value) => {
-    dispatch({ type: 'setUrlInput', value })
-  }, [])
-
   const executeAction = useCallback(async (action, errorMessage) => {
-    dispatch({ type: 'setField', field: 'uiError', value: '' })
+    ui.dispatch({ type: 'setField', field: 'uiError', value: '' })
     try {
       return await action()
     } catch (error) {
       console.error(error)
-      dispatch({ type: 'setField', field: 'uiError', value: errorMessage })
+      ui.dispatch({ type: 'setField', field: 'uiError', value: errorMessage })
       return null
     }
-  }, [])
-
-  const renameRoom = useCallback(async (name) => {
-    if (!auth.roomId || !canEditRoom) return
-    await executeAction(() => setMainState(auth.roomId, { name }), 'Nie udalo sie zmienic nazwy szafy.')
-  }, [auth.roomId, canEditRoom, executeAction])
-
-  const handleDeleteRoom = useCallback(async (targetRoom) => {
-    const roomName = targetRoom?.name || 'Szafa prywatna'
-    if (!targetRoom?.id || !window.confirm(`Czy na pewno chcesz usunac szafe "${roomName}"?`)) return
-
-    await executeAction(
-      () => deleteRoom(targetRoom.id, targetRoom.guestToken),
-      'Nie udalo sie usunac szafy.'
-    )
-  }, [executeAction])
-
-  const handleCreateRoom = useCallback(async () => {
-    if (!auth.user) return
-    setCreatingRoom(true)
-
-    const ref = auth.user.isAnonymous
-      ? await executeAction(() => createPublicRoom('Nowa szafa publiczna', auth.user.uid), 'Nie udalo sie utworzyc szafy publicznej.')
-      : await executeAction(() => createPrivateRoom(auth.user.uid, 'Nowa szafa prywatna'), 'Nie udalo sie utworzyc szafy prywatnej.')
-
-    setCreatingRoom(false)
-    if (ref?.id) route.navigateToRoom(ref.id)
-  }, [auth.user, executeAction, route])
-
-  const handleCreateRoomFromYt = useCallback(async (name, songs) => {
-    if (!auth.user || auth.user.isAnonymous) return
-    const ref = await executeAction(async () => {
-      const roomRef = await createPrivateRoom(auth.user.uid, name)
-      if (songs.length > 0) {
-        const songsWithIds = songs.map((s) => ({ ...s, id: genId() }))
-        await replaceRoomSongs(roomRef.id, songsWithIds)
-      }
-      return roomRef
-    }, 'Nie udalo sie utworzyc szafy z YouTube.')
-    if (ref?.id) route.navigateToRoom(ref.id)
-  }, [auth.user, executeAction, route])
-
-  const handleAddYtToRoom = useCallback(async (targetRoomId, ytSongs) => {
-    const targetRoom = ownedRooms.find((r) => r.id === targetRoomId)
-    if (!targetRoom) return
-    const songsWithIds = ytSongs.map((s) => ({ ...s, id: genId() }))
-    const existingYtIds = new Set((targetRoom.songs ?? []).map((s) => s.ytId))
-    const newSongs = songsWithIds.filter((s) => !existingYtIds.has(s.ytId))
-    const merged = [...(targetRoom.songs ?? []), ...newSongs]
-    await executeAction(
-      () => replaceRoomSongs(targetRoomId, merged),
-      'Nie udało się dodać piosenek do szafy.'
-    )
-    route.navigateToRoom(targetRoomId)
-  }, [executeAction, genId, ownedRooms, route])
-
-  const handleCopyRoom = useCallback(async () => {
-    if (!auth.user || auth.user.isAnonymous || !room || canEditRoom) return
-    setCopyingRoom(true)
-    const ref = await executeAction(
-      () => createPrivateRoomCopy(auth.user.uid, room),
-      'Nie udalo sie skopiowac szafy.'
-    )
-    setCopyingRoom(false)
-    if (ref?.id) route.navigateToRoom(ref.id)
-  }, [auth.user, canEditRoom, executeAction, room, route])
-
-  const handleAppendToRoom = useCallback(async (targetRoomId) => {
-    const targetRoom = ownedRooms.find((r) => r.id === targetRoomId)
-    if (!targetRoom || !room) return
-    setAppendingRoom(true)
-    const existingYtIds = new Set((targetRoom.songs ?? []).map((s) => s.ytId))
-    const newSongs = (room.songs ?? []).filter((s) => !existingYtIds.has(s.ytId))
-    const merged = [...(targetRoom.songs ?? []), ...newSongs]
-    await executeAction(() => replaceRoomSongs(targetRoomId, merged), 'Nie udało się dołączyć piosenek.')
-    setAppendingRoom(false)
-  }, [executeAction, ownedRooms, room])
-
-  const handleJoinRoom = useCallback((input) => {
-    const roomValue = resolveRoomInput(input)
-    if (roomValue) route.navigateToRoom(roomValue)
-  }, [route])
-
-  const handleSeedRooms = useCallback(async () => {
-    if (!window.confirm('Utworzyc 5 przykladowych list w bazie danych?')) return
-    try {
-      await seedSampleRooms()
-      alert('Gotowe! Odswiez strone, aby zobaczyc listy.')
-    } catch (error) {
-      alert(`Blad: ${error.message}`)
-    }
-  }, [])
+  }, [ui])
 
   const settings = room?.settings ?? {}
   const playback = useJukeboxPlayback({
@@ -248,8 +44,8 @@ export function useRoomScreen(route) {
 
   const handleLocalPlay = useCallback((song) => {
     playback.playerRef.current?.loadVideoById(song.ytId)
-    setLocalCurrentSongId(song.id)
-  }, [playback.playerRef])
+    ui.setLocalCurrentSongId(song.id)
+  }, [playback.playerRef, ui])
 
   const isPlaying = room?.isPlaying ?? false
   const currentSong = room?.currentSong ?? null
@@ -266,106 +62,40 @@ export function useRoomScreen(route) {
   const showOwnerUI = !!auth.user && !auth.user.isAnonymous
   const myRating = (room?.ratings ?? {})[userId] ?? 0
 
-  const saveSettings = useCallback(async (key, value) => {
-    if (!auth.roomId || !canEditRoom) return
-    await executeAction(() => saveRoomSetting(auth.roomId, key, value), 'Nie udalo sie zapisac ustawien.')
-    if (key === 'queueSize') {
-      await executeAction(() => playback.resizeVotingOptions(value), 'Nie udalo sie zaktualizowac opcji glosowania.')
-    }
-  }, [auth.roomId, canEditRoom, executeAction, playback])
-
-  const vote = useCallback(async (optionKey) => {
-    if (!auth.user || !auth.roomId || !room) return
-    const currentVote = (room.nextVotes ?? {})[auth.user.uid]
-    if (currentVote !== optionKey) incrementRoomVotes(auth.roomId).catch(() => {})
-    await executeAction(() => voteNextOption(auth.roomId, auth.user.uid, optionKey, currentVote), 'Nie udalo sie zapisac glosu.')
-  }, [auth.roomId, auth.user, executeAction, room])
-
-  const voteSkip = useCallback(async () => {
-    if (!userId || !auth.roomId || !isPlaying) return
-    await executeAction(() => toggleSkipVote(auth.roomId, userId, mySkipVote), 'Nie udalo sie zapisac glosu pominiecia.')
-  }, [auth.roomId, executeAction, isPlaying, mySkipVote, userId])
-
-  const rateActivePlaylist = useCallback(async (score) => {
-    if (!userId || !auth.roomId) return
-    await rateRoom(auth.roomId, userId, score)
-  }, [auth.roomId, userId])
-
-  const submitSuggestion = useCallback(async ({ title, ytId, url }) => {
-    if (!auth.roomId || !userId) return false
-    const done = await executeAction(
-      () => addSuggestion(auth.roomId, userId, { title, ytId, url }),
-      'Nie udalo sie wyslac propozycji.'
-    )
-    return done !== null
-  }, [auth.roomId, executeAction, userId])
-
-  const submitContactMessage = useCallback(async ({
-    message,
-    authorName,
-    authorEmail,
-    source,
-    roomId = null,
-  }) => {
-    try {
-      await createContactMessage({
-        message,
-        authorName,
-        authorEmail,
-        source,
-        roomId,
-        userId,
-      })
-      return true
-    } catch (error) {
-      throw new Error(error?.message || 'Nie udalo sie wyslac wiadomosci.')
-    }
-  }, [userId])
-
-  const approveSuggestion = useCallback(async (suggestion) => {
-    if (!auth.roomId || !room) return
-    const isDuplicate = (room.songs ?? []).some((s) => s.ytId === suggestion.ytId)
-    if (isDuplicate) {
-      dispatch({ type: 'setField', field: 'uiError', value: `"${suggestion.title}" jest już na liście.` })
-      setTimeout(() => dispatch({ type: 'setField', field: 'uiError', value: '' }), 3000)
-      return
-    }
-    const addedBy = suggestion.userId ? { uid: suggestion.userId } : null
-    const song = {
-      id: genId(),
-      title: suggestion.title,
-      ytId: suggestion.ytId,
-      url: suggestion.url,
-      ...(addedBy ? { addedBy } : {}),
-    }
-    await executeAction(async () => {
-      await replaceRoomSongs(auth.roomId, [...(room.songs ?? []), song])
-      await deleteSuggestion(auth.roomId, suggestion.id)
-    }, 'Nie udalo sie zatwierdzic propozycji.')
-  }, [auth.roomId, dispatch, executeAction, room])
-
-  const rejectSuggestion = useCallback(async (suggestionId) => {
-    if (!auth.roomId) return
-    await executeAction(() => deleteSuggestion(auth.roomId, suggestionId), 'Nie udalo sie odrzucic propozycji.')
-  }, [auth.roomId, executeAction])
+  const commands = useRoomCommands({
+    auth,
+    canEditRoom,
+    room,
+    ownedRooms,
+    route,
+    executeAction,
+    dispatch: ui.dispatch,
+    userId,
+    isPlaying,
+    mySkipVote,
+    resizeVotingOptions: playback.resizeVotingOptions,
+    setCreatingRoom: ui.setCreatingRoom,
+    setCopyingRoom: ui.setCopyingRoom,
+    setAppendingRoom: ui.setAppendingRoom,
+  })
 
   const playlistActions = usePlaylistActions({
     roomId: auth.roomId,
     room,
-    editingName: uiState.editingName,
+    editingName: ui.uiState.editingName,
     executeAction,
-    dispatch,
+    dispatch: ui.dispatch,
     genId,
   })
 
   const songActions = useSongActions({
     roomId: auth.roomId,
     room,
-    newSongUrl: uiState.newSongUrl,
-    newSongTitle: uiState.newSongTitle,
-    ytPlaylistId: uiState.ytPlaylistId,
+    newSongUrl: ui.uiState.newSongUrl,
+    newSongTitle: ui.uiState.newSongTitle,
+    ytPlaylistId: ui.uiState.ytPlaylistId,
     executeAction,
-    dispatch,
+    dispatch: ui.dispatch,
     genId,
     user: auth.user,
   })
@@ -376,12 +106,8 @@ export function useRoomScreen(route) {
     guestToken: room?.guestToken ?? null,
     buildRoomUrl: route.buildRoomUrl,
     fallbackGuestUrl: route.currentUrl,
-    onCopied: (value) => dispatch({ type: 'setField', field: 'copied', value }),
+    onCopied: (value) => ui.dispatch({ type: 'setField', field: 'copied', value }),
   })
-
-  const togglePanel = useCallback((key) => {
-    setPanelOpen((current) => ({ ...current, [key]: !current[key] }))
-  }, [])
 
   return {
     auth,
@@ -408,40 +134,40 @@ export function useRoomScreen(route) {
     ownedRooms,
     latestForeignRooms,
     shareLinks,
-    uiState,
-    leftPanel,
-    panelOpen,
-    creatingRoom,
-    copyingRoom,
-    appendingRoom,
-    localCurrentSongId,
-    setField,
-    toggleSection,
-    toggleLeftPanel,
-    startEditPlaylist,
-    cancelEditPlaylist,
-    handleSongUrlChange,
-    handleCreateRoom,
-    handleCreateRoomFromYt,
-    handleAddYtToRoom,
-    handleCopyRoom,
-    handleAppendToRoom,
-    handleDeleteRoom,
-    handleJoinRoom,
+    uiState: ui.uiState,
+    leftPanel: ui.leftPanel,
+    panelOpen: ui.panelOpen,
+    creatingRoom: ui.creatingRoom,
+    copyingRoom: ui.copyingRoom,
+    appendingRoom: ui.appendingRoom,
+    localCurrentSongId: ui.localCurrentSongId,
+    setField: ui.setField,
+    toggleSection: ui.toggleSection,
+    toggleLeftPanel: ui.toggleLeftPanel,
+    startEditPlaylist: ui.startEditPlaylist,
+    cancelEditPlaylist: ui.cancelEditPlaylist,
+    handleSongUrlChange: ui.handleSongUrlChange,
+    handleCreateRoom: commands.handleCreateRoom,
+    handleCreateRoomFromYt: commands.handleCreateRoomFromYt,
+    handleAddYtToRoom: commands.handleAddYtToRoom,
+    handleCopyRoom: commands.handleCopyRoom,
+    handleAppendToRoom: commands.handleAppendToRoom,
+    handleDeleteRoom: commands.handleDeleteRoom,
+    handleJoinRoom: commands.handleJoinRoom,
     handleLocalPlay,
-    handleSeedRooms,
-    renameRoom,
-    saveSettings,
-    vote,
-    voteSkip,
-    rateActivePlaylist,
-    submitSuggestion,
-    submitContactMessage,
-    approveSuggestion,
-    rejectSuggestion,
+    handleSeedRooms: commands.handleSeedRooms,
+    renameRoom: commands.renameRoom,
+    saveSettings: commands.saveSettings,
+    vote: commands.vote,
+    voteSkip: commands.voteSkip,
+    rateActivePlaylist: commands.rateActivePlaylist,
+    submitSuggestion: commands.submitSuggestion,
+    submitContactMessage: commands.submitContactMessage,
+    approveSuggestion: commands.approveSuggestion,
+    rejectSuggestion: commands.rejectSuggestion,
     playlistActions,
     songActions,
-    togglePanel,
+    togglePanel: ui.togglePanel,
     isVisible: settings.isVisible !== false,
     voteMode: playback.voteMode,
     playerRef: playback.playerRef,

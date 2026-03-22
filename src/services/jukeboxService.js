@@ -66,6 +66,18 @@ function createRoomPayload({ type, name, ownerId, guestToken }) {
   }
 }
 
+function withRoomTimestamps(payload, { includeSyncAt = false } = {}) {
+  return {
+    ...payload,
+    ...(includeSyncAt ? { syncAt: serverTimestamp() } : {}),
+    updatedAt: serverTimestamp(),
+  }
+}
+
+function updateRoom(roomId, payload, options) {
+  return updateDoc(roomRef(roomId), withRoomTimestamps(payload, options))
+}
+
 async function createUniqueGuestToken(maxAttempts = 10) {
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     const token = createJoinCode()
@@ -198,33 +210,21 @@ export function subscribeLatestRooms(callback, count = 5) {
 }
 
 export function saveRoomSetting(roomId, key, value) {
-  return updateDoc(roomRef(roomId), {
+  return updateRoom(roomId, {
     [`settings.${key}`]: value,
-    updatedAt: serverTimestamp(),
   })
 }
 
 export function setMainState(roomId, payload) {
-  return updateDoc(roomRef(roomId), {
-    ...payload,
-    syncAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  })
+  return updateRoom(roomId, payload, { includeSyncAt: true })
 }
 
 export function patchMainState(roomId, payload) {
-  return updateDoc(roomRef(roomId), {
-    ...payload,
-    updatedAt: serverTimestamp(),
-  })
+  return updateRoom(roomId, payload)
 }
 
 export function updatePlaybackSync(roomId, payload) {
-  return updateDoc(roomRef(roomId), {
-    ...payload,
-    syncAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  })
+  return updateRoom(roomId, payload, { includeSyncAt: true })
 }
 
 export function voteNextOption(roomId, uid, optionKey, currentVote) {
@@ -242,16 +242,14 @@ export function toggleSkipVote(roomId, uid, alreadyVoted) {
 }
 
 export function renameRoom(roomId, name) {
-  return updateDoc(roomRef(roomId), {
+  return updateRoom(roomId, {
     name,
-    updatedAt: serverTimestamp(),
   })
 }
 
 export function replaceRoomSongs(roomId, songs) {
-  return updateDoc(roomRef(roomId), {
+  return updateRoom(roomId, {
     songs,
-    updatedAt: serverTimestamp(),
   })
 }
 
@@ -270,23 +268,20 @@ export function deleteSuggestion(roomId, suggestionId) {
 }
 
 export function rateRoom(roomId, userId, score) {
-  return updateDoc(roomRef(roomId), {
+  return updateRoom(roomId, {
     [`ratings.${userId}`]: score,
-    updatedAt: serverTimestamp(),
   })
 }
 
 export function incrementRoomPlays(roomId) {
-  return updateDoc(roomRef(roomId), {
+  return updateRoom(roomId, {
     totalPlays: increment(1),
-    updatedAt: serverTimestamp(),
   })
 }
 
 export function incrementRoomVotes(roomId) {
-  return updateDoc(roomRef(roomId), {
+  return updateRoom(roomId, {
     totalVotes: increment(1),
-    updatedAt: serverTimestamp(),
   })
 }
 

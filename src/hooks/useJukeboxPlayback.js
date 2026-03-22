@@ -1,5 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { chooseWinningOption, generateVotingOptions, moveToNextTrack, replaceSongInOptions, replaceVotingOption } from '../domain/jukebox'
+import {
+  buildAdvanceToOptionState,
+  buildImmediatePlayState,
+  buildInitialPlaybackState,
+  buildOptionRemovalState,
+  buildQueuedState,
+  finalizeAdvanceState,
+  generateVotingOptions,
+  moveToNextTrack,
+  replaceOptionSong,
+  resizeOptions,
+} from '../domain/jukebox'
 import { incrementRoomPlays, patchMainState, setMainState, updatePlaybackSync } from '../services/jukeboxService'
 import { useYouTubePlayer } from './useYouTubePlayer'
 
@@ -77,48 +88,33 @@ export function useJukeboxPlayback({ authReady, canEditRoom, isViewMode, roomId,
     const { room: liveRoom, roomId: rid, settings: roomSettings } = liveRef.current
     if (!liveRoom || !rid) return
 
-    const vMode = roomSettings?.voteMode ?? 'highest'
-    const threshold = roomSettings?.voteThreshold ?? 1
-    const queueSz = Math.max(1, roomSettings?.queueSize ?? 1)
-    const queueLengthBeforeAdvance = (liveRoom.queue ?? []).length
-
     const nextState = moveToNextTrack({
       state: liveRoom,
-      voteMode: vMode,
+      voteMode: roomSettings?.voteMode ?? 'highest',
       skippedSongIds: [...skippedSongIdsRef.current],
     })
     if (!nextState) return
 
-    let newQueue = nextState.queue ?? []
-    let newOptions = nextState.nextOptions ?? {}
-    let newVotes = nextState.nextVotes ?? {}
+    const finalized = finalizeAdvanceState({
+      state: liveRoom,
+      nextState,
+      voteMode: roomSettings?.voteMode ?? 'highest',
+      voteThreshold: roomSettings?.voteThreshold ?? 1,
+      queueSize: Math.max(1, roomSettings?.queueSize ?? 1),
+      skippedSongIds: [...skippedSongIdsRef.current],
+    })
+    if (!finalized) return
 
-    if (queueLengthBeforeAdvance <= threshold && Object.keys(newOptions).length > 0) {
-      const keys = Object.keys(newOptions).sort()
-      const winnerKey = chooseWinningOption(keys, newVotes, vMode)
-      const winnerSongs = (newOptions[winnerKey] ?? []).filter(song => !skippedSongIdsRef.current.has(song.id))
-      newQueue = [...newQueue, ...winnerSongs]
-      newOptions = {}
-      newVotes = {}
-    }
-
-    if (Object.keys(newOptions).length === 0) {
-      const used = [nextState.currentSong, ...newQueue].filter(Boolean)
-      const generated = generateVotingOptions(liveRoom, queueSz, used)
-      newOptions = generated.nextOptions
-      newVotes = generated.nextVotes
-    }
-
-    prevSongIdRef.current = nextState.currentSong.id
-    loadVideoById(nextState.currentSong.ytId)
+    prevSongIdRef.current = finalized.currentSong.id
+    loadVideoById(finalized.currentSong.ytId)
     incrementRoomPlays(rid).catch(() => {})
 
     await setMainState(rid, {
       isPlaying: true,
-      currentSong: nextState.currentSong,
-      queue: newQueue,
-      nextOptions: newOptions,
-      nextVotes: newVotes,
+      currentSong: finalized.currentSong,
+      queue: finalized.queue,
+      nextOptions: finalized.nextOptions,
+      nextVotes: finalized.nextVotes,
       skipVoters: {},
       syncPos: 0,
       duration: null,
@@ -150,16 +146,13 @@ export function useJukeboxPlayback({ authReady, canEditRoom, isViewMode, roomId,
     loadVideoById(song.ytId)
     incrementRoomPlays(roomId).catch(() => {})
 
-    const existingQueue = room.queue ?? []
-    const alreadyUsed = [song, ...existingQueue].filter(Boolean)
-    const newOptions = replaceSongInOptions(room.nextOptions ?? {}, song, room.songs ?? [], alreadyUsed)
-
+    const nextState = buildImmediatePlayState(room, song)
     await setMainState(roomId, {
       isPlaying: true,
-      currentSong: song,
-      queue: existingQueue,
-      nextOptions: newOptions,
-      nextVotes: {},
+      currentSong: nextState.currentSong,
+      queue: nextState.queue,
+      nextOptions: nextState.nextOptions,
+      nextVotes: nextState.nextVotes,
       skipVoters: {},
       syncPos: 0,
       duration: null,
@@ -169,49 +162,36 @@ export function useJukeboxPlayback({ authReady, canEditRoom, isViewMode, roomId,
   const queueSong = useCallback(async (song) => {
     if (!roomId || !room) return
 
-    const newQueue = [...(room.queue ?? []), song]
-    const alreadyUsed = [room.currentSong, ...newQueue].filter(Boolean)
-    const newOptions = replaceSongInOptions(room.nextOptions ?? {}, song, room.songs ?? [], alreadyUsed)
-
-    await patchMainState(roomId, {
-      queue: newQueue,
-      nextOptions: newOptions,
-    })
+    const nextState = buildQueuedState(room, song)
+    await patchMainState(roomId, nextState)
   }, [room, roomId])
 
   const removeFromQueue = useCallback(async (songId) => {
     if (!roomId || !room) return
-    const newQueue = (room.queue ?? []).filter((s) => s.id !== songId)
+    const newQueue = (room.queue ?? []).filter((song) => song.id !== songId)
     await patchMainState(roomId, { queue: newQueue })
   }, [room, roomId])
 
   const replaceSong = useCallback(async (optionKey, song) => {
     if (!roomId || !room) return
-    const options = room.nextOptions ?? {}
-    const allSongs = room.songs ?? []
-    const alreadyUsed = [room.currentSong, ...(room.queue ?? [])].filter(Boolean)
-
-    const usedIds = new Set([
-      ...alreadyUsed.map(s => s.id),
-      ...Object.values(options).flat().map(s => s.id),
-    ])
-    const pool = allSongs.filter(s => !usedIds.has(s.id))
-    const pick = pool.length > 0 ? pool[Math.floor(Math.random() * pool.length)] : null
-
-    const newGroup = (options[optionKey] ?? []).map(s => s.id === song.id ? (pick ?? s) : s)
-    await patchMainState(roomId, { nextOptions: { ...options, [optionKey]: newGroup } })
+    const newGroup = replaceOptionSong(
+      room.nextOptions ?? {},
+      room.songs ?? [],
+      room.currentSong,
+      room.queue ?? [],
+      optionKey,
+      song,
+    )
+    await patchMainState(roomId, {
+      nextOptions: { ...(room.nextOptions ?? {}), [optionKey]: newGroup },
+    })
   }, [room, roomId])
 
   const removeVotingOption = useCallback(async (optionKey) => {
     if (!roomId || !room) return
 
-    const alreadyUsed = [room.currentSong, ...(room.queue ?? [])].filter(Boolean)
-    const newOptions = replaceVotingOption(room.nextOptions ?? {}, optionKey, room.songs ?? [], alreadyUsed, queueSize)
-    const newVotes = Object.fromEntries(
-      Object.entries(room.nextVotes ?? {}).filter(([, v]) => v !== optionKey)
-    )
-
-    await patchMainState(roomId, { nextOptions: newOptions, nextVotes: newVotes })
+    const nextState = buildOptionRemovalState(room, optionKey, queueSize)
+    await patchMainState(roomId, nextState)
   }, [room, roomId, queueSize])
 
   useEffect(() => {
@@ -249,22 +229,20 @@ export function useJukeboxPlayback({ authReady, canEditRoom, isViewMode, roomId,
 
   const startJukebox = useCallback(async () => {
     if (!room?.songs?.length || !roomId) return
-    const shuffled = [...room.songs].sort(() => Math.random() - 0.5)
-    const first = shuffled[0]
-    const initialQueue = queueSize > 1 ? shuffled.slice(1, queueSize) : []
 
-    prevSongIdRef.current = first.id
-    loadVideoById(first.ytId)
+    const initialState = buildInitialPlaybackState(room, queueSize)
+    if (!initialState.currentSong) return
+
+    prevSongIdRef.current = initialState.currentSong.id
+    loadVideoById(initialState.currentSong.ytId)
     incrementRoomPlays(roomId).catch(() => {})
-
-    const generated = generateVotingOptions(room, queueSize, [first, ...initialQueue])
 
     await setMainState(roomId, {
       isPlaying: true,
-      currentSong: first,
-      queue: initialQueue,
-      nextOptions: generated.nextOptions,
-      nextVotes: generated.nextVotes,
+      currentSong: initialState.currentSong,
+      queue: initialState.queue,
+      nextOptions: initialState.nextOptions,
+      nextVotes: initialState.nextVotes,
       skipVoters: {},
       syncPos: 0,
       duration: null,
@@ -284,19 +262,18 @@ export function useJukeboxPlayback({ authReady, canEditRoom, isViewMode, roomId,
     const { room: liveRoom, roomId: rid } = liveRef.current
     if (!liveRoom || !rid) return
 
-    const songs = ((liveRoom.nextOptions ?? {})[key] ?? []).filter(song => !skippedSongIdsRef.current.has(song.id))
-    if (!songs.length) return
+    const nextState = buildAdvanceToOptionState(liveRoom, key, [...skippedSongIdsRef.current])
+    if (!nextState) return
 
-    const [current, ...queue] = songs
-    prevSongIdRef.current = current.id
-    loadVideoById(current.ytId)
+    prevSongIdRef.current = nextState.currentSong.id
+    loadVideoById(nextState.currentSong.ytId)
 
     await setMainState(rid, {
       isPlaying: true,
-      currentSong: current,
-      queue,
-      nextOptions: {},
-      nextVotes: {},
+      currentSong: nextState.currentSong,
+      queue: nextState.queue,
+      nextOptions: nextState.nextOptions,
+      nextVotes: nextState.nextVotes,
       skipVoters: {},
       syncPos: 0,
       duration: null,
@@ -306,37 +283,17 @@ export function useJukeboxPlayback({ authReady, canEditRoom, isViewMode, roomId,
   const resizeVotingOptions = useCallback(async (newSize) => {
     const { room: liveRoom, roomId: rid } = liveRef.current
     if (!liveRoom || !rid) return
-    const options = liveRoom.nextOptions ?? {}
-    const keys = Object.keys(options).sort()
-    if (keys.length === 0) return
 
-    const currentMaxSize = Math.max(...keys.map(k => (options[k] ?? []).length))
-    const newOptions = {}
+    const nextOptionsState = resizeOptions(
+      liveRoom.nextOptions ?? {},
+      liveRoom.songs ?? [],
+      liveRoom.currentSong,
+      liveRoom.queue ?? [],
+      newSize,
+    )
+    if (Object.keys(nextOptionsState).length === 0) return
 
-    if (newSize <= currentMaxSize) {
-      for (const key of keys) {
-        newOptions[key] = (options[key] ?? []).slice(0, newSize)
-      }
-    } else {
-      const usedIds = new Set([
-        liveRoom.currentSong?.id,
-        ...(liveRoom.queue ?? []).map(s => s.id),
-        ...keys.flatMap(k => (options[k] ?? []).map(s => s.id)),
-      ].filter(Boolean))
-
-      const pool = [...(liveRoom.songs ?? []).filter(s => !usedIds.has(s.id))].sort(() => Math.random() - 0.5)
-      let poolIdx = 0
-
-      for (const key of keys) {
-        const current = options[key] ?? []
-        const needed = Math.max(0, newSize - current.length)
-        const extra = pool.slice(poolIdx, poolIdx + needed)
-        poolIdx += needed
-        newOptions[key] = [...current, ...extra]
-      }
-    }
-
-    await patchMainState(rid, { nextOptions: newOptions })
+    await patchMainState(rid, { nextOptions: nextOptionsState })
   }, [])
 
   return {

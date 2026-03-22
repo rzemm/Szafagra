@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
-import { cleanTitle, extractYtId, extractYtPlaylistId, fetchYtPlaylistItems, fetchYtTitle, searchYouTube } from '../lib/youtube'
+import { createAddedByUser, createSong } from '../domain/song'
+import {
+  cleanTitle,
+  extractYtId,
+  extractYtPlaylistId,
+  fetchYtPlaylistItems,
+  fetchYtTitle,
+  searchYouTube,
+} from '../lib/youtube'
 import { replaceRoomSongs } from '../services/jukeboxService'
 
 export function useSongActions({
@@ -39,24 +47,22 @@ export function useSongActions({
   const selectSuggestion = useCallback(async (suggestion) => {
     if (!roomId || !room) return
     setSuggestions([])
-    const isDuplicate = (room.songs ?? []).some((s) => s.ytId === suggestion.ytId)
+    const isDuplicate = (room.songs ?? []).some((song) => song.ytId === suggestion.ytId)
     if (isDuplicate) {
-      dispatch({ type: 'setField', field: 'urlErr', value: 'Ten utwór jest już na liście.' })
+      dispatch({ type: 'setField', field: 'urlErr', value: 'Ten utwor jest juz na liscie.' })
       return
     }
-    const addedBy = user && !user.isAnonymous
-      ? { uid: user.uid, name: user.displayName || user.email || null }
-      : null
-    const song = {
-      id: genId(),
+
+    const song = createSong({
+      genId,
       title: suggestion.title,
       ytId: suggestion.ytId,
-      url: `https://youtu.be/${suggestion.ytId}`,
-      ...(addedBy ? { addedBy } : {}),
-    }
+      addedBy: createAddedByUser(user),
+    })
+
     await executeAction(
       () => replaceRoomSongs(roomId, [...(room.songs ?? []), song]),
-      'Nie udało się dodać utworu.',
+      'Nie udalo sie dodac utworu.',
     )
     dispatch({ type: 'songAdded' })
   }, [dispatch, executeAction, genId, room, roomId, user])
@@ -70,7 +76,7 @@ export function useSongActions({
     const playlistId = extractYtPlaylistId(url)
     if (playlistId) {
       if (playlistId.startsWith('RD')) {
-        dispatch({ type: 'setField', field: 'urlErr', value: 'Listy "Mix" i "Polecane przez YouTube" nie są dostępne przez API. Dodaj utwory ręcznie lub użyj zwykłej playlisty YT.' })
+        dispatch({ type: 'setField', field: 'urlErr', value: 'Listy "Mix" i "Polecane przez YouTube" nie sa dostepne przez API. Dodaj utwory recznie lub uzyj zwyklej playlisty YT.' })
         return
       }
       dispatch({ type: 'setField', field: 'ytPlaylistId', value: playlistId })
@@ -82,12 +88,12 @@ export function useSongActions({
 
     const ytId = extractYtId(url)
     if (!ytId) {
-      dispatch({ type: 'setField', field: 'urlErr', value: 'Nieprawidłowy link YouTube' })
+      dispatch({ type: 'setField', field: 'urlErr', value: 'Nieprawidlowy link YouTube' })
       return
     }
 
     dispatch({ type: 'songTitleFetchStart' })
-    const title = await executeAction(() => fetchYtTitle(url), 'Nie udało się pobrać tytułu utworu.')
+    const title = await executeAction(() => fetchYtTitle(url), 'Nie udalo sie pobrac tytulu utworu.')
     if (title) dispatch({ type: 'setField', field: 'newSongTitle', value: cleanTitle(title) })
     dispatch({ type: 'songTitleFetchEnd' })
   }, [dispatch, executeAction, newSongTitle, newSongUrl])
@@ -98,16 +104,20 @@ export function useSongActions({
     dispatch({ type: 'setField', field: 'importingYtPlaylist', value: true })
     const done = await executeAction(async () => {
       const fetched = await fetchYtPlaylistItems(ytPlaylistId)
-      if (fetched.length === 0) throw new Error('Playlista pusta lub niedostępna przez API')
+      if (fetched.length === 0) throw new Error('Playlista pusta lub niedostepna przez API')
 
       const existing = room?.songs ?? []
-      const existingIds = new Set(existing.map((s) => s.ytId))
+      const existingIds = new Set(existing.map((song) => song.ytId))
       const newSongs = fetched
         .filter((song) => !existingIds.has(song.ytId))
-        .map((song) => ({ id: genId(), ...song, title: cleanTitle(song.title) }))
-      if (newSongs.length === 0) throw new Error('Wszystkie utwory z tej playlisty są już na liście.')
+        .map((song) => createSong({
+          genId,
+          ...song,
+          title: cleanTitle(song.title),
+        }))
+      if (newSongs.length === 0) throw new Error('Wszystkie utwory z tej playlisty sa juz na liscie.')
       return replaceRoomSongs(roomId, [...existing, ...newSongs])
-    }, 'Nie udało się zaimportować playlisty YouTube.')
+    }, 'Nie udalo sie zaimportowac playlisty YouTube.')
     dispatch({ type: 'setField', field: 'importingYtPlaylist', value: false })
 
     if (done !== null) {
@@ -122,13 +132,13 @@ export function useSongActions({
 
     const ytId = extractYtId(url)
     if (!ytId) {
-      dispatch({ type: 'setField', field: 'urlErr', value: 'Nieprawidłowy link YouTube' })
+      dispatch({ type: 'setField', field: 'urlErr', value: 'Nieprawidlowy link YouTube' })
       return
     }
 
-    const isDuplicate = (room?.songs ?? []).some((s) => s.ytId === ytId)
+    const isDuplicate = (room?.songs ?? []).some((song) => song.ytId === ytId)
     if (isDuplicate) {
-      dispatch({ type: 'setField', field: 'urlErr', value: 'Ten utwór jest już na liście.' })
+      dispatch({ type: 'setField', field: 'urlErr', value: 'Ten utwor jest juz na liscie.' })
       return
     }
 
@@ -136,23 +146,21 @@ export function useSongActions({
     let title = newSongTitle.trim()
     if (!title) {
       dispatch({ type: 'songTitleFetchStart' })
-      title = await executeAction(() => fetchYtTitle(cleanUrl), 'Nie udało się pobrać tytułu.') ?? ''
+      title = await executeAction(() => fetchYtTitle(cleanUrl), 'Nie udalo sie pobrac tytulu.') ?? ''
       dispatch({ type: 'songTitleFetchEnd' })
     }
 
-    const addedBy = user && !user.isAnonymous
-      ? { uid: user.uid, name: user.displayName || user.email || null }
-      : null
-    const song = {
-      id: genId(),
+    const song = createSong({
+      genId,
       url: cleanUrl,
       title: cleanTitle(title) || cleanUrl,
       ytId,
-      ...(addedBy ? { addedBy } : {}),
-    }
+      addedBy: createAddedByUser(user),
+    })
+
     const done = await executeAction(
       () => replaceRoomSongs(roomId, [...(room?.songs ?? []), song]),
-      'Nie udało się dodać utworu.',
+      'Nie udalo sie dodac utworu.',
     )
     if (done === null) return
 
@@ -164,7 +172,7 @@ export function useSongActions({
 
     await executeAction(
       () => replaceRoomSongs(roomId, room.songs.filter((song) => song.id !== songId)),
-      'Nie udało się usunąć utworu.',
+      'Nie udalo sie usunac utworu.',
     )
   }, [executeAction, room, roomId])
 
@@ -173,7 +181,7 @@ export function useSongActions({
     const idSet = new Set(songIds)
     await executeAction(
       () => replaceRoomSongs(roomId, room.songs.filter((song) => !idSet.has(song.id))),
-      'Nie udało się usunąć utworów.',
+      'Nie udalo sie usunac utworow.',
     )
   }, [executeAction, room, roomId])
 

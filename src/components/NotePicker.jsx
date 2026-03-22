@@ -1,9 +1,9 @@
 import { useState } from 'react'
 
 function formatNoteTitle(count) {
-  if (count === 1) return '1 utwor w grupie'
+  if (count === 1) return '1 utwór w grupie'
   if (count < 5) return `${count} utwory w grupie`
-  return `${count} utworow w grupie`
+  return `${count} utworów w grupie`
 }
 
 export function NotePicker({ value, onChange, max = 5 }) {
