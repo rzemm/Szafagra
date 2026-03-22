@@ -156,6 +156,70 @@
   opacity: 0.85;
 }
 
+.setting-row--service {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.service-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.service-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.service-desc {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  line-height: 1.3;
+}
+
+.service-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.setting-row--service-disabled {
+  opacity: 0.45;
+}
+
+.service-soon {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  font-style: italic;
+  align-self: flex-start;
+}
+
+.btn-setting-action--dim {
+  opacity: 0.65;
+}
+
+.code-input-mono {
+  font-family: monospace;
+  font-size: 1.1rem;
+  letter-spacing: 0.18em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.code-error-msg {
+  font-size: 0.75rem;
+  color: var(--danger, #e05555);
+  font-weight: 600;
+}
+
+.code-hint {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+
 /* ─── Player area ───────────────────────────────────────────────────────────── */
 .player-area {
   flex: 1;

@@ -194,6 +194,13 @@ export const pl = {
   playNow: 'Odtworz teraz',
   removeFromQueue: 'Usun z kolejki',
   writeMessageSidebar: 'Napisz wiadomosc',
+  changeRoomCode: 'Zmien kod dolaczenia',
+  codeLabel: 'Nowy kod',
+  codePlaceholder: 'np. IMPREZA',
+  codeHint: 'Od 4 do 10 znakow, tylko litery i cyfry',
+  codeErrorLength: 'Kod musi miec od 4 do 10 znakow',
+  codeErrorTaken: 'Ten kod jest juz zajety',
+  codeErrorGeneric: 'Nie udalo sie zmienic kodu',
 
   // ContactMessageForm
   messageLabel: 'Wiadomosc',

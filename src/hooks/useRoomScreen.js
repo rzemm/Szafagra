@@ -165,6 +165,7 @@ export function useRoomScreen(route) {
     submitContactMessage: commands.submitContactMessage,
     approveSuggestion: commands.approveSuggestion,
     rejectSuggestion: commands.rejectSuggestion,
+    changeRoomCode: commands.changeRoomCode,
     playlistActions,
     songActions,
     togglePanel: ui.togglePanel,

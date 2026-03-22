@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { ContactMessageForm } from '../ContactMessageForm'
 import { NotePicker } from '../NotePicker'
+import { YouTubeImportModal } from '../YouTubeImportModal'
+import { useYouTubeAuth } from '../../hooks/useYouTubeAuth'
 import { useLanguage } from '../../context/LanguageContext'
 
 function SuggestionsSection({
@@ -57,6 +59,10 @@ export function SettingsPanel({
   copied,
   roomType,
   onRenameRoom,
+  onChangeRoomCode,
+  onCreateRoomFromYt,
+  onAddYtToRoom,
+  ownedRooms,
   showQr,
   showQueueOverlay,
   showRoomCode,
@@ -68,8 +74,46 @@ export function SettingsPanel({
   onSubmitMessage,
 }) {
   const { t } = useLanguage()
+  const yt = useYouTubeAuth()
   const [openGroup, setOpenGroup] = useState('voting')
   const toggleGroup = (key) => setOpenGroup((current) => current === key ? null : key)
+  const [showYtImport, setShowYtImport] = useState(false)
+
+  const [showCodePopup, setShowCodePopup] = useState(false)
+  const [newCode, setNewCode] = useState('')
+  const [codeError, setCodeError] = useState('')
+  const [codeSaving, setCodeSaving] = useState(false)
+  const codeInputRef = useRef(null)
+
+  const openCodePopup = () => {
+    setNewCode('')
+    setCodeError('')
+    setShowCodePopup(true)
+    setTimeout(() => codeInputRef.current?.focus(), 50)
+  }
+
+  const handleCodeInput = (e) => {
+    const val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10)
+    setNewCode(val)
+    setCodeError('')
+  }
+
+  const handleCodeSave = async () => {
+    if (newCode.length < 4) {
+      setCodeError(t('codeErrorLength'))
+      return
+    }
+    setCodeSaving(true)
+    const result = await onChangeRoomCode(newCode)
+    setCodeSaving(false)
+    if (result?.success) {
+      setShowCodePopup(false)
+    } else if (result?.error === 'taken') {
+      setCodeError(t('codeErrorTaken'))
+    } else {
+      setCodeError(t('codeErrorGeneric'))
+    }
+  }
 
   const handleImportChange = async (event) => {
     const [file] = event.target.files ?? []
@@ -254,6 +298,33 @@ export function SettingsPanel({
             </label>
           </div>
 
+          <div className="setting-row setting-row--service">
+            <div className="service-info">
+              <span className="service-name">YouTube</span>
+              <span className="service-desc">{t('connectYouTubeDesc')}</span>
+            </div>
+            {yt.accessToken ? (
+              <div className="service-btns">
+                <button className="btn-setting-action" onClick={() => setShowYtImport(true)}>{t('ytImportOpen')}</button>
+                <button className="btn-setting-action" onClick={() => { yt.disconnect(); yt.connect() }}>{t('ytSwitchAccount')}</button>
+                <button className="btn-setting-action btn-setting-action--dim" onClick={yt.disconnect}>{t('ytDisconnect')}</button>
+              </div>
+            ) : (
+              <button className="btn-setting-action" onClick={yt.connect} disabled={yt.connecting}>
+                {yt.connecting ? t('ytConnecting') : t('ytConnect')}
+              </button>
+            )}
+            {yt.error && <span className="code-error-msg">{yt.error}</span>}
+          </div>
+
+          <div className="setting-row setting-row--service setting-row--service-disabled">
+            <div className="service-info">
+              <span className="service-name">Spotify</span>
+              <span className="service-desc">{t('connectSpotifyDesc')}</span>
+            </div>
+            <span className="service-soon">{t('comingSoon')}</span>
+          </div>
+
           <div className="setting-row setting-row--stats">
             <div className="settings-stats">
               <div className="settings-stat">
@@ -275,6 +346,14 @@ export function SettingsPanel({
             <div className="setting-row">
               <button className="btn-setting-action" style={{ flex: 1 }} onClick={copyAdminLink}>
                 {copied === 'admin' ? t('copiedLink') : roomType === 'public' ? t('copyRoomLink') : t('copyAdminLink')}
+              </button>
+            </div>
+          )}
+
+          {canEditRoom && (
+            <div className="setting-row">
+              <button className="btn-setting-action" style={{ flex: 1 }} onClick={openCodePopup}>
+                {t('changeRoomCode')}
               </button>
             </div>
           )}
@@ -304,6 +383,57 @@ export function SettingsPanel({
           </>}
         </div>
       </div>
+
+      {showYtImport && yt.accessToken && (
+        <YouTubeImportModal
+          accessToken={yt.accessToken}
+          onClose={() => setShowYtImport(false)}
+          onCreateRoom={async (name, songs) => {
+            await onCreateRoomFromYt(name, songs)
+            yt.disconnect()
+            setShowYtImport(false)
+          }}
+          onAddToRoom={async (roomId, songs) => {
+            await onAddYtToRoom(roomId, songs)
+            yt.disconnect()
+            setShowYtImport(false)
+          }}
+          currentRoomId={room?.id ?? null}
+          ownedRooms={ownedRooms ?? []}
+        />
+      )}
+
+      {showCodePopup && (
+        <div className="song-settings-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowCodePopup(false) }}>
+          <div className="song-settings-modal">
+            <div className="song-settings-header">
+              <h3 className="song-settings-title">{t('changeRoomCode')}</h3>
+              <button className="song-settings-close" onClick={() => setShowCodePopup(false)}>✕</button>
+            </div>
+            <div className="song-settings-body">
+              <span className="song-settings-label">{t('codeLabel')}</span>
+              <input
+                ref={codeInputRef}
+                className="song-settings-input code-input-mono"
+                type="text"
+                value={newCode}
+                onChange={handleCodeInput}
+                onKeyDown={(e) => e.key === 'Enter' && !codeSaving && newCode.length >= 4 && handleCodeSave()}
+                placeholder={t('codePlaceholder')}
+                maxLength={10}
+              />
+              {codeError && <span className="code-error-msg">{codeError}</span>}
+              <span className="code-hint">{t('codeHint')}</span>
+            </div>
+            <div className="song-settings-footer" style={{ gap: '0.5rem' }}>
+              <button className="btn-setting-action" onClick={() => setShowCodePopup(false)}>{t('cancel')}</button>
+              <button className="song-settings-save" onClick={handleCodeSave} disabled={codeSaving || newCode.length < 4}>
+                {codeSaving ? t('saving') : t('save')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

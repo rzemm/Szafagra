@@ -78,6 +78,10 @@ export function OwnerRoomView({
         copied={sharing.copied}
         roomType={sidebar.roomType}
         onRenameRoom={sidebar.renameRoom}
+        onChangeRoomCode={sidebar.changeRoomCode}
+        onCreateRoomFromYt={sidebar.onCreateRoomFromYt}
+        onAddYtToRoom={sidebar.onAddYtToRoom}
+        ownedRooms={sidebar.ownedRooms}
         showQr={ui.panelOpen.qr}
         showQueueOverlay={ui.panelOpen.showQueue}
         showRoomCode={ui.panelOpen.showRoomCode}

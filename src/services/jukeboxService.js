@@ -326,3 +326,18 @@ export async function deleteRoom(roomId, guestToken) {
     await deleteDoc(tokenRef(guestToken)).catch(() => {})
   }
 }
+
+export async function changeRoomGuestToken(roomId, currentToken, newToken, roomType) {
+  const snap = await getDoc(tokenRef(newToken))
+  if (snap.exists()) throw new Error('taken')
+
+  if (currentToken) {
+    await deleteDoc(tokenRef(currentToken)).catch(() => {})
+  }
+  await updateRoom(roomId, { guestToken: newToken })
+  await setDoc(tokenRef(newToken), {
+    roomId,
+    type: roomType ?? 'private',
+    createdAt: serverTimestamp(),
+  })
+}

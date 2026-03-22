@@ -4,6 +4,7 @@ import { seedSampleRooms } from '../dev/seedRooms'
 import { genId } from '../lib/jukebox'
 import {
   addSuggestion,
+  changeRoomGuestToken,
   createContactMessage,
   createPrivateRoom,
   createPrivateRoomCopy,
@@ -222,6 +223,17 @@ export function useRoomCommands({
     await executeAction(() => deleteSuggestion(auth.roomId, suggestionId), 'Nie udało się odrzucić propozycji.')
   }, [auth.roomId, executeAction])
 
+  const changeRoomCode = useCallback(async (newCode) => {
+    if (!auth.roomId || !canEditRoom) return { error: 'no_permission' }
+    try {
+      await changeRoomGuestToken(auth.roomId, room?.guestToken ?? null, newCode, room?.type)
+      return { success: true }
+    } catch (err) {
+      if (err.message === 'taken') return { error: 'taken' }
+      return { error: 'generic' }
+    }
+  }, [auth.roomId, canEditRoom, room?.guestToken, room?.type])
+
   return {
     renameRoom,
     handleDeleteRoom,
@@ -240,5 +252,6 @@ export function useRoomCommands({
     submitContactMessage,
     approveSuggestion,
     rejectSuggestion,
+    changeRoomCode,
   }
 }

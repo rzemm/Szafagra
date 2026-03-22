@@ -37,6 +37,10 @@ export function PlaylistSidebar({
   copied,
   roomType,
   onRenameRoom,
+  onChangeRoomCode,
+  onCreateRoomFromYt,
+  onAddYtToRoom,
+  ownedRooms,
   showQr,
   showQueueOverlay,
   showRoomCode,
@@ -146,6 +150,10 @@ export function PlaylistSidebar({
           copied={copied}
           roomType={roomType}
           onRenameRoom={onRenameRoom}
+          onChangeRoomCode={onChangeRoomCode}
+          onCreateRoomFromYt={onCreateRoomFromYt}
+          onAddYtToRoom={onAddYtToRoom}
+          ownedRooms={ownedRooms}
           showQr={showQr}
           showQueueOverlay={showQueueOverlay}
           showRoomCode={showRoomCode}

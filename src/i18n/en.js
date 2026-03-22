@@ -194,6 +194,13 @@ export const en = {
   playNow: 'Play now',
   removeFromQueue: 'Remove from queue',
   writeMessageSidebar: 'Write a message',
+  changeRoomCode: 'Change join code',
+  codeLabel: 'New code',
+  codePlaceholder: 'e.g. PARTY',
+  codeHint: '4 to 10 characters, letters and digits only',
+  codeErrorLength: 'Code must be 4 to 10 characters',
+  codeErrorTaken: 'This code is already taken',
+  codeErrorGeneric: 'Could not change the code',
 
   // ContactMessageForm
   messageLabel: 'Message',
