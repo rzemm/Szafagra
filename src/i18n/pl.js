@@ -24,7 +24,7 @@ export const pl = {
   songCount: (n) => `${n} piosenek`,
   creating: 'Tworzenie...',
   createNewRoom: 'Utworz nowa szafe',
-  recentLists: 'Ostatnie listy',
+  recentLists: 'Ostatnie szafy',
   generateSampleLists: '+ Wygeneruj przykladowe listy',
   noListsToShow: 'Brak list do pokazania',
   signInToSeeRecentRooms: 'Zaloguj sie, aby zobaczyc ostatnie szafy',

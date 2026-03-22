@@ -1054,6 +1054,30 @@
   padding: 0 0.2rem;
 }
 
+.room-preview-append-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+}
+
+.room-preview-append-select {
+  flex: 1;
+  min-width: 0;
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.85rem;
+  padding: 0.4rem 0.6rem;
+  cursor: pointer;
+  outline: none;
+}
+
+.room-preview-append-select:focus {
+  border-color: var(--accent);
+}
+
 .room-preview-btn--append {
   font-size: 0.82rem;
   font-weight: 500;

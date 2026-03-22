@@ -55,6 +55,7 @@ export function HomePage({
   const [showAccountSettings, setShowAccountSettings] = useState(false)
   const [previewRoom, setPreviewRoom] = useState(null)
   const [previewBusy, setPreviewBusy] = useState(false)
+  const [appendRoomId, setAppendRoomId] = useState('')
   const isLoggedIn = user && !user.isAnonymous
 
   const handleSeed = async () => {
@@ -300,23 +301,34 @@ export function HomePage({
                   {previewBusy ? t('creating') : t('copyToNew')}
                 </button>
                 {ownedRooms.length > 0 && (
-                  <div className="room-preview-append-list">
-                    <span className="room-preview-append-label">{t('addTo')}</span>
-                    {ownedRooms.map((ownedRoom) => (
+                  <div className="room-preview-append-row">
+                    <select
+                      className="room-preview-append-select"
+                      value={appendRoomId}
+                      onChange={(e) => setAppendRoomId(e.target.value)}
+                      disabled={previewBusy}
+                    >
+                      <option value="">{t('addTo')}</option>
+                      {ownedRooms.map((ownedRoom) => (
+                        <option key={ownedRoom.id} value={ownedRoom.id}>
+                          {ownedRoom.name || t('privateRoom')}
+                        </option>
+                      ))}
+                    </select>
+                    {appendRoomId && (
                       <button
-                        key={ownedRoom.id}
-                        className="room-preview-btn room-preview-btn--append"
+                        className="room-preview-btn room-preview-btn--copy"
                         disabled={previewBusy}
                         onClick={async () => {
                           setPreviewBusy(true)
-                          await onAppendForeignToRoom(ownedRoom.id, previewRoom.songs ?? [])
+                          await onAppendForeignToRoom(appendRoomId, previewRoom.songs ?? [])
                           setPreviewBusy(false)
                           setPreviewRoom(null)
                         }}
                       >
-                        {ownedRoom.name || t('privateRoom')}
+                        {previewBusy ? t('creating') : '+ Dodaj'}
                       </button>
-                    ))}
+                    )}
                   </div>
                 )}
               </>

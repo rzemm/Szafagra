@@ -22,11 +22,13 @@ export function OwnerRoomView({
 
   const handlePlayerAreaClick = useCallback((e) => {
     if (e.target.closest('button, input, select, a, label, [role="button"], .qr-clickable')) return
+    const willOpenSidebar = !ui.leftPanel
     if (ui.leftPanel) {
       ui.toggleLeftPanel(ui.leftPanel)
     } else {
       ui.toggleLeftPanel('songs')
     }
+    if (willOpenSidebar && ui.panelOpen.voting) ui.togglePanel('voting')
   }, [ui])
 
   const handleAppend = async () => {
@@ -192,12 +194,25 @@ export function OwnerRoomView({
             </div>
           )}
           {sidebar.settings.tickerOnScreen && sidebar.settings.tickerText && (
-            <div className="admin-ticker">Info: {sidebar.settings.tickerText}</div>
+            <div className="admin-ticker">{sidebar.settings.tickerText}</div>
           )}
         </div>
 
+        {playback.isPlaying && playback.skipThreshold > 0 && playback.skipCount > 0 && (
+          <div className="skip-votes-banner">
+            {Array.from({ length: playback.skipCount }, (_, i) => (
+              <span key={i} className="skip-vote-x">❌</span>
+            ))}
+          </div>
+        )}
+
         <div className="voting-panel-bottom">
-          <div className="voting-bottom-bar" onClick={() => ui.togglePanel('voting')}>
+          <div className="voting-bottom-bar" onClick={(e) => {
+            e.stopPropagation()
+            const willOpen = !ui.panelOpen.voting
+            ui.togglePanel('voting')
+            if (willOpen && ui.leftPanel) ui.toggleLeftPanel(ui.leftPanel)
+          }}>
             {playback.isPlaying && voting.nextOptionKeys.length > 0 ? voting.nextOptionKeys.map((key, index) => {
               const count = voteCounts[index]
               const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0
