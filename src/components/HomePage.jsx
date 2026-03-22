@@ -86,9 +86,9 @@ export function HomePage({
                 }
                 <span className="home-user-name">{user.displayName}</span>
               </button>
-              <button className="home-user-link" onClick={onOpenCookieSettings}>{t('cookies')}</button>
+              <button className="home-user-link" onClick={onOpenCookieSettings}>🍪 {t('cookies')}</button>
               <button className="lang-toggle" onClick={toggleLang}>{t('langToggle')}</button>
-              <button className="home-user-logout" onClick={onSignOut}>{t('signOut')}</button>
+              <button className="home-user-logout" onClick={onSignOut}><span className="home-logout-x">✕</span>{t('signOut')}</button>
             </div>
           ) : (
             <div className="home-google-signin">

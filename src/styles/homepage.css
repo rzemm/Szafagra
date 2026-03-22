@@ -683,6 +683,12 @@
   white-space: nowrap;
 }
 
+.home-logout-x {
+  color: #ef4444;
+  font-size: 0.85em;
+  margin-right: 0.25rem;
+}
+
 .home-user-logout {
   background: none;
   border: 1px solid var(--border);

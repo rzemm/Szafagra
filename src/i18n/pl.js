@@ -230,5 +230,5 @@ export const pl = {
   ytImportAddToOther: 'Dodaj do innej szafy...',
 
   // Language toggle
-  langToggle: 'EN',
+  langToggle: '🇬🇧',
 }

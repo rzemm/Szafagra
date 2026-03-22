@@ -230,5 +230,5 @@ export const en = {
   ytImportAddToOther: 'Add to another room...',
 
   // Language toggle
-  langToggle: 'PL',
+  langToggle: '🇵🇱',
 }
