@@ -501,15 +501,16 @@
   justify-content: center;
   gap: 0.3rem;
   padding: 0.35rem 1rem;
-  background: var(--surface);
-  border-top: 1px solid var(--border);
+  background: transparent;
   flex-shrink: 0;
 }
 
 .skip-vote-x {
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   line-height: 1;
-  opacity: 0.85;
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 4px;
+  padding: 0.1rem 0.2rem;
 }
 
 .voting-panel-bottom {

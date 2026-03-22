@@ -134,9 +134,6 @@ export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerSta
           </div>
 
           <div className="disco-bar-controls">
-            {canEditRoom && isPlaying && skipThreshold > 0 && (
-              <span className="disco-skip-count">{skipCount}/{skipThreshold}</span>
-            )}
             {canEditRoom && (!isPlaying ? (
               <button
                 className="btn-ctrl btn-ctrl-start"
