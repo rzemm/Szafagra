@@ -138,6 +138,7 @@ export function OwnerRoomView({
         onLocalPlay={viewMode.handleLocalPlay}
         localCurrentSongId={viewMode.localCurrentSongId}
         onSubmitMessage={sidebar.onSubmitMessage}
+        removeVotingProposal={sidebar.removeVotingProposal}
       />
 
       <div className="player-area player-area-admin" onPointerDown={handlePointerDown} onPointerUp={handlePointerUp}>

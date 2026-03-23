@@ -11,7 +11,7 @@ import {
   replaceOptionSong,
   resizeOptions,
 } from '../domain/jukebox'
-import { incrementRoomPlays, patchMainState, setMainState, updatePlaybackSync } from '../services/jukeboxService'
+import { clearVotingProposals, incrementRoomPlays, patchMainState, setMainState, updatePlaybackSync } from '../services/jukeboxService'
 import { useYouTubePlayer } from './useYouTubePlayer'
 
 export function useJukeboxPlayback({ authReady, canEditRoom, isViewMode, roomId, room, settings }) {
@@ -102,12 +102,17 @@ export function useJukeboxPlayback({ authReady, canEditRoom, isViewMode, roomId,
       voteThreshold: roomSettings?.voteThreshold ?? 1,
       queueSize: Math.max(1, roomSettings?.queueSize ?? 1),
       skippedSongIds: [...skippedSongIdsRef.current],
+      votingProposalsMap: liveRoom.votingProposals ?? {},
     })
     if (!finalized) return
 
     prevSongIdRef.current = finalized.currentSong.id
     loadVideoById(finalized.currentSong.ytId, finalized.currentSong.startOffset)
     incrementRoomPlays(rid).catch(() => {})
+
+    if (finalized.consumedProposalKeys?.length > 0) {
+      clearVotingProposals(rid, finalized.consumedProposalKeys).catch(() => {})
+    }
 
     await setMainState(rid, {
       isPlaying: true,
@@ -199,7 +204,10 @@ export function useJukeboxPlayback({ authReady, canEditRoom, isViewMode, roomId,
     if (nextOptionKeys.length > 0) return
     if (!room.songs?.length) return
     const used = [currentSong, ...(room.queue ?? [])].filter(Boolean)
-    const generated = generateVotingOptions(room, queueSize, used)
+    const generated = generateVotingOptions(room, queueSize, used, room.votingProposals ?? {})
+    if (generated.consumedProposalKeys?.length > 0) {
+      clearVotingProposals(roomId, generated.consumedProposalKeys).catch(() => {})
+    }
     patchMainState(roomId, {
       nextOptions: generated.nextOptions,
       nextVotes: generated.nextVotes,

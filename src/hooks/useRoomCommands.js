@@ -5,6 +5,7 @@ import { genId } from '../lib/jukebox'
 import {
   addPlaylistSuggestion,
   addSuggestion,
+  clearVotingProposals,
   changeRoomGuestToken,
   createContactMessage,
   createPrivateRoom,
@@ -17,6 +18,7 @@ import {
   replaceRoomSongs,
   saveRoomSetting,
   setMainState,
+  setVotingProposal,
   toggleSkipVote,
   voteNextOption,
 } from '../services/jukeboxService'
@@ -176,6 +178,23 @@ export function useRoomCommands({
     return done !== null
   }, [auth.roomId, executeAction, userId])
 
+  const submitVotingProposal = useCallback(async (song, key) => {
+    if (!auth.roomId || !userId) return false
+    const done = await executeAction(
+      () => setVotingProposal(auth.roomId, key ?? userId, song),
+      'Nie udało się wysłać propozycji.'
+    )
+    return done !== null
+  }, [auth.roomId, executeAction, userId])
+
+  const removeVotingProposal = useCallback(async (targetUserId) => {
+    if (!auth.roomId || !canEditRoom) return
+    await executeAction(
+      () => clearVotingProposals(auth.roomId, [targetUserId]),
+      'Nie udało się usunąć propozycji.'
+    )
+  }, [auth.roomId, canEditRoom, executeAction])
+
   const submitPlaylistSuggestion = useCallback(async ({ playlistTitle, playlistId, songs }) => {
     if (!auth.roomId || !userId) return false
     const done = await executeAction(
@@ -225,6 +244,7 @@ export function useRoomCommands({
     await executeAction(async () => {
       await replaceRoomSongs(auth.roomId, [...(room.songs ?? []), song])
       await deleteSuggestion(auth.roomId, suggestion.id)
+      await setVotingProposal(auth.roomId, song.id, song)
     }, 'Nie udało się zatwierdzić propozycji.')
   }, [auth.roomId, dispatch, executeAction, room])
 
@@ -271,7 +291,9 @@ export function useRoomCommands({
     voteSkip,
     rateActivePlaylist,
     submitSuggestion,
+    submitVotingProposal,
     submitPlaylistSuggestion,
+    removeVotingProposal,
     submitContactMessage,
     approveSuggestion,
     approvePlaylistSuggestion,

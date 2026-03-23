@@ -34,6 +34,7 @@ export function GuestView({
   allowSuggestions,
   allowSuggestFromList,
   submitSuggestion,
+  submitVotingProposal,
   submitPlaylistSuggestion,
   myRating,
   onRate,
@@ -58,7 +59,6 @@ export function GuestView({
   const [suggestSearchResults, setSuggestSearchResults] = useState([])
   const [listSearch, setListSearch] = useState('')
   const [showThumbs, setShowThumbs] = useState(true)
-  const [suggestedSongIds, setSuggestedSongIds] = useState(new Set())
 
   // playlist suggestion state
   const [playlists, setPlaylists] = useState(null)
@@ -82,6 +82,7 @@ export function GuestView({
   }, [visibleTabs, activeTab])
 
   const activeIndex = visibleTabs.indexOf(activeTab)
+  const sliderIndex = ALL_TABS.indexOf(activeTab)
 
   // swipe
   const swipeStart = useRef(null)
@@ -162,19 +163,20 @@ export function GuestView({
     }
   }
 
+  const myProposal = userId ? (jukeboxState?.votingProposals?.[userId] ?? null) : null
+  const myProposedIds = useMemo(() => {
+    if (!userId || !jukeboxState?.votingProposals) return new Set()
+    return new Set(
+      Object.entries(jukeboxState.votingProposals)
+        .filter(([key]) => key === userId || key.startsWith(`${userId}_`))
+        .map(([, song]) => song.id)
+    )
+  }, [userId, jukeboxState?.votingProposals])
+
   const handleSuggestFromList = async (song) => {
-    if (suggestedSongIds.has(song.id)) return
-    const ok = await submitSuggestion({ title: song.title, ytId: song.ytId, url: `https://youtu.be/${song.ytId}` })
-    if (ok) {
-      setSuggestedSongIds((prev) => new Set([...prev, song.id]))
-      setTimeout(() => {
-        setSuggestedSongIds((prev) => {
-          const next = new Set(prev)
-          next.delete(song.id)
-          return next
-        })
-      }, 3000)
-    }
+    if (!submitVotingProposal) return
+    const key = allowSuggestFromList === true ? `${userId}_${song.id}` : undefined
+    await submitVotingProposal(song, key)
   }
 
   useEffect(() => {
@@ -294,7 +296,7 @@ export function GuestView({
       >
         <div
           className="guest-tab-slider"
-          style={{ transform: `translateX(-${activeIndex * 100}%)` }}
+          style={{ transform: `translateX(-${sliderIndex * 100}%)` }}
         >
           {/* ── Panel: Głosuj ── */}
           <div className="guest-tab-panel">
@@ -534,11 +536,14 @@ export function GuestView({
                 <>
                   <p className="guest-list-count">{t('listCount', allSongs.length)}</p>
                   <ul className="guest-list-songs">
-                    {allSongs.map(({ song, origIdx }) => {
-                      const wasSuggested = suggestedSongIds.has(song.id)
+                    {allSongs.map(({ song }) => {
+                      const isMyProposal = allowSuggestFromList === true
+                        ? myProposedIds.has(song.id)
+                        : myProposal?.id === song.id
+                      const showBtn = allowSuggestFromList && submitVotingProposal &&
+                        (allowSuggestFromList === true || !myProposal || isMyProposal)
                       return (
-                        <li key={song.id} className="guest-list-song">
-                          <span className="guest-list-pos">{origIdx + 1}</span>
+                        <li key={song.id} className={`guest-list-song${isMyProposal ? ' proposed' : ''}`}>
                           {showThumbs && (
                             <img
                               src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`}
@@ -547,14 +552,13 @@ export function GuestView({
                             />
                           )}
                           <span className="guest-list-title">{song.title}</span>
-                          {allowSuggestFromList && submitSuggestion && (
+                          {showBtn && (
                             <button
-                              className={`guest-list-suggest-btn${wasSuggested ? ' sent' : ''}`}
-                              onClick={() => handleSuggestFromList(song)}
-                              disabled={wasSuggested}
-                              title={wasSuggested ? t('suggestionSent') : t('suggestBtn')}
+                              className={`guest-list-suggest-btn${isMyProposal ? ' sent' : ''}`}
+                              onClick={() => !isMyProposal && handleSuggestFromList(song)}
+                              title={isMyProposal ? t('myProposal') : t('proposeForVote')}
                             >
-                              {wasSuggested ? '✓' : '+'}
+                              {isMyProposal ? '✓' : '+'}
                             </button>
                           )}
                         </li>

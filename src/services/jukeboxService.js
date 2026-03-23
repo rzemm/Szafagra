@@ -278,6 +278,19 @@ export function addPlaylistSuggestion(roomId, userId, { playlistTitle, playlistI
   })
 }
 
+export function setVotingProposal(roomId, key, song) {
+  return updateDoc(roomRef(roomId), {
+    [`votingProposals.${key}`]: { id: song.id, title: song.title, ytId: song.ytId },
+  })
+}
+
+export function clearVotingProposals(roomId, keys) {
+  if (!keys?.length) return Promise.resolve()
+  const update = {}
+  for (const key of keys) update[`votingProposals.${key}`] = deleteField()
+  return updateDoc(roomRef(roomId), update)
+}
+
 export function rateRoom(roomId, userId, score) {
   return updateRoom(roomId, {
     [`ratings.${userId}`]: score,

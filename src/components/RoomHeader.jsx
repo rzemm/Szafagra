@@ -32,6 +32,7 @@ export function RoomHeader({
   onShareGuestLink,
   guestCopied,
   suggestions,
+  proposalsCount = 0,
   searchSuggestions = [],
   selectSuggestion,
   clearSuggestions,
@@ -55,38 +56,28 @@ export function RoomHeader({
               onClick={() => toggleLeftPanel('songs')}
               title={t('panelSongsTitle')}
             >
-              <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
-                <rect x="1" y="2" width="12" height="1.5" rx="0.75" fill="currentColor"/>
-                <rect x="1" y="6.25" width="12" height="1.5" rx="0.75" fill="currentColor"/>
-                <rect x="1" y="10.5" width="8" height="1.5" rx="0.75" fill="currentColor"/>
-              </svg>
-              {t('panelSongs')}
+              🎵 {t('panelSongs')}
             </button>
             <button
               className={`btn-panel-toggle${leftPanel === 'queue' ? ' active' : ''}`}
               onClick={() => toggleLeftPanel('queue')}
               title={t('panelQueueTitle')}
             >
-              <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
-                <circle cx="2" cy="3" r="1.2" fill="currentColor"/>
-                <circle cx="2" cy="7" r="1.2" fill="currentColor"/>
-                <circle cx="2" cy="11" r="1.2" fill="currentColor"/>
-                <rect x="4.5" y="2.25" width="8" height="1.5" rx="0.75" fill="currentColor"/>
-                <rect x="4.5" y="6.25" width="8" height="1.5" rx="0.75" fill="currentColor"/>
-                <rect x="4.5" y="10.25" width="5" height="1.5" rx="0.75" fill="currentColor"/>
-              </svg>
-              {t('panelQueue')}
+              ⏭️ {t('panelQueue')}
+            </button>
+            <button
+              className={`btn-panel-toggle${leftPanel === 'proposals' ? ' active' : ''}`}
+              onClick={() => toggleLeftPanel('proposals')}
+              title={t('panelProposalsTitle')}
+            >
+              📥 {t('panelProposals')}{proposalsCount > 0 ? ` (${proposalsCount})` : ''}
             </button>
             <button
               className={`btn-panel-toggle${leftPanel === 'settings' ? ' active' : ''}`}
               onClick={() => toggleLeftPanel('settings')}
               title={t('panelSettingsTitle')}
             >
-              <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden="true" style={{ flexShrink: 0 }}>
-                <circle cx="7" cy="7" r="2" stroke="currentColor" strokeWidth="1.3"/>
-                <path d="M7 1.5v1.2M7 11.3v1.2M1.5 7h1.2M11.3 7h1.2M3.4 3.4l.85.85M9.75 9.75l.85.85M10.6 3.4l-.85.85M4.25 9.75l-.85.85" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-              </svg>
-              {t('panelSettings')}{suggestions?.length > 0 ? ` (${suggestions.length})` : ''}
+              ⚙️ {t('panelSettings')}
             </button>
           </>
         )}

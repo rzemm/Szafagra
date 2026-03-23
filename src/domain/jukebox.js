@@ -46,15 +46,38 @@ export function chooseWinningOption(keys, votes, voteMode) {
   return resolveVoting(keys, votes, voteMode).winnerKey
 }
 
-export function generateVotingOptions(playlist, groupSize, exclude = []) {
+// votingProposalsMap: { [userId]: { id, title, ytId } }
+export function generateVotingOptions(playlist, groupSize, exclude = [], votingProposalsMap = {}) {
+  const proposalEntries = Object.entries(votingProposalsMap)
   const nextOptions = {}
   const used = [...exclude]
+  const consumedProposalKeys = []
+  let proposalIdx = 0
+
   for (let i = 0; i < 3; i++) {
-    const songs = pickRandom(playlist?.songs ?? [], groupSize, used)
+    const usedIds = new Set(used.map(s => s.id))
+
+    // skip proposals already in used set
+    while (proposalIdx < proposalEntries.length && usedIds.has(proposalEntries[proposalIdx][1].id)) {
+      proposalIdx++
+    }
+
+    let songs
+    if (proposalIdx < proposalEntries.length) {
+      const [uid, proposedSong] = proposalEntries[proposalIdx]
+      proposalIdx++
+      const fill = groupSize > 1 ? pickRandom(playlist?.songs ?? [], groupSize - 1, [...used, proposedSong]) : []
+      songs = [proposedSong, ...fill]
+      consumedProposalKeys.push(uid)
+    } else {
+      songs = pickRandom(playlist?.songs ?? [], groupSize, used)
+    }
+
     nextOptions[String(i)] = songs
     used.push(...songs)
   }
-  return { nextOptions, nextVotes: {} }
+
+  return { nextOptions, nextVotes: {}, consumedProposalKeys }
 }
 
 export function moveToNextTrack({ state, voteMode = 'highest', skippedSongIds = [] }) {
@@ -97,6 +120,7 @@ export function finalizeAdvanceState({
   voteThreshold = 1,
   queueSize = 1,
   skippedSongIds = [],
+  votingProposalsMap = {},
 }) {
   if (!state || !nextState) return null
 
@@ -105,6 +129,7 @@ export function finalizeAdvanceState({
   let newQueue = nextState.queue ?? []
   let newOptions = nextState.nextOptions ?? {}
   let newVotes = nextState.nextVotes ?? {}
+  let consumedProposalKeys = []
 
   if (queueLengthBeforeAdvance <= voteThreshold && Object.keys(newOptions).length > 0) {
     const keys = Object.keys(newOptions).sort()
@@ -117,9 +142,10 @@ export function finalizeAdvanceState({
 
   if (Object.keys(newOptions).length === 0) {
     const used = [nextState.currentSong, ...newQueue].filter(Boolean)
-    const generated = generateVotingOptions(state, queueSize, used)
+    const generated = generateVotingOptions(state, queueSize, used, votingProposalsMap)
     newOptions = generated.nextOptions
     newVotes = generated.nextVotes
+    consumedProposalKeys = generated.consumedProposalKeys
   }
 
   return {
@@ -127,6 +153,7 @@ export function finalizeAdvanceState({
     queue: newQueue,
     nextOptions: newOptions,
     nextVotes: newVotes,
+    consumedProposalKeys,
   }
 }
 

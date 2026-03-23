@@ -46,7 +46,27 @@ service cloud.firestore {
     }
 
     function onlyGuestWritableStateFieldsChanged() {
-      return stateChangedKeys().hasOnly(['nextVotes', 'skipVoters']);
+      return stateChangedKeys().hasOnly(['nextVotes', 'skipVoters', 'votingProposals']);
+    }
+
+    function onlyOwnVotingProposalChanged() {
+      let before = resource.data.get('votingProposals', {});
+      let after = request.resource.data.get('votingProposals', {});
+      let diff = after.diff(before);
+      // Single-proposal mode: key equals userId
+      return (
+        diff.affectedKeys().hasOnly([request.auth.uid]) &&
+        after[request.auth.uid] is map &&
+        after[request.auth.uid].keys().hasOnly(['id', 'title', 'ytId']) &&
+        after[request.auth.uid].id is string &&
+        after[request.auth.uid].title is string &&
+        after[request.auth.uid].ytId is string
+      ) || (
+        // Unlimited mode: only adding exactly one entry, no removals or modifications
+        diff.removedKeys().size() == 0 &&
+        diff.changedKeys().size() == 0 &&
+        diff.addedKeys().size() == 1
+      );
     }
 
     function onlyOwnVoteChanged() {
@@ -89,6 +109,10 @@ service cloud.firestore {
         (
           !stateChangedKeys().hasAny(['skipVoters']) ||
           onlyOwnSkipVoteChanged()
+        ) &&
+        (
+          !stateChangedKeys().hasAny(['votingProposals']) ||
+          onlyOwnVotingProposalChanged()
         );
     }
 

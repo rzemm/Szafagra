@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { SongsPanel } from './sidebar/SongsPanel'
 import { QueuePanel } from './sidebar/QueuePanel'
 import { SettingsPanel } from './sidebar/SettingsPanel'
+import { ProposalsPanel } from './sidebar/ProposalsPanel'
 
 export function PlaylistSidebar({
   leftPanel,
@@ -55,6 +56,7 @@ export function PlaylistSidebar({
   onLocalPlay,
   localCurrentSongId,
   onSubmitMessage,
+  removeVotingProposal,
 }) {
   const [sidebarWidth, setSidebarWidth] = useState(360)
   const isResizing = useRef(false)
@@ -131,10 +133,6 @@ export function PlaylistSidebar({
       {leftPanel === 'settings' && (
         <SettingsPanel
           room={room}
-          suggestions={suggestions}
-          approveSuggestion={approveSuggestion}
-          approvePlaylistSuggestion={approvePlaylistSuggestion}
-          rejectSuggestion={rejectSuggestion}
           showThumbnails={showThumbnails}
           showAddedBy={showAddedBy}
           voteThreshold={voteThreshold}
@@ -167,6 +165,18 @@ export function PlaylistSidebar({
           isVisible={isVisible}
           canEditRoom={canEditRoom}
           onSubmitMessage={onSubmitMessage}
+        />
+      )}
+
+      {leftPanel === 'proposals' && (
+        <ProposalsPanel
+          room={room}
+          suggestions={suggestions}
+          showThumbnails={showThumbnails}
+          removeVotingProposal={removeVotingProposal}
+          approveSuggestion={approveSuggestion}
+          rejectSuggestion={rejectSuggestion}
+          canEditRoom={canEditRoom}
         />
       )}
     </aside>

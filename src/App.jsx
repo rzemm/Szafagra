@@ -86,6 +86,7 @@ export default function App() {
           onShareGuestLink={screen.shareLinks.copyVoterLink}
           guestCopied={screen.uiState.copied === 'voter'}
           suggestions={screen.suggestions}
+          proposalsCount={Object.keys(screen.room?.votingProposals ?? {}).length + (screen.suggestions?.length ?? 0)}
           onOpenCookieSettings={consent.openSettings}
         />
 
@@ -118,6 +119,7 @@ export default function App() {
                 approveSuggestion: screen.approveSuggestion,
                 approvePlaylistSuggestion: screen.approvePlaylistSuggestion,
                 rejectSuggestion: screen.rejectSuggestion,
+                removeVotingProposal: screen.removeVotingProposal,
                 onSubmitMessage: screen.submitContactMessage,
               }}
               playback={{
@@ -186,6 +188,7 @@ export default function App() {
               tickerText={screen.settings.tickerText ?? ''}
               tickerForGuests={screen.settings.tickerForGuests ?? false}
               submitSuggestion={screen.submitSuggestion}
+              submitVotingProposal={screen.submitVotingProposal}
               submitPlaylistSuggestion={screen.submitPlaylistSuggestion}
               myRating={screen.myRating}
               onRate={screen.rateActivePlaylist}
