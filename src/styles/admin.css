@@ -916,20 +916,19 @@ body.disco-mode .sidebar {
 }
 
 .header--guest {
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.4rem;
-  padding: 0.6rem 1rem;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
 }
 
 .header--guest .header-inner {
-  justify-content: center;
+  flex: 1;
 }
 
 .header--guest .header-actions {
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 0.6rem;
+  gap: 0.5rem;
+  flex-shrink: 0;
 }
 
 .header-add-song {

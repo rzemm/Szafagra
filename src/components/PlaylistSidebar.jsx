@@ -24,6 +24,7 @@ export function PlaylistSidebar({
   voteMode,
   skipThreshold,
   allowSuggestions,
+  allowSuggestFromList,
   allowGuestListening,
   tickerText,
   tickerOnScreen,
@@ -140,6 +141,7 @@ export function PlaylistSidebar({
           voteMode={voteMode}
           skipThreshold={skipThreshold}
           allowSuggestions={allowSuggestions}
+          allowSuggestFromList={allowSuggestFromList}
           allowGuestListening={allowGuestListening}
           tickerText={tickerText}
           tickerOnScreen={tickerOnScreen}

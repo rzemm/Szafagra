@@ -42,6 +42,7 @@ export const en = {
   signInGoogle2: 'Sign in with Google',
   buyCoffee: 'Buy coffee',
   shareLink: 'Share link',
+  shareBtn: 'Share',
   fetchingTitlePlaceholder: 'Fetching title...',
   addSongTitlePrefix: 'Music',
   addSongPlaceholder: 'Add song or playlist \u2013 paste YouTube link or type title',
@@ -103,6 +104,15 @@ export const en = {
   clickQrToCopy: 'Click QR to copy link',
   votingOptionsTitle: 'Voting options',
 
+  // GuestView - tabs
+  tabVoting: 'Vote',
+  tabQueue: 'Queue',
+  tabSuggest: 'Suggest',
+  tabList: 'All songs',
+  listSearchPlaceholder: 'Search...',
+  listEmpty: 'No songs',
+  listCount: (n) => `${n} ${n === 1 ? 'song' : 'songs'}`,
+
   // GuestView
   disableListening: 'Stop listening',
   listen: 'Listen',
@@ -112,6 +122,7 @@ export const en = {
   vote: 'Vote',
   wantToSkip: 'I want to skip this song',
   skipSong: 'Skip song',
+  skipCurrent: 'Skip current',
   musicIcon: 'Music',
   ownerHasntStarted: 'The room owner has not started the jukebox yet...',
   yourRating: 'Your rating',
@@ -175,7 +186,8 @@ export const en = {
   songsPerGroup: 'Songs per group',
   minQueuedLabel: 'Min. queued',
   skipVotesRequired: 'Votes required to skip',
-  guestSuggestions: 'Guest suggestions',
+  guestSuggestions: 'Users can add songs to the list',
+  guestSuggestFromList: 'Users can suggest songs from the list',
   guestListening: 'Guest listening',
   displayGroup: 'Display',
   textTicker: 'Text ticker',

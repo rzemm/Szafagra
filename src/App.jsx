@@ -181,6 +181,7 @@ export default function App() {
               mySkipVote={screen.mySkipVote}
               voteSkip={screen.voteSkip}
               allowSuggestions={screen.settings.allowSuggestions ?? true}
+              allowSuggestFromList={screen.settings.allowSuggestFromList ?? false}
               allowGuestListening={screen.settings.allowGuestListening ?? false}
               tickerText={screen.settings.tickerText ?? ''}
               tickerForGuests={screen.settings.tickerForGuests ?? false}
@@ -191,6 +192,7 @@ export default function App() {
               showThumbnails={screen.showThumbnails}
               jukeboxState={screen.room}
               onSubmitMessage={screen.submitContactMessage}
+              onOpenCookieSettings={consent.openSettings}
             />
           )}
         </main>

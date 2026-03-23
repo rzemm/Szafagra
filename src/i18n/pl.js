@@ -42,6 +42,7 @@ export const pl = {
   signInGoogle2: 'Zaloguj sie przez Google',
   buyCoffee: 'Postaw kawe',
   shareLink: 'Udostepnij link',
+  shareBtn: 'Udostępnij',
   fetchingTitlePlaceholder: 'Pobieranie tytulu...',
   addSongTitlePrefix: 'Muzyka',
   addSongPlaceholder: 'Dodaj piosenke lub liste - wklej link z YouTube albo wpisz tytul',
@@ -103,6 +104,15 @@ export const pl = {
   clickQrToCopy: 'Kliknij QR, aby skopiowac link',
   votingOptionsTitle: 'Opcje glosowania',
 
+  // GuestView - tabs
+  tabVoting: 'Głosuj',
+  tabQueue: 'Kolejka',
+  tabSuggest: 'Zaproponuj',
+  tabList: 'Lista',
+  listSearchPlaceholder: 'Szukaj...',
+  listEmpty: 'Brak piosenek',
+  listCount: (n) => `${n} ${n === 1 ? 'utwór' : n < 5 ? 'utwory' : 'utworów'}`,
+
   // GuestView
   disableListening: 'Wylacz odsluch',
   listen: 'Sluchaj',
@@ -112,6 +122,7 @@ export const pl = {
   vote: 'Glosuj',
   wantToSkip: 'Chce pominac te piosenke',
   skipSong: 'Pomin piosenke',
+  skipCurrent: 'Pomiń bieżący',
   musicIcon: 'Muzyka',
   ownerHasntStarted: 'Wlasciciel szafy jeszcze nie uruchomil jukeboxu...',
   yourRating: 'Twoja ocena',
@@ -175,7 +186,8 @@ export const pl = {
   songsPerGroup: 'Utworow w grupie',
   minQueuedLabel: 'Min. zakolejkowanych',
   skipVotesRequired: 'Wymagane glosy do pominiecia',
-  guestSuggestions: 'Propozycje gosci',
+  guestSuggestions: 'Użytkownicy mogą dodawać piosenki do listy',
+  guestSuggestFromList: 'Użytkownicy mogą proponować piosenki z listy',
   guestListening: 'Sluchaj u goscia',
   displayGroup: 'Wyswietlanie',
   textTicker: 'Pasek z tekstem',

@@ -107,6 +107,7 @@ export function OwnerRoomView({
         voteMode={voting.voteMode}
         skipThreshold={playback.skipThreshold}
         allowSuggestions={sidebar.settings.allowSuggestions ?? true}
+        allowSuggestFromList={sidebar.settings.allowSuggestFromList ?? false}
         allowGuestListening={sidebar.settings.allowGuestListening ?? false}
         tickerText={sidebar.settings.tickerText ?? ''}
         tickerOnScreen={sidebar.settings.tickerOnScreen ?? false}

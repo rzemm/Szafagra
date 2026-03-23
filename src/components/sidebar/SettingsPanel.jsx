@@ -117,6 +117,7 @@ export function SettingsPanel({
   voteMode,
   skipThreshold,
   allowSuggestions,
+  allowSuggestFromList,
   allowGuestListening,
   tickerText,
   tickerOnScreen,
@@ -262,6 +263,14 @@ export function SettingsPanel({
             <span className="setting-label">{t('guestSuggestions')}</span>
             <label className="toggle-switch">
               <input type="checkbox" checked={!!allowSuggestions} onChange={(event) => saveSettings('allowSuggestions', event.target.checked)} disabled={!canEditRoom} />
+              <span className="toggle-slider" />
+            </label>
+          </div>
+
+          <div className="setting-row">
+            <span className="setting-label">{t('guestSuggestFromList')}</span>
+            <label className="toggle-switch">
+              <input type="checkbox" checked={!!allowSuggestFromList} onChange={(event) => saveSettings('allowSuggestFromList', event.target.checked)} disabled={!canEditRoom} />
               <span className="toggle-slider" />
             </label>
           </div>

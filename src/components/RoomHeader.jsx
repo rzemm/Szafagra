@@ -90,7 +90,11 @@ export function RoomHeader({
             </button>
           </>
         )}
-        <a href="/" className="header-logo"><img src={logoUrl} alt="Szafagra" className="header-logo-img" /></a>
+        {showOwnerUI ? (
+          <a href="/" className="header-logo"><img src={logoUrl} alt="Szafagra" className="header-logo-img" /></a>
+        ) : (
+          <span className="header-logo"><img src={logoUrl} alt="Szafagra" className="header-logo-img" /></span>
+        )}
       </div>
 
       {showOwnerUI && canEditRoom && (
@@ -131,11 +135,15 @@ export function RoomHeader({
       )}
 
       <div className="header-actions">
-        <button className="header-utility-link" onClick={onOpenCookieSettings}>
-          {t('cookies')}
-        </button>
+        {showOwnerUI && (
+          <button className="header-utility-link" onClick={onOpenCookieSettings}>
+            {t('cookies')}
+          </button>
+        )}
 
-        <button className="lang-toggle" onClick={toggleLang}>{t('langToggle')}</button>
+        {showOwnerUI && (
+          <button className="lang-toggle" onClick={toggleLang}>{t('langToggle')}</button>
+        )}
 
         {user?.isAnonymous ? (
           <button className="header-google-btn" onClick={signInWithGoogle} title={t('signInGoogle2')}>
@@ -176,7 +184,7 @@ export function RoomHeader({
           <a className="btn-share" href="https://buycoffee.to/szafifi" target="_blank" rel="noreferrer">{t('buyCoffee')}</a>
         ) : (
           <button className="btn-header-share" onClick={onShareGuestLink} title={t('shareLink')}>
-            {guestCopied ? 'OK' : 'Link'}
+            {guestCopied ? 'OK' : t('shareBtn')}
           </button>
         )}
       </div>
