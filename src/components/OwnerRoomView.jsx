@@ -20,36 +20,54 @@ export function OwnerRoomView({
   const [appendTargetId, setAppendTargetId] = useState('')
   const [appendDone, setAppendDone] = useState(false)
 
-  const dragStartY = useRef(null)
+  const dragStart = useRef(null)
 
   const handlePointerDown = useCallback((e) => {
     if (e.target.closest('button, input, select, a, label, [role="button"], .qr-clickable')) return
-    dragStartY.current = e.clientY
+    dragStart.current = { x: e.clientX, y: e.clientY }
   }, [])
 
   const handlePointerUp = useCallback((e) => {
-    if (dragStartY.current === null) return
+    if (!dragStart.current) return
     if (e.target.closest('button, input, select, a, label, [role="button"], .qr-clickable')) {
-      dragStartY.current = null
+      dragStart.current = null
       return
     }
-    const deltaY = dragStartY.current - e.clientY
-    dragStartY.current = null
+    const dx = e.clientX - dragStart.current.x  // > 0 = w prawo
+    const dy = dragStart.current.y - e.clientY  // > 0 = w górę
+    dragStart.current = null
 
-    if (deltaY > 40) {
-      // przeciągnięcie w górę → dolny panel
-      const willOpen = !ui.panelOpen.voting
-      ui.togglePanel('voting')
-      if (willOpen && ui.leftPanel) ui.toggleLeftPanel(ui.leftPanel)
-    } else if (Math.abs(deltaY) < 15) {
-      // klik (bez ruchu) → boczny panel
-      const willOpenSidebar = !ui.leftPanel
+    const THRESHOLD = 40
+    const isSwipeRight = dx > THRESHOLD && dx > Math.abs(dy)
+    const isSwipeUp = dy > THRESHOLD && dy > Math.abs(dx)
+    const isClick = Math.abs(dx) < 15 && Math.abs(dy) < 15
+
+    if (isSwipeRight) {
       if (ui.leftPanel) {
+        // ten sam panel → zwiń
         ui.toggleLeftPanel(ui.leftPanel)
+      } else {
+        // inny lub nic → zamknij dolny, otwórz lewy
+        if (ui.panelOpen.voting) ui.togglePanel('voting')
+        ui.toggleLeftPanel('songs')
+      }
+    } else if (isSwipeUp) {
+      if (ui.panelOpen.voting) {
+        // ten sam panel → zwiń
+        ui.togglePanel('voting')
+      } else {
+        // inny lub nic → zamknij lewy, otwórz dolny
+        if (ui.leftPanel) ui.toggleLeftPanel(ui.leftPanel)
+        ui.togglePanel('voting')
+      }
+    } else if (isClick) {
+      const anyOpen = ui.leftPanel || ui.panelOpen.voting
+      if (anyOpen) {
+        if (ui.leftPanel) ui.toggleLeftPanel(ui.leftPanel)
+        if (ui.panelOpen.voting) ui.togglePanel('voting')
       } else {
         ui.toggleLeftPanel('songs')
       }
-      if (willOpenSidebar && ui.panelOpen.voting) ui.togglePanel('voting')
     }
   }, [ui])
 
@@ -229,7 +247,7 @@ export function OwnerRoomView({
           </div>
         )}
 
-        <div className="voting-panel-bottom">
+        <div className="voting-panel-bottom" onPointerDown={(e) => e.stopPropagation()} onPointerUp={(e) => e.stopPropagation()}>
           <div className="voting-bottom-bar" onClick={(e) => {
             e.stopPropagation()
             const willOpen = !ui.panelOpen.voting
