@@ -15,37 +15,92 @@ const IconSpotify = () => (
 )
 import { ContactMessageForm } from '../ContactMessageForm'
 import { NotePicker } from '../NotePicker'
+import { YouTubeAuthNotice } from '../YouTubeAuthNotice'
 import { YouTubeImportModal } from '../YouTubeImportModal'
 import { useYouTubeAuth } from '../../hooks/useYouTubeAuth'
 import { useLanguage } from '../../context/LanguageContext'
+
+function PlaylistSuggestionItem({ suggestion, showThumbnails, approvePlaylistSuggestion, rejectSuggestion }) {
+  const { t } = useLanguage()
+  const [expanded, setExpanded] = useState(false)
+
+  return (
+    <div className="suggestion-playlist-item">
+      <div className="suggestion-playlist-header">
+        <div className="suggestion-playlist-meta">
+          <span className="suggestion-playlist-name">{suggestion.playlistTitle}</span>
+          <span className="suggestion-playlist-info">
+            {t('playlistSuggestionFrom')} · {t('playlistSuggestionSongs', suggestion.songs?.length ?? 0)}
+          </span>
+        </div>
+        <div className="suggestion-actions">
+          <button
+            className="btn-icon"
+            onClick={() => setExpanded((v) => !v)}
+            title={expanded ? t('hidePlaylistSongs') : t('showPlaylistSongs')}
+          >
+            {expanded ? '▲' : '▼'}
+          </button>
+          <button className="btn-icon play" onClick={() => approvePlaylistSuggestion(suggestion)} title={t('approveAllSongs')}>OK</button>
+          <button className="btn-icon danger" onClick={() => rejectSuggestion(suggestion.id)} title={t('reject')}>x</button>
+        </div>
+      </div>
+      {expanded && suggestion.songs?.length > 0 && (
+        <ul className="suggestion-playlist-songs">
+          {suggestion.songs.map((song, i) => (
+            <li key={song.ytId || i} className="suggestion-playlist-song">
+              {showThumbnails && <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="song-thumb" />}
+              <span className="song-title">{song.title}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
 
 function SuggestionsSection({
   suggestions,
   showThumbnails,
   approveSuggestion,
+  approvePlaylistSuggestion,
   rejectSuggestion,
 }) {
   const { t } = useLanguage()
 
   if (!suggestions?.length) return null
 
+  const songSuggestions = suggestions.filter((s) => s.type !== 'playlist')
+  const playlistSuggestions = suggestions.filter((s) => s.type === 'playlist')
+
   return (
     <div className="section">
       <div className="section-title-row">
         <h2 className="section-title">{t('suggestionsHeader')} <span className="count">{suggestions.length}</span></h2>
       </div>
-      <div className="suggestions-list">
-        {suggestions.map((suggestion) => (
-          <div key={suggestion.id} className="suggestion-item">
-            {showThumbnails && <img src={`https://img.youtube.com/vi/${suggestion.ytId}/default.jpg`} alt="" className="song-thumb" />}
-            <span className="song-title">{suggestion.title}</span>
-            <div className="suggestion-actions">
-              <button className="btn-icon play" onClick={() => approveSuggestion(suggestion)} title={t('addToList')}>OK</button>
-              <button className="btn-icon danger" onClick={() => rejectSuggestion(suggestion.id)} title={t('reject')}>x</button>
+      {playlistSuggestions.map((suggestion) => (
+        <PlaylistSuggestionItem
+          key={suggestion.id}
+          suggestion={suggestion}
+          showThumbnails={showThumbnails}
+          approvePlaylistSuggestion={approvePlaylistSuggestion}
+          rejectSuggestion={rejectSuggestion}
+        />
+      ))}
+      {songSuggestions.length > 0 && (
+        <div className="suggestions-list">
+          {songSuggestions.map((suggestion) => (
+            <div key={suggestion.id} className="suggestion-item">
+              {showThumbnails && <img src={`https://img.youtube.com/vi/${suggestion.ytId}/default.jpg`} alt="" className="song-thumb" />}
+              <span className="song-title">{suggestion.title}</span>
+              <div className="suggestion-actions">
+                <button className="btn-icon play" onClick={() => approveSuggestion(suggestion)} title={t('addToList')}>OK</button>
+                <button className="btn-icon danger" onClick={() => rejectSuggestion(suggestion.id)} title={t('reject')}>x</button>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -54,6 +109,7 @@ export function SettingsPanel({
   room,
   suggestions,
   approveSuggestion,
+  approvePlaylistSuggestion,
   rejectSuggestion,
   showThumbnails,
   showAddedBy,
@@ -153,6 +209,7 @@ export function SettingsPanel({
         suggestions={suggestions}
         showThumbnails={showThumbnails}
         approveSuggestion={approveSuggestion}
+        approvePlaylistSuggestion={approvePlaylistSuggestion}
         rejectSuggestion={rejectSuggestion}
       />
 
@@ -318,6 +375,7 @@ export function SettingsPanel({
               </button>
             )}
             {yt.error && <span className="code-error-msg">{yt.error}</span>}
+            <YouTubeAuthNotice helpText={yt.helpText} className="code-hint yt-auth-inline-help" />
           </div>
 
           <div className="setting-row setting-row--service-disabled">

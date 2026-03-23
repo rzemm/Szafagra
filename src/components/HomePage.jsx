@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { ScrollText } from './ScrollText.jsx'
 import { useLanguage } from '../context/LanguageContext'
 import { UserProfileModal } from './UserProfileModal.jsx'
+import { ContactMessageForm } from './ContactMessageForm.jsx'
+import logoUrl from '../assets/logo.png'
 
 const IconTrash = () => (
   <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
@@ -48,6 +50,7 @@ export function HomePage({
   onAddYtToRoom,
   onCopyForeignRoom,
   onAppendForeignToRoom,
+  onSubmitMessage,
 }) {
   const { t, lang, toggleLang } = useLanguage()
   const [roomInput, setRoomInput] = useState('')
@@ -75,8 +78,7 @@ export function HomePage({
       <div className="homepage-top">
         <div className="homepage-top-left">
           <div className="homepage-logo">
-            <span className="homepage-logo-icon"><IconMusic /></span>
-            <span className="header-logo">szafi.fi</span>
+            <img src={logoUrl} alt="Szafagra" className="homepage-logo-img" />
           </div>
           {isLoggedIn ? (
             <div className="home-user-bar">
@@ -87,7 +89,6 @@ export function HomePage({
                 }
                 <span className="home-user-name">{user.displayName}</span>
               </button>
-              <button className="home-user-link" onClick={onOpenCookieSettings}>🍪 {t('cookies')}</button>
               <button className="lang-toggle" onClick={toggleLang}>{t('langToggle')}</button>
               <button className="home-user-logout" onClick={onSignOut}><span className="home-logout-x">✕</span>{t('signOut')}</button>
             </div>
@@ -98,7 +99,6 @@ export function HomePage({
                 {t('signInGoogle')}
               </button>
               <p className="home-google-hint">{t('toSeePrivateRooms')}</p>
-              <button className="home-cookie-link" onClick={onOpenCookieSettings}>{t('cookieSettings')}</button>
               <button className="lang-toggle" onClick={toggleLang}>{t('langToggle')}</button>
             </div>
           )}
@@ -259,6 +259,20 @@ export function HomePage({
           </div>
         </div>
       </div>
+
+      <footer className="homepage-footer">
+        <ContactMessageForm
+          triggerClassName="homepage-footer-btn"
+          triggerLabel={t('writeMessage')}
+          title={t('writeMessageToCreators')}
+          submitLabel={t('send')}
+          successMessage={t('thanksSaved')}
+          panelClassName="homepage-contact-form"
+          onSubmit={(payload) => onSubmitMessage?.({ ...payload, source: 'homepage' })}
+        />
+        <button className="homepage-footer-btn" onClick={onOpenCookieSettings}>{t('cookieSettings')}</button>
+        <a className="homepage-footer-btn" href="/privacy.html" target="_blank" rel="noreferrer">{t('privacy')}</a>
+      </footer>
     </div>
 
     {previewRoom && (

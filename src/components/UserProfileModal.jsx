@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useLanguage } from '../context/LanguageContext'
 import { useYouTubeAuth } from '../hooks/useYouTubeAuth'
+import { YouTubeAuthNotice } from './YouTubeAuthNotice'
 import { YouTubeImportModal } from './YouTubeImportModal'
 
 const YouTubeIcon = () => (
@@ -136,6 +137,7 @@ export function UserProfileModal({ user, onClose, onUpdateDisplayName, onCreateR
               )}
             </div>
             {yt.error && <div className="upmodal-yt-error">{yt.error}</div>}
+            <YouTubeAuthNotice helpText={yt.helpText} className="upmodal-yt-help" />
 
             <div className="upmodal-integration-row upmodal-integration--disabled">
               <div className="upmodal-integration-icon upmodal-integration-icon--sp">

@@ -771,6 +771,20 @@
 
 /* ─── YouTube Import Modal ───────────────────────────────────────────────────── */
 
+.upmodal-yt-help {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-top: 0.35rem;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+
+.upmodal-yt-help strong {
+  color: var(--text);
+}
+
 .ytimport-overlay {
   position: fixed;
   inset: 0;

@@ -6,10 +6,12 @@ const IconStar = () => (
   </svg>
 )
 import { formatTime } from '../lib/jukebox'
-import { extractYtId, fetchYtTitle, searchYouTube } from '../lib/youtube'
+import { extractYtId, fetchYtTitle, fetchUserYtPlaylists, fetchYtPlaylistItems, searchYouTube } from '../lib/youtube'
 import { useGuestPlayer } from '../hooks/useGuestPlayer'
+import { useYouTubeAuth } from '../hooks/useYouTubeAuth'
 import { ContactMessageForm } from './ContactMessageForm'
 import { ScrollText } from './ScrollText'
+import { YouTubeAuthNotice } from './YouTubeAuthNotice'
 import { useLanguage } from '../context/LanguageContext'
 
 export function GuestView({
@@ -29,6 +31,7 @@ export function GuestView({
   voteSkip,
   allowSuggestions,
   submitSuggestion,
+  submitPlaylistSuggestion,
   myRating,
   onRate,
   showThumbnails = true,
@@ -40,6 +43,7 @@ export function GuestView({
 }) {
   const { t } = useLanguage()
   const { listening, toggleListening, playerDivRef: guestPlayerDivRef } = useGuestPlayer({ jukeboxState, isPlaying })
+  const ytAuth = useYouTubeAuth()
   const [queueOpen, setQueueOpen] = useState(false)
   const [hoverStar, setHoverStar] = useState(0)
   const [suggestUrl, setSuggestUrl] = useState('')
@@ -49,6 +53,15 @@ export function GuestView({
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [suggestSearchResults, setSuggestSearchResults] = useState([])
+
+  // playlist suggestion state
+  const [playlists, setPlaylists] = useState(null)
+  const [loadingPlaylists, setLoadingPlaylists] = useState(false)
+  const [selectedPlaylist, setSelectedPlaylist] = useState(null)
+  const [playlistSongs, setPlaylistSongs] = useState(null)
+  const [loadingPlaylistSongs, setLoadingPlaylistSongs] = useState(false)
+  const [submittingPlaylist, setSubmittingPlaylist] = useState(false)
+  const [submittedPlaylist, setSubmittedPlaylist] = useState(false)
 
   useEffect(() => {
     const isUrl = suggestUrl.includes('youtube.com') || suggestUrl.includes('youtu.be')
@@ -115,6 +128,48 @@ export function GuestView({
       setSuggestErr('')
       setSubmitted(true)
       setTimeout(() => setSubmitted(false), 3000)
+    }
+  }
+
+  useEffect(() => {
+    if (!ytAuth.accessToken) return
+    setPlaylists(null)
+    setSelectedPlaylist(null)
+    setPlaylistSongs(null)
+    setLoadingPlaylists(true)
+    fetchUserYtPlaylists(ytAuth.accessToken)
+      .then((data) => { setPlaylists(data); setLoadingPlaylists(false) })
+      .catch(() => setLoadingPlaylists(false))
+  }, [ytAuth.accessToken])
+
+  const handleSelectPlaylist = async (playlist) => {
+    setSelectedPlaylist(playlist)
+    setPlaylistSongs(null)
+    setLoadingPlaylistSongs(true)
+    try {
+      const items = await fetchYtPlaylistItems(playlist.id, ytAuth.accessToken)
+      setPlaylistSongs(items)
+    } catch {
+      setPlaylistSongs([])
+    } finally {
+      setLoadingPlaylistSongs(false)
+    }
+  }
+
+  const handleSubmitPlaylist = async () => {
+    if (!selectedPlaylist || !playlistSongs || submittingPlaylist) return
+    setSubmittingPlaylist(true)
+    const ok = await submitPlaylistSuggestion({
+      playlistTitle: selectedPlaylist.title,
+      playlistId: selectedPlaylist.id,
+      songs: playlistSongs,
+    })
+    setSubmittingPlaylist(false)
+    if (ok) {
+      setSubmittedPlaylist(true)
+      setSelectedPlaylist(null)
+      setPlaylistSongs(null)
+      setTimeout(() => setSubmittedPlaylist(false), 4000)
     }
   }
 
@@ -296,6 +351,74 @@ export function GuestView({
               >
                 {submitting ? '...' : t('suggestBtn')}
               </button>
+            </>
+          )}
+        </div>
+      )}
+
+      {allowSuggestions && submitPlaylistSuggestion && (
+        <div className="guest-suggest">
+          <p className="guest-suggest-label">{t('suggestPlaylist')}</p>
+          {submittedPlaylist ? (
+            <p className="guest-suggest-ok">{t('suggestPlaylistSent')}</p>
+          ) : !ytAuth.accessToken ? (
+            <>
+              <p className="guest-suggest-playlist-desc">{t('suggestPlaylistDesc')}</p>
+              <button className="guest-suggest-yt-btn" onClick={ytAuth.connect} disabled={ytAuth.connecting}>
+                {ytAuth.connecting ? t('suggestPlaylistConnecting') : t('suggestPlaylistConnect')}
+              </button>
+              {ytAuth.error && <p className="guest-suggest-err">{ytAuth.error}</p>}
+              <YouTubeAuthNotice helpText={ytAuth.helpText} className="guest-suggest-hint guest-suggest-hint--stacked" />
+            </>
+          ) : (
+            <>
+              <div className="guest-suggest-yt-header">
+                <button className="guest-suggest-yt-disconnect" onClick={ytAuth.disconnect}>{t('suggestPlaylistDisconnect')}</button>
+              </div>
+              {loadingPlaylists && <p className="guest-suggest-hint">{t('suggestPlaylistLoading')}</p>}
+              {!loadingPlaylists && playlists && playlists.length === 0 && (
+                <p className="guest-suggest-hint">{t('suggestPlaylistNoPlaylists')}</p>
+              )}
+              {!selectedPlaylist && playlists && playlists.length > 0 && (
+                <>
+                  <p className="guest-suggest-hint">{t('suggestPlaylistSelect')}</p>
+                  <ul className="guest-playlist-list">
+                    {playlists.map((pl) => (
+                      <li key={pl.id} className="guest-playlist-item" onClick={() => handleSelectPlaylist(pl)}>
+                        {pl.thumbnail && <img src={pl.thumbnail} alt="" className="guest-playlist-thumb" />}
+                        <div className="guest-playlist-info">
+                          <span className="guest-playlist-title">{pl.title}</span>
+                          <span className="guest-playlist-count">{pl.itemCount} {t('suggestPlaylistVideos')}</span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+              {selectedPlaylist && (
+                <div className="guest-playlist-selected">
+                  <button className="guest-playlist-back" onClick={() => { setSelectedPlaylist(null); setPlaylistSongs(null) }}>
+                    ← {t('suggestPlaylistBack')}
+                  </button>
+                  <div className="guest-playlist-selected-info">
+                    {selectedPlaylist.thumbnail && <img src={selectedPlaylist.thumbnail} alt="" className="guest-playlist-thumb" />}
+                    <div>
+                      <span className="guest-playlist-title">{selectedPlaylist.title}</span>
+                      {loadingPlaylistSongs && <p className="guest-suggest-hint">{t('suggestPlaylistFetching')}</p>}
+                      {playlistSongs && <p className="guest-suggest-hint">{t('suggestPlaylistSongCount', playlistSongs.length)}</p>}
+                    </div>
+                  </div>
+                  {playlistSongs && playlistSongs.length > 0 && (
+                    <button
+                      className="guest-suggest-btn"
+                      onClick={handleSubmitPlaylist}
+                      disabled={submittingPlaylist}
+                    >
+                      {submittingPlaylist ? '...' : t('suggestPlaylistSubmit')}
+                    </button>
+                  )}
+                </div>
+              )}
             </>
           )}
         </div>

@@ -357,6 +357,18 @@
   color: var(--text-dim);
 }
 
+.guest-suggest-hint--stacked {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  line-height: 1.45;
+}
+
+.guest-suggest-hint--stacked strong {
+  color: var(--text);
+  font-size: 0.8rem;
+}
+
 .guest-suggest-err {
   font-size: 0.82rem;
   color: var(--accent);
@@ -379,12 +391,142 @@
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  align-self: flex-end;
+  width: 100%;
+  text-align: center;
 }
 
 .guest-suggest-btn:disabled {
   opacity: 0.4;
   cursor: default;
+}
+
+/* ─── Guest playlist suggestion (YT login + list picker) ────────────────────── */
+.guest-suggest-playlist-desc {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+.guest-suggest-yt-btn {
+  background: #ff0000;
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 9px 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+  transition: opacity 0.15s;
+}
+
+.guest-suggest-yt-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.guest-suggest-yt-header {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.guest-suggest-yt-disconnect {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  cursor: pointer;
+}
+
+.guest-suggest-yt-disconnect:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.guest-playlist-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.guest-playlist-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--surface3);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.guest-playlist-item:hover {
+  background: var(--surface2);
+  outline: 1px solid var(--border);
+}
+
+.guest-playlist-thumb {
+  width: 48px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.guest-playlist-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.guest-playlist-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.guest-playlist-count {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+
+.guest-playlist-selected {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.guest-playlist-back {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+}
+
+.guest-playlist-back:hover {
+  color: var(--text);
+}
+
+.guest-playlist-selected-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface3);
+  border-radius: var(--radius-sm);
+  padding: 8px;
 }
 
 /* ─── Note picker (queue size) ───────────────────────────────────────────────── */
@@ -529,6 +671,63 @@
   gap: 4px;
   margin-left: auto;
   flex-shrink: 0;
+}
+
+/* ─── Admin: playlist suggestion item ───────────────────────────────────────── */
+.suggestion-playlist-item {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 6px;
+  overflow: hidden;
+}
+
+.suggestion-playlist-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+}
+
+.suggestion-playlist-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.suggestion-playlist-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.suggestion-playlist-info {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+
+.suggestion-playlist-songs {
+  list-style: none;
+  border-top: 1px solid var(--border);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.suggestion-playlist-song {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.suggestion-playlist-song:last-child {
+  border-bottom: none;
 }
 
 /* ─── Settings panel ────────────────────────────────────────────────────────── */

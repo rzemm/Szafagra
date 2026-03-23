@@ -48,6 +48,7 @@ export default function App() {
         onAddYtToRoom={screen.handleAddYtToRoom}
         onCopyForeignRoom={(sourceRoom) => screen.handleCreateRoomFromYt(sourceRoom.name || 'Kopia', sourceRoom.songs ?? [])}
         onAppendForeignToRoom={screen.handleAddYtToRoom}
+        onSubmitMessage={screen.submitContactMessage}
       />
     )
   } else if (screen.roomError) {
@@ -115,6 +116,7 @@ export default function App() {
                 onCreateRoomFromYt: screen.handleCreateRoomFromYt,
                 onAddYtToRoom: screen.handleAddYtToRoom,
                 approveSuggestion: screen.approveSuggestion,
+                approvePlaylistSuggestion: screen.approvePlaylistSuggestion,
                 rejectSuggestion: screen.rejectSuggestion,
                 onSubmitMessage: screen.submitContactMessage,
               }}
@@ -183,6 +185,7 @@ export default function App() {
               tickerText={screen.settings.tickerText ?? ''}
               tickerForGuests={screen.settings.tickerForGuests ?? false}
               submitSuggestion={screen.submitSuggestion}
+              submitPlaylistSuggestion={screen.submitPlaylistSuggestion}
               myRating={screen.myRating}
               onRate={screen.rateActivePlaylist}
               showThumbnails={screen.showThumbnails}

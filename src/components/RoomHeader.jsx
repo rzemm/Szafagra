@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ScrollText } from './ScrollText'
 import { UserProfileModal } from './UserProfileModal'
 import { useLanguage } from '../context/LanguageContext'
+import logoUrl from '../assets/logo.png'
 
 const GoogleIcon = () => (
   <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true" style={{ flexShrink: 0 }}>
@@ -45,7 +46,7 @@ export function RoomHeader({
   const [profileOpen, setProfileOpen] = useState(false)
 
   return (
-    <header className="header">
+    <header className={`header${!showOwnerUI ? ' header--guest' : ''}`}>
       <div className="header-inner">
         {showOwnerUI && (
           <>
@@ -89,7 +90,7 @@ export function RoomHeader({
             </button>
           </>
         )}
-        <a href="/" className="header-logo">szafi.fi</a>
+        <a href="/" className="header-logo"><img src={logoUrl} alt="Szafagra" className="header-logo-img" /></a>
       </div>
 
       {showOwnerUI && canEditRoom && (

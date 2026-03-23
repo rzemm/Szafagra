@@ -1,13 +1,40 @@
 /* ─── Homepage ──────────────────────────────────────────────────────────────── */
 .homepage {
-  height: 100svh;
+  min-height: 100svh;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 1.5rem;
-  padding: 2rem;
+  padding: 2rem 2rem 0;
   background: var(--bg);
   overflow: hidden;
+}
+
+.homepage-footer {
+  margin-top: auto;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.5rem;
+  padding: 1rem 0 1.5rem;
+  border-top: 1px solid var(--border, rgba(255,255,255,0.08));
+}
+
+.homepage-footer-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted, rgba(255,255,255,0.45));
+  font-size: 0.8rem;
+  padding: 0.25rem 0;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.homepage-footer-btn:hover {
+  color: var(--text);
 }
 
 .homepage-top {
@@ -38,16 +65,12 @@
 .homepage-logo {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
 }
 
-.homepage-logo-icon {
-  font-size: 2.2rem;
-  line-height: 1;
-}
-
-.homepage-logo .header-logo {
-  font-size: 2.2rem;
+.homepage-logo-img {
+  height: 3rem;
+  width: auto;
+  display: block;
 }
 
 .homepage-body {
@@ -722,12 +745,8 @@
     gap: 0.75rem;
   }
 
-  .homepage-logo .header-logo {
-    font-size: 1.5rem;
-  }
-
-  .homepage-logo-icon {
-    font-size: 1.5rem;
+  .homepage-logo-img {
+    height: 2rem;
   }
 
   .home-how-it-works {

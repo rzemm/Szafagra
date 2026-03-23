@@ -3,6 +3,7 @@ import { attachSongIds, createAddedBySuggestion, createSong } from '../domain/so
 import { seedSampleRooms } from '../dev/seedRooms'
 import { genId } from '../lib/jukebox'
 import {
+  addPlaylistSuggestion,
   addSuggestion,
   changeRoomGuestToken,
   createContactMessage,
@@ -175,6 +176,15 @@ export function useRoomCommands({
     return done !== null
   }, [auth.roomId, executeAction, userId])
 
+  const submitPlaylistSuggestion = useCallback(async ({ playlistTitle, playlistId, songs }) => {
+    if (!auth.roomId || !userId) return false
+    const done = await executeAction(
+      () => addPlaylistSuggestion(auth.roomId, userId, { playlistTitle, playlistId, songs }),
+      'Nie udało się wysłać propozycji playlisty.'
+    )
+    return done !== null
+  }, [auth.roomId, executeAction, userId])
+
   const submitContactMessage = useCallback(async ({
     message,
     authorName,
@@ -218,6 +228,18 @@ export function useRoomCommands({
     }, 'Nie udało się zatwierdzić propozycji.')
   }, [auth.roomId, dispatch, executeAction, room])
 
+  const approvePlaylistSuggestion = useCallback(async (suggestion) => {
+    if (!auth.roomId || !room) return
+    const existingYtIds = new Set((room.songs ?? []).map((s) => s.ytId))
+    const newSongs = (suggestion.songs ?? [])
+      .filter((s) => !existingYtIds.has(s.ytId))
+      .map((s) => createSong({ genId, title: s.title, ytId: s.ytId, url: s.url, addedBy: createAddedBySuggestion(suggestion) }))
+    await executeAction(async () => {
+      await replaceRoomSongs(auth.roomId, [...(room.songs ?? []), ...newSongs])
+      await deleteSuggestion(auth.roomId, suggestion.id)
+    }, 'Nie udało się zatwierdzić playlisty.')
+  }, [auth.roomId, executeAction, room])
+
   const rejectSuggestion = useCallback(async (suggestionId) => {
     if (!auth.roomId) return
     await executeAction(() => deleteSuggestion(auth.roomId, suggestionId), 'Nie udało się odrzucić propozycji.')
@@ -249,8 +271,10 @@ export function useRoomCommands({
     voteSkip,
     rateActivePlaylist,
     submitSuggestion,
+    submitPlaylistSuggestion,
     submitContactMessage,
     approveSuggestion,
+    approvePlaylistSuggestion,
     rejectSuggestion,
     changeRoomCode,
   }

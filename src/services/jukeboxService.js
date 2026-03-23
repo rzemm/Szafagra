@@ -267,6 +267,17 @@ export function deleteSuggestion(roomId, suggestionId) {
   return deleteDoc(suggestionRef(roomId, suggestionId))
 }
 
+export function addPlaylistSuggestion(roomId, userId, { playlistTitle, playlistId, songs }) {
+  return setDoc(doc(suggestionsRef(roomId)), {
+    type: 'playlist',
+    userId,
+    playlistTitle,
+    playlistId,
+    songs,
+    createdAt: serverTimestamp(),
+  })
+}
+
 export function rateRoom(roomId, userId, score) {
   return updateRoom(roomId, {
     [`ratings.${userId}`]: score,

@@ -130,6 +130,29 @@ export const en = {
   invalidYouTubeLink: 'Invalid YouTube link',
   couldNotFetchTitle: 'Could not fetch title',
 
+  // GuestView - playlist suggestion
+  suggestPlaylist: 'Suggest your playlist',
+  suggestPlaylistDesc: 'Sign in with YouTube, pick a playlist, and send it to the room.',
+  suggestPlaylistConnect: 'Sign in with YouTube',
+  suggestPlaylistConnecting: 'Connecting...',
+  suggestPlaylistLoading: 'Loading playlists...',
+  suggestPlaylistNoPlaylists: 'No playlists found on this account.',
+  suggestPlaylistSelect: 'Select a playlist:',
+  suggestPlaylistVideos: 'videos',
+  suggestPlaylistFetching: 'Fetching songs...',
+  suggestPlaylistSongCount: (n) => `${n} songs`,
+  suggestPlaylistSubmit: 'Suggest this playlist',
+  suggestPlaylistSent: 'Playlist sent to the admin!',
+  suggestPlaylistBack: 'Back',
+  suggestPlaylistDisconnect: 'Change account',
+
+  // Admin - playlist suggestion panel
+  playlistSuggestionFrom: 'From guest',
+  playlistSuggestionSongs: (n) => `${n} songs`,
+  approveAllSongs: 'Add all',
+  showPlaylistSongs: 'Show songs',
+  hidePlaylistSongs: 'Hide',
+
   // PlaylistSidebar
   searchSongs: 'Search songs...',
   clearSearch: 'Clear',
@@ -232,6 +255,17 @@ export const en = {
   ytImportOpen: 'Import playlists',
   ytSwitchAccount: 'Switch YT account',
   ytDisconnect: 'Disconnect',
+  ytAuthHelpTitle: 'If YouTube sign-in is not working:',
+  ytAuthHelpBody: 'You can still paste a regular YouTube playlist link for now. Public rollout also requires the OAuth domain and publishing setup in Google Cloud/Firebase.',
+  ytAuthPopupBlocked: 'Your browser blocked the sign-in popup. Allow popups and try again.',
+  ytAuthCancelled: 'The previous sign-in attempt was cancelled. Try again.',
+  ytAuthUnauthorizedDomain: 'This domain is not allowed yet in Firebase Authentication or Google OAuth.',
+  ytAuthOperationNotAllowed: 'Google sign-in is not enabled for this Firebase configuration.',
+  ytAuthNetworkError: 'Could not reach Google. Check your connection and try again.',
+  ytAuthRedirectMismatch: 'OAuth is not fully configured for this domain yet. The origin or redirect URI is missing.',
+  ytAuthAccessBlocked: 'Google blocked access to this integration. The app still needs to be published or verified.',
+  ytAuthClientConfigError: 'The OAuth client configuration is invalid or outdated.',
+  ytAuthGenericError: 'Could not connect to YouTube. Try again or use a playlist link instead.',
 
   // YouTubeImportModal
   ytImportTitle: 'Import from YouTube',

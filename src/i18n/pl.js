@@ -130,6 +130,29 @@ export const pl = {
   invalidYouTubeLink: 'Nieprawidlowy link YouTube',
   couldNotFetchTitle: 'Nie udalo sie pobrac tytulu',
 
+  // GuestView - playlist suggestion
+  suggestPlaylist: 'Zaproponuj swoja liste',
+  suggestPlaylistDesc: 'Zaloguj sie przez YouTube, wybierz liste i przeslij ja do szafy.',
+  suggestPlaylistConnect: 'Zaloguj sie przez YouTube',
+  suggestPlaylistConnecting: 'Laczenie...',
+  suggestPlaylistLoading: 'Pobieranie playlist...',
+  suggestPlaylistNoPlaylists: 'Brak playlist na tym koncie.',
+  suggestPlaylistSelect: 'Wybierz liste:',
+  suggestPlaylistVideos: 'filmow',
+  suggestPlaylistFetching: 'Pobieranie utworow...',
+  suggestPlaylistSongCount: (n) => `${n} utworow`,
+  suggestPlaylistSubmit: 'Zaproponuj te liste',
+  suggestPlaylistSent: 'Lista wyslana do admina!',
+  suggestPlaylistBack: 'Wróc',
+  suggestPlaylistDisconnect: 'Zmien konto',
+
+  // Admin - playlist suggestion panel
+  playlistSuggestionFrom: 'Od gościa',
+  playlistSuggestionSongs: (n) => `${n} piosenek`,
+  approveAllSongs: 'Dodaj wszystkie',
+  showPlaylistSongs: 'Pokaż piosenki',
+  hidePlaylistSongs: 'Ukryj',
+
   // PlaylistSidebar
   searchSongs: 'Szukaj piosenek...',
   clearSearch: 'Wyczysc',
@@ -232,6 +255,17 @@ export const pl = {
   ytImportOpen: 'Importuj',
   ytSwitchAccount: 'Zmien konto',
   ytDisconnect: 'Rozlacz',
+  ytAuthHelpTitle: 'Jesli logowanie YouTube nie dziala:',
+  ytAuthHelpBody: 'Mozesz tymczasowo wkleic zwykly link do playlisty YouTube. Dla publicznego rollouttu trzeba jeszcze skonfigurowac domeny i publikacje OAuth w Google Cloud/Firebase.',
+  ytAuthPopupBlocked: 'Przegladarka zablokowala okno logowania. Zezwol na popupy i sprobuj ponownie.',
+  ytAuthCancelled: 'Poprzednia proba logowania zostala anulowana. Sprobuj jeszcze raz.',
+  ytAuthUnauthorizedDomain: 'Ta domena nie jest jeszcze dozwolona w Firebase Authentication lub Google OAuth.',
+  ytAuthOperationNotAllowed: 'Logowanie Google nie jest wlaczone dla tej konfiguracji Firebase.',
+  ytAuthNetworkError: 'Nie udalo sie polaczyc z Google. Sprawdz internet i sprobuj ponownie.',
+  ytAuthRedirectMismatch: 'Konfiguracja OAuth dla tej domeny jest niepelna. Brakuje poprawnego origin lub redirect URI.',
+  ytAuthAccessBlocked: 'Google zablokowal dostep do tej integracji. Aplikacja musi zostac opublikowana lub zweryfikowana.',
+  ytAuthClientConfigError: 'Konfiguracja klienta OAuth jest nieprawidlowa lub nieaktualna.',
+  ytAuthGenericError: 'Nie udalo sie polaczyc z YouTube. Sprobuj ponownie albo uzyj linku do playlisty.',
 
   // YouTubeImportModal
   ytImportTitle: 'Importuj z YouTube',

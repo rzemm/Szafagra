@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import { NowPlayingPanel } from './NowPlayingPanel'
 import { PlaylistSidebar } from './PlaylistSidebar'
@@ -20,15 +20,37 @@ export function OwnerRoomView({
   const [appendTargetId, setAppendTargetId] = useState('')
   const [appendDone, setAppendDone] = useState(false)
 
-  const handlePlayerAreaClick = useCallback((e) => {
+  const dragStartY = useRef(null)
+
+  const handlePointerDown = useCallback((e) => {
     if (e.target.closest('button, input, select, a, label, [role="button"], .qr-clickable')) return
-    const willOpenSidebar = !ui.leftPanel
-    if (ui.leftPanel) {
-      ui.toggleLeftPanel(ui.leftPanel)
-    } else {
-      ui.toggleLeftPanel('songs')
+    dragStartY.current = e.clientY
+  }, [])
+
+  const handlePointerUp = useCallback((e) => {
+    if (dragStartY.current === null) return
+    if (e.target.closest('button, input, select, a, label, [role="button"], .qr-clickable')) {
+      dragStartY.current = null
+      return
     }
-    if (willOpenSidebar && ui.panelOpen.voting) ui.togglePanel('voting')
+    const deltaY = dragStartY.current - e.clientY
+    dragStartY.current = null
+
+    if (deltaY > 40) {
+      // przeciągnięcie w górę → dolny panel
+      const willOpen = !ui.panelOpen.voting
+      ui.togglePanel('voting')
+      if (willOpen && ui.leftPanel) ui.toggleLeftPanel(ui.leftPanel)
+    } else if (Math.abs(deltaY) < 15) {
+      // klik (bez ruchu) → boczny panel
+      const willOpenSidebar = !ui.leftPanel
+      if (ui.leftPanel) {
+        ui.toggleLeftPanel(ui.leftPanel)
+      } else {
+        ui.toggleLeftPanel('songs')
+      }
+      if (willOpenSidebar && ui.panelOpen.voting) ui.togglePanel('voting')
+    }
   }, [ui])
 
   const handleAppend = async () => {
@@ -58,6 +80,7 @@ export function OwnerRoomView({
         addSong={sidebar.songActions.addSongDirect}
         suggestions={sidebar.suggestions}
         approveSuggestion={sidebar.approveSuggestion}
+        approvePlaylistSuggestion={sidebar.approvePlaylistSuggestion}
         rejectSuggestion={sidebar.rejectSuggestion}
         showThumbnails={sidebar.showThumbnails}
         showAddedBy={sidebar.showAddedBy}
@@ -98,7 +121,7 @@ export function OwnerRoomView({
         onSubmitMessage={sidebar.onSubmitMessage}
       />
 
-      <div className="player-area player-area-admin" onClick={handlePlayerAreaClick}>
+      <div className="player-area player-area-admin" onPointerDown={handlePointerDown} onPointerUp={handlePointerUp}>
         <div className="scroll-ticker-wrap">
           <div className="admin-scroll-area">
             {viewMode.isViewMode && (

@@ -15,6 +15,7 @@ export function PlaylistSidebar({
   addSong,
   suggestions,
   approveSuggestion,
+  approvePlaylistSuggestion,
   rejectSuggestion,
   showThumbnails,
   showAddedBy,
@@ -131,6 +132,7 @@ export function PlaylistSidebar({
           room={room}
           suggestions={suggestions}
           approveSuggestion={approveSuggestion}
+          approvePlaylistSuggestion={approvePlaylistSuggestion}
           rejectSuggestion={rejectSuggestion}
           showThumbnails={showThumbnails}
           showAddedBy={showAddedBy}
