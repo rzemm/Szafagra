@@ -1683,6 +1683,82 @@ body.disco-mode .sidebar {
   display: none;
 }
 
+.btn-setting-action--danger {
+  border-color: #c0392b44;
+  color: #e74c3c;
+}
+
+.btn-setting-action--danger:hover {
+  border-color: #e74c3c;
+  color: #e74c3c;
+}
+
+/* ─── Event setting row ───────────────────────────────────────────────────── */
+.setting-row--event {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.event-set-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.event-set-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.8rem;
+  color: var(--text-muted, #aaa);
+}
+
+.event-set-date {
+  color: var(--text);
+  font-size: 0.8rem;
+}
+
+.event-set-location {
+  color: var(--accent);
+  text-decoration: none;
+  word-break: break-word;
+  font-size: 0.8rem;
+}
+
+.event-set-location:hover {
+  text-decoration: underline;
+}
+
+.event-set-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+/* ─── Event popup ─────────────────────────────────────────────────────────── */
+.event-location-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.event-location-row .song-settings-input {
+  flex: 1;
+}
+
+.event-maps-link {
+  font-size: 1.2rem;
+  line-height: 1;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.event-desc-textarea {
+  resize: vertical;
+  min-height: 64px;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
 .header-join-row {
   display: flex;
   align-items: center;

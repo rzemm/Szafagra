@@ -35,6 +35,8 @@ export default function App() {
         user={screen.auth.user}
         ownedRooms={screen.ownedRooms}
         latestForeignRooms={screen.latestForeignRooms}
+        upcomingOpenParties={screen.upcomingOpenParties}
+        topRatedRooms={screen.topRatedRooms}
         onCreateRoom={screen.handleCreateRoom}
         onDeleteRoom={screen.handleDeleteRoom}
         onJoinRoom={screen.handleJoinRoom}

@@ -57,6 +57,11 @@ export function PlaylistSidebar({
   localCurrentSongId,
   onSubmitMessage,
   removeVotingProposal,
+  roomMode,
+  openParty,
+  partyDate,
+  partyLocation,
+  partyDescription,
 }) {
   const [sidebarWidth, setSidebarWidth] = useState(360)
   const isResizing = useRef(false)
@@ -165,6 +170,11 @@ export function PlaylistSidebar({
           isVisible={isVisible}
           canEditRoom={canEditRoom}
           onSubmitMessage={onSubmitMessage}
+          roomMode={roomMode}
+          openParty={openParty}
+          partyDate={partyDate}
+          partyLocation={partyLocation}
+          partyDescription={partyDescription}
         />
       )}
 

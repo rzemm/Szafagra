@@ -53,12 +53,53 @@ export function SettingsPanel({
   isVisible,
   canEditRoom,
   onSubmitMessage,
+  roomMode,
+  openParty,
+  partyDate,
+  partyLocation,
+  partyDescription,
 }) {
-  const { t } = useLanguage()
+  const { t, lang } = useLanguage()
   const yt = useYouTubeAuth()
   const [openGroup, setOpenGroup] = useState('voting')
   const toggleGroup = (key) => setOpenGroup((current) => current === key ? null : key)
   const [showYtImport, setShowYtImport] = useState(false)
+
+  const [showEventPopup, setShowEventPopup] = useState(false)
+  const [eventDate, setEventDate] = useState('')
+  const [eventLocation, setEventLocation] = useState('')
+  const [eventDescription, setEventDescription] = useState('')
+  const [eventSaving, setEventSaving] = useState(false)
+
+  const openEventPopup = () => {
+    setEventDate(partyDate ?? '')
+    setEventLocation(partyLocation ?? '')
+    setEventDescription(partyDescription ?? '')
+    setShowEventPopup(true)
+  }
+
+  const handleEventSave = async () => {
+    if (!eventDate) return
+    setEventSaving(true)
+    await saveSettings('openParty', true)
+    await saveSettings('partyDate', eventDate)
+    await saveSettings('partyLocation', eventLocation)
+    await saveSettings('partyDescription', eventDescription)
+    setEventSaving(false)
+    setShowEventPopup(false)
+  }
+
+  const handleCancelEvent = async () => {
+    await saveSettings('openParty', false)
+    await saveSettings('partyDate', '')
+    await saveSettings('partyLocation', '')
+    await saveSettings('partyDescription', '')
+  }
+
+  const formatEventDate = (dateStr) => {
+    if (!dateStr) return ''
+    return new Date(dateStr).toLocaleString(lang === 'pl' ? 'pl-PL' : 'en-GB', { dateStyle: 'short', timeStyle: 'short' })
+  }
 
   const [showCodePopup, setShowCodePopup] = useState(false)
   const [newCode, setNewCode] = useState('')
@@ -265,6 +306,43 @@ export function SettingsPanel({
 
           {openGroup === 'room' && <>
           <div className="setting-row">
+            <span className="setting-label">{t('roomModeLabel')}</span>
+            <div className="setting-toggle-group">
+              <button className={`btn-setting${roomMode === 'party_shared' ? ' active' : ''}`} onClick={() => saveSettings('roomMode', 'party_shared')} disabled={!canEditRoom}>{t('modeSharedParty')}</button>
+              <button className={`btn-setting${roomMode === 'jukebox' ? ' active' : ''}`} onClick={() => saveSettings('roomMode', 'jukebox')} disabled={!canEditRoom}>{t('modeJukebox')}</button>
+              <button className={`btn-setting${roomMode === 'listening' ? ' active' : ''}`} onClick={() => saveSettings('roomMode', 'listening')} disabled={!canEditRoom}>{t('modeListening')}</button>
+            </div>
+          </div>
+
+          {canEditRoom && (
+            <div className="setting-row setting-row--event">
+              {partyDate ? (
+                <div className="event-set-info">
+                  <div className="event-set-details">
+                    <span className="event-set-date">{'\uD83D\uDCC5'} {formatEventDate(partyDate)}</span>
+                    {partyLocation && (
+                      <a
+                        className="event-set-location"
+                        href={`https://www.google.com/maps/search/${encodeURIComponent(partyLocation)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {'\uD83D\uDCCD'} {partyLocation}
+                      </a>
+                    )}
+                  </div>
+                  <div className="event-set-actions">
+                    <button className="btn-setting-action" onClick={openEventPopup}>{t('editEventBtn')}</button>
+                    <button className="btn-setting-action btn-setting-action--danger" onClick={handleCancelEvent}>{t('cancelEventBtn')}</button>
+                  </div>
+                </div>
+              ) : (
+                <button className="btn-setting-action" style={{ flex: 1 }} onClick={openEventPopup}>{t('setEventBtn')}</button>
+              )}
+            </div>
+          )}
+
+          <div className="setting-row">
             <span className="setting-label">{t('nameSetting')}</span>
             <input
               className="setting-rename-input"
@@ -377,6 +455,61 @@ export function SettingsPanel({
           currentRoomId={room?.id ?? null}
           ownedRooms={ownedRooms ?? []}
         />
+      )}
+
+      {showEventPopup && (
+        <div className="song-settings-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowEventPopup(false) }}>
+          <div className="song-settings-modal">
+            <div className="song-settings-header">
+              <h3 className="song-settings-title">{t('setEventTitle')}</h3>
+              <button className="song-settings-close" onClick={() => setShowEventPopup(false)}>&#x2715;</button>
+            </div>
+            <div className="song-settings-body">
+              <span className="song-settings-label">{t('eventDateLabel')}</span>
+              <input
+                className="song-settings-input"
+                type="datetime-local"
+                value={eventDate}
+                onChange={(e) => setEventDate(e.target.value)}
+              />
+              <span className="song-settings-label" style={{ marginTop: '0.75rem' }}>{t('eventLocationLabel')}</span>
+              <div className="event-location-row">
+                <input
+                  className="song-settings-input"
+                  type="text"
+                  value={eventLocation}
+                  onChange={(e) => setEventLocation(e.target.value)}
+                  placeholder={t('partyLocationPlaceholder')}
+                />
+                {eventLocation && (
+                  <a
+                    className="event-maps-link"
+                    href={`https://www.google.com/maps/search/${encodeURIComponent(eventLocation)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    title={t('openInMaps')}
+                  >
+                    {'\uD83D\uDCCD'}
+                  </a>
+                )}
+              </div>
+              <span className="song-settings-label" style={{ marginTop: '0.75rem' }}>{t('eventDescLabel')}</span>
+              <textarea
+                className="song-settings-input event-desc-textarea"
+                value={eventDescription}
+                onChange={(e) => setEventDescription(e.target.value)}
+                placeholder={t('eventDescPlaceholder')}
+                rows={3}
+              />
+            </div>
+            <div className="song-settings-footer" style={{ gap: '0.5rem' }}>
+              <button className="btn-setting-action" onClick={() => setShowEventPopup(false)}>{t('cancel')}</button>
+              <button className="song-settings-save" onClick={handleEventSave} disabled={eventSaving || !eventDate}>
+                {eventSaving ? t('saving') : t('save')}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {showCodePopup && (

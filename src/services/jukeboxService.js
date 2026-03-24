@@ -41,7 +41,7 @@ function defaultSettings() {
   }
 }
 
-function createRoomPayload({ type, name, ownerId, guestToken }) {
+function createRoomPayload({ type, name, ownerId, guestToken, extraSettings = {} }) {
   return {
     type,
     name,
@@ -51,7 +51,7 @@ function createRoomPayload({ type, name, ownerId, guestToken }) {
     ratings: {},
     totalPlays: 0,
     totalVotes: 0,
-    settings: defaultSettings(),
+    settings: { ...defaultSettings(), ...extraSettings },
     isPlaying: false,
     currentSong: null,
     queue: [],
@@ -89,7 +89,7 @@ async function createUniqueGuestToken(maxAttempts = 10) {
   throw new Error('Could not generate a unique guest token')
 }
 
-export async function createPrivateRoom(ownerId, name = 'Nowa szafa prywatna') {
+export async function createPrivateRoom(ownerId, name = 'Nowa szafa prywatna', roomMode = null) {
   const guestToken = await createUniqueGuestToken()
   const newRoomRef = doc(roomsRef)
 
@@ -98,6 +98,7 @@ export async function createPrivateRoom(ownerId, name = 'Nowa szafa prywatna') {
     name,
     ownerId,
     guestToken,
+    extraSettings: roomMode ? { roomMode } : {},
   }))
 
   await setDoc(tokenRef(guestToken), {
@@ -139,7 +140,7 @@ export async function createPrivateRoomCopy(ownerId, sourceRoom) {
   return newRoomRef
 }
 
-export async function createPublicRoom(name = 'Nowa szafa publiczna', creatorUid) {
+export async function createPublicRoom(name = 'Nowa szafa publiczna', creatorUid, roomMode = null) {
   const guestToken = await createUniqueGuestToken()
   const newRoomRef = doc(roomsRef)
 
@@ -148,6 +149,7 @@ export async function createPublicRoom(name = 'Nowa szafa publiczna', creatorUid
     name,
     ownerId: null,
     guestToken,
+    extraSettings: roomMode ? { roomMode } : {},
   }))
 
   await setDoc(tokenRef(guestToken), {
@@ -209,6 +211,20 @@ export function subscribeLatestRooms(callback, count = 5) {
   })
 }
 
+export function subscribeOpenParties(callback) {
+  const q = query(roomsRef, where('settings.openParty', '==', true))
+  return onSnapshot(q, snap => {
+    callback(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+  })
+}
+
+export function subscribePublicRooms(callback, count = 30) {
+  const q = query(roomsRef, where('type', '==', 'public'), limit(count))
+  return onSnapshot(q, snap => {
+    callback(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+  })
+}
+
 export function saveRoomSetting(roomId, key, value) {
   return updateRoom(roomId, {
     [`settings.${key}`]: value,
@@ -238,6 +254,13 @@ export function toggleSkipVote(roomId, uid, alreadyVoted) {
   const update = alreadyVoted
     ? { [`skipVoters.${uid}`]: deleteField() }
     : { [`skipVoters.${uid}`]: true }
+  return updateDoc(roomRef(roomId), update)
+}
+
+export function toggleEventInterest(roomId, visitorId, alreadyInterested) {
+  const update = alreadyInterested
+    ? { [`eventInterest.${visitorId}`]: deleteField() }
+    : { [`eventInterest.${visitorId}`]: true }
   return updateDoc(roomRef(roomId), update)
 }
 

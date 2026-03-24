@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { subscribeLatestRooms, subscribeOwnedRooms } from '../services/jukeboxService'
+import { subscribeLatestRooms, subscribeOwnedRooms, subscribeOpenParties, subscribePublicRooms } from '../services/jukeboxService'
 
 export function useOwnedRooms(uid, enabled) {
   const [rooms, setRooms] = useState([])
@@ -10,6 +10,48 @@ export function useOwnedRooms(uid, enabled) {
   }, [enabled, uid])
 
   return enabled && uid ? rooms : []
+}
+
+export function useUpcomingOpenParties(enabled) {
+  const [parties, setParties] = useState([])
+
+  useEffect(() => {
+    if (!enabled) return
+    return subscribeOpenParties((rooms) => {
+      const now = new Date().toISOString()
+      setParties(
+        rooms
+          .filter((r) => r.settings?.partyDate && r.settings.partyDate > now)
+          .sort((a, b) => a.settings.partyDate.localeCompare(b.settings.partyDate))
+      )
+    })
+  }, [enabled])
+
+  return enabled ? parties : []
+}
+
+export function useTopRatedRooms(enabled) {
+  const [rooms, setRooms] = useState([])
+
+  useEffect(() => {
+    if (!enabled) return
+    return subscribePublicRooms((allRooms) => {
+      setRooms(
+        allRooms
+          .filter((r) => r.settings?.isVisible !== false && (r.songs?.length ?? 0) > 0)
+          .map((r) => {
+            const vals = Object.values(r.ratings ?? {})
+            const avg = vals.length > 0 ? vals.reduce((s, v) => s + v, 0) / vals.length : 0
+            return { ...r, _avgRating: avg, _ratingCount: vals.length }
+          })
+          .filter((r) => r._ratingCount > 0)
+          .sort((a, b) => b._avgRating - a._avgRating)
+          .slice(0, 5)
+      )
+    })
+  }, [enabled])
+
+  return enabled ? rooms : []
 }
 
 export function useLatestForeignRooms(uid, enabled) {

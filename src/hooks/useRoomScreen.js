@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { genId } from '../lib/jukebox'
 import { useJukeboxPlayback } from './useJukeboxPlayback'
-import { useLatestForeignRooms, useOwnedRooms } from './useRoomListings'
+import { useLatestForeignRooms, useOwnedRooms, useUpcomingOpenParties, useTopRatedRooms } from './useRoomListings'
 import { usePlaylistActions } from './usePlaylistActions'
 import { useRoomAuth } from './useRoomAuth'
 import { useRoomCommands } from './useRoomCommands'
@@ -18,8 +18,11 @@ export function useRoomScreen(route) {
 
   const isLoggedIn = !!auth.user && !auth.user.isAnonymous
   const homepageEnabled = !route.hasRoomParam && isLoggedIn
+  const onHomepage = !route.hasRoomParam
   const ownedRooms = useOwnedRooms(auth.user?.uid, isLoggedIn)
   const latestForeignRooms = useLatestForeignRooms(auth.user?.uid, homepageEnabled)
+  const upcomingOpenParties = useUpcomingOpenParties(onHomepage)
+  const topRatedRooms = useTopRatedRooms(onHomepage)
 
   const executeAction = useCallback(async (action, errorMessage) => {
     ui.dispatch({ type: 'setField', field: 'uiError', value: '' })
@@ -133,6 +136,8 @@ export function useRoomScreen(route) {
     suggestions,
     ownedRooms,
     latestForeignRooms,
+    upcomingOpenParties,
+    topRatedRooms,
     shareLinks,
     uiState: ui.uiState,
     leftPanel: ui.leftPanel,

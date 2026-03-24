@@ -139,6 +139,11 @@ export function OwnerRoomView({
         localCurrentSongId={viewMode.localCurrentSongId}
         onSubmitMessage={sidebar.onSubmitMessage}
         removeVotingProposal={sidebar.removeVotingProposal}
+        roomMode={sidebar.settings.roomMode ?? 'party_shared'}
+        openParty={sidebar.settings.openParty ?? false}
+        partyDate={sidebar.settings.partyDate ?? ''}
+        partyLocation={sidebar.settings.partyLocation ?? ''}
+        partyDescription={sidebar.settings.partyDescription ?? ''}
       />
 
       <div className="player-area player-area-admin" onPointerDown={handlePointerDown} onPointerUp={handlePointerUp}>
