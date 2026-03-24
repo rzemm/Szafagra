@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+﻿import { useRef, useState } from 'react'
 
 import { ContactMessageForm } from '../ContactMessageForm'
 import { NotePicker } from '../NotePicker'
@@ -39,6 +39,10 @@ export function SettingsPanel({
   const { t, lang } = useLanguage()
   const [openGroup, setOpenGroup] = useState('voting')
   const toggleGroup = (key) => setOpenGroup((current) => current === key ? null : key)
+  const requireSuggestionApproval = room?.settings?.requireSuggestionApproval ?? true
+  const allowPlaybackStop = room?.settings?.allowPlaybackStop ?? false
+  const playbackStopThreshold = Math.max(1, room?.settings?.playbackStopThreshold ?? 2)
+  const playbackStopMinutes = Math.max(1, room?.settings?.playbackStopMinutes ?? 5)
 
   const [showEventPopup, setShowEventPopup] = useState(false)
   const [eventDate, setEventDate] = useState('')
@@ -136,15 +140,15 @@ export function SettingsPanel({
         <div className="settings-group">
           <span className="settings-group-title settings-group-title--clickable" onClick={() => toggleGroup('voting')}>
             {t('votingOptionsGroup')}
-            <span className="settings-group-arrow">{openGroup === 'voting' ? '▾' : '▸'}</span>
+            <span className="settings-group-arrow">{openGroup === 'voting' ? '\u25be' : '\u25b8'}</span>
           </span>
 
           {openGroup === 'voting' && <>
           <div className="setting-row">
             <span className="setting-label">{t('voteType')}</span>
             <div className="setting-toggle-group">
-              <button className={`btn-setting${voteMode === 'highest' ? ' active' : ''}`} onClick={() => saveSettings('voteMode', 'highest')} disabled={!canEditRoom}>Top</button>
-              <button className={`btn-setting${voteMode === 'weighted' ? ' active' : ''}`} onClick={() => saveSettings('voteMode', 'weighted')} disabled={!canEditRoom}>%</button>
+              <button className={`btn-setting${voteMode === 'highest' ? ' active' : ''}`} onClick={() => saveSettings('voteMode', 'highest')} disabled={!canEditRoom}>{t('voteModeHighest')}</button>
+              <button className={`btn-setting${voteMode === 'weighted' ? ' active' : ''}`} onClick={() => saveSettings('voteMode', 'weighted')} disabled={!canEditRoom}>{t('voteModeWeighted')}</button>
             </div>
           </div>
 
@@ -177,14 +181,33 @@ export function SettingsPanel({
             />
           </div>
 
-          <div className="setting-row setting-row--perms-header">
-            <span className="setting-label setting-label--sub">{t('permissionsHeader')}</span>
-          </div>
+          </>}
+        </div>
 
+        <div className="settings-group">
+          <span className="settings-group-title settings-group-title--clickable" onClick={() => toggleGroup('userPermissions')}>
+            {t('userPermissionsGroup')}
+            <span className="settings-group-arrow">{openGroup === 'userPermissions' ? '\u25be' : '\u25b8'}</span>
+          </span>
+
+          {openGroup === 'userPermissions' && <>
           <div className="setting-row">
             <span className="setting-label">{t('permAddSongs')}</span>
             <label className="toggle-switch">
               <input type="checkbox" checked={!!allowSuggestions} onChange={(event) => saveSettings('allowSuggestions', event.target.checked)} disabled={!canEditRoom} />
+              <span className="toggle-slider" />
+            </label>
+          </div>
+
+          <div className="setting-row">
+            <span className="setting-label">{t('requireSuggestionApproval')}</span>
+            <label className="toggle-switch">
+              <input
+                type="checkbox"
+                checked={!!requireSuggestionApproval}
+                onChange={(event) => saveSettings('requireSuggestionApproval', event.target.checked)}
+                disabled={!canEditRoom || !allowSuggestions}
+              />
               <span className="toggle-slider" />
             </label>
           </div>
@@ -207,11 +230,42 @@ export function SettingsPanel({
           </div>
 
           <div className="setting-row">
-            <span className="setting-label">{t('guestListening')}</span>
+            <span className="setting-label">{t('allowPlaybackStop')}</span>
             <label className="toggle-switch">
-              <input type="checkbox" checked={!!allowGuestListening} onChange={(event) => saveSettings('allowGuestListening', event.target.checked)} disabled={!canEditRoom} />
+              <input
+                type="checkbox"
+                checked={!!allowPlaybackStop}
+                onChange={(event) => saveSettings('allowPlaybackStop', event.target.checked)}
+                disabled={!canEditRoom}
+              />
               <span className="toggle-slider" />
             </label>
+          </div>
+
+          <div className="setting-row">
+            <span className="setting-label">{t('playbackStopThreshold')}</span>
+            <input
+              className="setting-number-input"
+              type="number"
+              min="1"
+              max="99"
+              value={playbackStopThreshold}
+              onChange={(event) => saveSettings('playbackStopThreshold', Math.max(1, parseInt(event.target.value, 10) || 1))}
+              disabled={!canEditRoom || !allowPlaybackStop}
+            />
+          </div>
+
+          <div className="setting-row">
+            <span className="setting-label">{t('playbackStopDuration')}</span>
+            <input
+              className="setting-number-input"
+              type="number"
+              min="1"
+              max="240"
+              value={playbackStopMinutes}
+              onChange={(event) => saveSettings('playbackStopMinutes', Math.max(1, parseInt(event.target.value, 10) || 1))}
+              disabled={!canEditRoom || !allowPlaybackStop}
+            />
           </div>
           </>}
         </div>
@@ -219,7 +273,7 @@ export function SettingsPanel({
         <div className="settings-group">
           <span className="settings-group-title settings-group-title--clickable" onClick={() => toggleGroup('display')}>
             {t('displayGroup')}
-            <span className="settings-group-arrow">{openGroup === 'display' ? '▾' : '▸'}</span>
+            <span className="settings-group-arrow">{openGroup === 'display' ? '\u25be' : '\u25b8'}</span>
           </span>
 
           {openGroup === 'display' && <>
@@ -276,7 +330,7 @@ export function SettingsPanel({
         <div className="settings-group">
           <span className="settings-group-title settings-group-title--clickable" onClick={() => toggleGroup('room')}>
             {t('roomOptionsGroup')}
-            <span className="settings-group-arrow">{openGroup === 'room' ? '▾' : '▸'}</span>
+            <span className="settings-group-arrow">{openGroup === 'room' ? '\u25be' : '\u25b8'}</span>
           </span>
 
           {openGroup === 'room' && <>
@@ -341,17 +395,17 @@ export function SettingsPanel({
           <div className="setting-row setting-row--stats">
             <div className="settings-stats">
               <div className="settings-stat settings-stat--rating">
-                <span className="settings-stat-icon">★</span>
+                <span className="settings-stat-icon">â…</span>
                 <span className="settings-stat-value">{avgRating}</span>
                 <span className="settings-stat-label">{t('ratingLabel')}{ratingCount > 0 ? ` (${ratingCount})` : ''}</span>
               </div>
               <div className="settings-stat settings-stat--plays">
-                <span className="settings-stat-icon">▶</span>
+                <span className="settings-stat-icon">â–¶</span>
                 <span className="settings-stat-value">{room?.totalPlays ?? 0}</span>
                 <span className="settings-stat-label">{t('playsLabel')}</span>
               </div>
               <div className="settings-stat settings-stat--votes">
-                <span className="settings-stat-icon">✔</span>
+                <span className="settings-stat-icon">âś”</span>
                 <span className="settings-stat-value">{room?.totalVotes ?? 0}</span>
                 <span className="settings-stat-label">{t('votesLabel')}</span>
               </div>
@@ -452,7 +506,7 @@ export function SettingsPanel({
           <div className="song-settings-modal">
             <div className="song-settings-header">
               <h3 className="song-settings-title">{t('changeRoomCode')}</h3>
-              <button className="song-settings-close" onClick={() => setShowCodePopup(false)}>✕</button>
+              <button className="song-settings-close" onClick={() => setShowCodePopup(false)}>âś•</button>
             </div>
             <div className="song-settings-body">
               <span className="song-settings-label">{t('codeLabel')}</span>
@@ -481,3 +535,5 @@ export function SettingsPanel({
     </>
   )
 }
+
+

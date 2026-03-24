@@ -39,6 +39,10 @@ function defaultSettings() {
     skipThreshold: 0,
     queueSize: 1,
     allowSuggestions: false,
+    requireSuggestionApproval: true,
+    allowPlaybackStop: false,
+    playbackStopThreshold: 2,
+    playbackStopMinutes: 5,
     showThumbnails: true,
     isVisible: true,
   }
