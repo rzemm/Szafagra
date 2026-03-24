@@ -86,6 +86,7 @@ export const en = {
   buyCoffee: 'Buy coffee',
   shareLink: 'Share link',
   shareBtn: 'Share',
+  partyShareText: 'Check out this party on Szafagra',
   fetchingTitlePlaceholder: 'Fetching title...',
   addSongTitlePrefix: 'Music',
   addSongPlaceholder: 'Add song or playlist \u2013 paste YouTube link or type title',

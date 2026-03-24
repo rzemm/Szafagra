@@ -87,6 +87,18 @@ export function HomePage({
     return () => clearInterval(timer)
   }, [])
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const sharedPartyId = new URLSearchParams(window.location.search).get('party')?.trim()
+    if (!sharedPartyId) return
+
+    const sharedParty = upcomingOpenParties.find((party) => party.id === sharedPartyId)
+    if (!sharedParty) return
+
+    setDiscoverTab('parties')
+    setPreviewParty((currentParty) => (currentParty?.id === sharedParty.id ? currentParty : sharedParty))
+  }, [upcomingOpenParties])
+
   const isLoggedIn = user && !user.isAnonymous
 
   const handleCreate = async (roomMode) => {
@@ -114,6 +126,24 @@ export function HomePage({
     onJoinRoom(roomInput)
   }
 
+  const handleOpenPartyPreview = (party) => {
+    setPreviewParty(party)
+    if (typeof window === 'undefined') return
+
+    const url = new URL(window.location.href)
+    url.searchParams.set('party', party.id)
+    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`)
+  }
+
+  const handleClosePartyPreview = () => {
+    setPreviewParty(null)
+    if (typeof window === 'undefined') return
+
+    const url = new URL(window.location.href)
+    url.searchParams.delete('party')
+    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`)
+  }
+
   return (
     <>
       <div className="homepage">
@@ -134,7 +164,7 @@ export function HomePage({
                 { icon: '📱', text: t('howStep3Desc') },
               ].map((slide, index) => (
                 <div key={index} className={`homepage-header-slide${index === headerSlide ? ' active' : ''}`}>
-                  <span className="homepage-header-slide-icon">{slide.icon}</span>
+                  <span className={`homepage-header-slide-icon homepage-header-slide-icon--tone-${index + 1}`}>{slide.icon}</span>
                   <span className="homepage-header-slide-text">{slide.text}</span>
                 </div>
               ))}
@@ -313,7 +343,6 @@ export function HomePage({
                     partiesWithDistance.map((party) => {
                       const date = party.settings?.partyDate
                       const location = party.settings?.partyLocation
-                      const description = party.settings?.partyDescription
                       const interestCount = Object.keys(party.eventInterest ?? {}).length
                       const formattedDate = date
                         ? new Date(date).toLocaleString(lang === 'pl' ? 'pl-PL' : 'en-GB', { dateStyle: 'short', timeStyle: 'short' })
@@ -323,16 +352,23 @@ export function HomePage({
                         <button
                           key={party.id}
                           className="home-room-card home-room-card--clickable home-room-card--party"
-                          onClick={() => setPreviewParty(party)}
+                          onClick={() => handleOpenPartyPreview(party)}
                         >
                           <div className="home-room-card-body">
-                            <ScrollText className="home-room-label">{party.name || t('defaultRoomName')}</ScrollText>
+                            <div className="home-party-title-row">
+                              <span className="home-party-interest-badge">{'\uD83D\uDC64'} {interestCount}</span>
+                              <ScrollText className="home-room-label">{party.name || t('defaultRoomName')}</ScrollText>
+                            </div>
                             <div className="home-party-meta">
-                              {formattedDate && <span className="home-party-date">{'\uD83D\uDCC5'} {formattedDate}</span>}
-                              {location && <span className="home-party-location">{'\uD83D\uDCCD'} {location}</span>}
+                              {formattedDate && location ? (
+                                <span className="home-party-date">{'\uD83D\uDCC5'} {formattedDate} {'\u2022'} {'\uD83D\uDCCD'} {location}</span>
+                              ) : (
+                                <>
+                                  {formattedDate && <span className="home-party-date">{'\uD83D\uDCC5'} {formattedDate}</span>}
+                                  {location && <span className="home-party-location">{'\uD83D\uDCCD'} {location}</span>}
+                                </>
+                              )}
                               {party._dist != null && <span className="home-party-dist">{party._dist < 1 ? '< 1 km' : `${Math.round(party._dist)} km`}</span>}
-                              {description && <span className="home-party-desc">{description}</span>}
-                              {interestCount > 0 && <span className="home-party-interest">{t('interestedCount', interestCount)}</span>}
                             </div>
                           </div>
                         </button>
@@ -411,7 +447,7 @@ export function HomePage({
       {previewParty && (
         <PartyPreviewModal
           party={upcomingOpenParties.find((party) => party.id === previewParty.id) ?? previewParty}
-          onClose={() => setPreviewParty(null)}
+          onClose={handleClosePartyPreview}
           lang={lang}
           t={t}
         />

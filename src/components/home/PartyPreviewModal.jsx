@@ -14,6 +14,7 @@ export function PartyPreviewModal({ party, lang, t, onClose }) {
   const visitorId = getVisitorId()
   const [partySearch, setPartySearch] = useState('')
   const [partyShowThumbs, setPartyShowThumbs] = useState(false)
+  const [shareCopied, setShareCopied] = useState(false)
   const interested = !!(party.eventInterest?.[visitorId])
   const interestCount = Object.keys(party.eventInterest ?? {}).length
   const date = party.settings?.partyDate
@@ -26,6 +27,35 @@ export function PartyPreviewModal({ party, lang, t, onClose }) {
   const filteredSongs = partySearch.trim()
     ? songs.filter((song) => song.title?.toLowerCase().includes(partySearch.toLowerCase()))
     : songs
+  const shareUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}${window.location.pathname}?party=${encodeURIComponent(party.id)}`
+    : `/?party=${encodeURIComponent(party.id)}`
+  const shareTitle = party.name || t('defaultRoomName')
+
+  const handleShare = async () => {
+    const shareData = {
+      title: shareTitle,
+      text: t('partyShareText'),
+      url: shareUrl,
+    }
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData)
+        return
+      }
+      await navigator.clipboard.writeText(shareUrl)
+      setShareCopied(true)
+      window.setTimeout(() => setShareCopied(false), 1800)
+    } catch {
+      // Ignore aborted share/copy interactions.
+    }
+  }
+
+  const handleEnterRoom = () => {
+    if (typeof window === 'undefined') return
+    window.location.href = `/?room=${encodeURIComponent(party.id)}`
+  }
 
   return (
     <div className="room-preview-overlay" role="presentation" onClick={onClose}>
@@ -63,6 +93,15 @@ export function PartyPreviewModal({ party, lang, t, onClose }) {
             onClick={() => setPartyShowThumbs((value) => !value)}
           >
             {'\uD83D\uDDBC'} {t('showThumbnailsBtn')}
+          </button>
+        </div>
+
+        <div className="party-preview-actions">
+          <button className="party-preview-action-btn" onClick={handleShare}>
+            {'\u2197'} {shareCopied ? t('copiedLabel') : t('shareBtn')}
+          </button>
+          <button className="party-preview-action-btn party-preview-action-btn--primary" onClick={handleEnterRoom}>
+            {'\u25B6'} {t('enterRoom')}
           </button>
         </div>
 
