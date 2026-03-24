@@ -250,6 +250,7 @@ export const en = {
   showRoomCode: 'Show room code',
   showQueueOverlay: 'Show queue',
   roomOptionsGroup: 'Room options',
+  roomInfoGroup: 'Room info',
   roomModeLabel: 'Room mode',
   modePartyPrep: 'Party preparation',
   modeParty: 'Party',

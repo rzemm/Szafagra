@@ -371,6 +371,16 @@ export function SettingsPanel({
             </div>
           )}
 
+          </>}
+        </div>
+
+        <div className="settings-group">
+          <span className="settings-group-title settings-group-title--clickable" onClick={() => toggleGroup('roomInfo')}>
+            {t('roomInfoGroup')}
+            <span className="settings-group-arrow">{openGroup === 'roomInfo' ? '\u25be' : '\u25b8'}</span>
+          </span>
+
+          {openGroup === 'roomInfo' && <>
           <div className="setting-row">
             <span className="setting-label">{t('nameSetting')}</span>
             <input
@@ -395,17 +405,17 @@ export function SettingsPanel({
           <div className="setting-row setting-row--stats">
             <div className="settings-stats">
               <div className="settings-stat settings-stat--rating">
-                <span className="settings-stat-icon">â…</span>
+                <span className="settings-stat-icon">{'★'}</span>
                 <span className="settings-stat-value">{avgRating}</span>
                 <span className="settings-stat-label">{t('ratingLabel')}{ratingCount > 0 ? ` (${ratingCount})` : ''}</span>
               </div>
               <div className="settings-stat settings-stat--plays">
-                <span className="settings-stat-icon">â–¶</span>
+                <span className="settings-stat-icon">{'▶'}</span>
                 <span className="settings-stat-value">{room?.totalPlays ?? 0}</span>
                 <span className="settings-stat-label">{t('playsLabel')}</span>
               </div>
               <div className="settings-stat settings-stat--votes">
-                <span className="settings-stat-icon">âś”</span>
+                <span className="settings-stat-icon">{'✓'}</span>
                 <span className="settings-stat-value">{room?.totalVotes ?? 0}</span>
                 <span className="settings-stat-label">{t('votesLabel')}</span>
               </div>
