@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { initializeApp, getApps } from 'firebase/app'
 import { getAuth, signInWithPopup, GoogleAuthProvider } from 'firebase/auth'
 import { firebaseConfig } from '../firebase'
-import { useLanguage } from '../context/LanguageContext'
+import { useLanguage } from '../context/useLanguage'
 
 function getYtAuth() {
   const ytFirebaseConfig = {

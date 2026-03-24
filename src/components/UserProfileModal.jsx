@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useLanguage } from '../context/LanguageContext'
+import { useLanguage } from '../context/useLanguage'
 import { useYouTubeAuth } from '../hooks/useYouTubeAuth'
 import { YouTubeAuthNotice } from './YouTubeAuthNotice'
 import { YouTubeImportModal } from './YouTubeImportModal'

@@ -53,6 +53,9 @@ export function useRoomCommands({
   setCopyingRoom,
   setAppendingRoom,
 }) {
+  const roomGuestToken = room?.guestToken ?? null
+  const roomType = room?.type
+
   const renameRoom = useCallback(async (name) => {
     if (!auth.roomId || !canEditRoom) return
     await executeAction(() => setMainState(auth.roomId, { name }), 'Nie udało się zmienić nazwy szafy.')
@@ -268,13 +271,13 @@ export function useRoomCommands({
   const changeRoomCode = useCallback(async (newCode) => {
     if (!auth.roomId || !canEditRoom) return { error: 'no_permission' }
     try {
-      await changeRoomGuestToken(auth.roomId, room?.guestToken ?? null, newCode, room?.type)
+      await changeRoomGuestToken(auth.roomId, roomGuestToken, newCode, roomType)
       return { success: true }
     } catch (err) {
       if (err.message === 'taken') return { error: 'taken' }
       return { error: 'generic' }
     }
-  }, [auth.roomId, canEditRoom, room?.guestToken, room?.type])
+  }, [auth.roomId, canEditRoom, roomGuestToken, roomType])
 
   return {
     renameRoom,

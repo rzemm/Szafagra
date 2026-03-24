@@ -15,11 +15,9 @@ export function PlaylistSidebar({
   addSong,
   suggestions,
   approveSuggestion,
-  approvePlaylistSuggestion,
   rejectSuggestion,
   showThumbnails,
   showAddedBy,
-  queue,
   voteThreshold,
   voteMode,
   skipThreshold,
@@ -34,10 +32,6 @@ export function PlaylistSidebar({
   importPlaylist,
   exportPlaylist,
   queueSong,
-  removeFromQueue,
-  copyAdminLink,
-  copied,
-  roomType,
   onRenameRoom,
   onChangeRoomCode,
   onCreateRoomFromYt,
@@ -58,7 +52,6 @@ export function PlaylistSidebar({
   onSubmitMessage,
   removeVotingProposal,
   roomMode,
-  openParty,
   partyDate,
   partyLocation,
   partyDescription,
@@ -151,9 +144,6 @@ export function PlaylistSidebar({
           saveSettings={saveSettings}
           exportPlaylist={exportPlaylist}
           importPlaylist={importPlaylist}
-          copyAdminLink={copyAdminLink}
-          copied={copied}
-          roomType={roomType}
           onRenameRoom={onRenameRoom}
           onChangeRoomCode={onChangeRoomCode}
           showQr={showQr}
@@ -166,7 +156,6 @@ export function PlaylistSidebar({
           canEditRoom={canEditRoom}
           onSubmitMessage={onSubmitMessage}
           roomMode={roomMode}
-          openParty={openParty}
           partyDate={partyDate}
           partyLocation={partyLocation}
           partyDescription={partyDescription}

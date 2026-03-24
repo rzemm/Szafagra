@@ -1,10 +1,11 @@
-import { useCallback, useRef, useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import { NowPlayingPanel } from './NowPlayingPanel'
+import { OwnerQueueOverlay } from './owner/OwnerQueueOverlay'
+import { OwnerViewModeBanner } from './owner/OwnerViewModeBanner'
+import { OwnerVotingDock } from './owner/OwnerVotingDock'
 import { PlaylistSidebar } from './PlaylistSidebar'
-import { ScrollText } from './ScrollText'
-import { VotingPanel } from './VotingPanel'
-import { useLanguage } from '../context/LanguageContext'
+import { useOwnerGestures } from '../hooks/useOwnerGestures'
+import { useLanguage } from '../context/useLanguage'
 
 export function OwnerRoomView({
   room,
@@ -18,72 +19,7 @@ export function OwnerRoomView({
   viewMode,
 }) {
   const { t } = useLanguage()
-  const [appendTargetId, setAppendTargetId] = useState('')
-  const [appendDone, setAppendDone] = useState(false)
-
-  const dragStart = useRef(null)
-
-  const handlePointerDown = useCallback((e) => {
-    if (e.target.closest('button, input, select, a, label, [role="button"], .qr-clickable')) return
-    dragStart.current = { x: e.clientX, y: e.clientY }
-  }, [])
-
-  const handlePointerUp = useCallback((e) => {
-    if (!dragStart.current) return
-    if (e.target.closest('button, input, select, a, label, [role="button"], .qr-clickable')) {
-      dragStart.current = null
-      return
-    }
-    const dx = e.clientX - dragStart.current.x  // > 0 = w prawo
-    const dy = dragStart.current.y - e.clientY  // > 0 = w górę
-    dragStart.current = null
-
-    const THRESHOLD = 40
-    const isSwipeRight = dx > THRESHOLD && dx > Math.abs(dy)
-    const isSwipeUp = dy > THRESHOLD && dy > Math.abs(dx)
-    const isClick = Math.abs(dx) < 15 && Math.abs(dy) < 15
-
-    if (isSwipeRight) {
-      if (ui.leftPanel) {
-        // ten sam panel → zwiń
-        ui.toggleLeftPanel(ui.leftPanel)
-      } else {
-        // inny lub nic → zamknij dolny, otwórz lewy
-        if (ui.panelOpen.voting) ui.togglePanel('voting')
-        ui.toggleLeftPanel('songs')
-      }
-    } else if (isSwipeUp) {
-      if (ui.panelOpen.voting) {
-        // ten sam panel → zwiń
-        ui.togglePanel('voting')
-      } else {
-        // inny lub nic → zamknij lewy, otwórz dolny
-        if (ui.leftPanel) ui.toggleLeftPanel(ui.leftPanel)
-        ui.togglePanel('voting')
-      }
-    } else if (isClick) {
-      const anyOpen = ui.leftPanel || ui.panelOpen.voting
-      if (anyOpen) {
-        if (ui.leftPanel) ui.toggleLeftPanel(ui.leftPanel)
-        if (ui.panelOpen.voting) ui.togglePanel('voting')
-      } else {
-        ui.toggleLeftPanel('songs')
-      }
-    }
-  }, [ui])
-
-  const handleAppend = async () => {
-    if (!appendTargetId) return
-    await viewMode.handleAppendToRoom(appendTargetId)
-    setAppendDone(true)
-    setTimeout(() => setAppendDone(false), 3000)
-  }
-
-  const voteCounts = voting.nextOptionKeys.map((key) =>
-    Object.values(voting.nextVotesData).filter((value) => value === key).length
-  )
-  const totalVotes = Object.values(voting.nextVotesData).length
-  const maxCount = Math.max(0, ...voteCounts)
+  const { handlePointerDown, handlePointerUp } = useOwnerGestures(ui)
 
   return (
     <>
@@ -99,7 +35,6 @@ export function OwnerRoomView({
         addSong={sidebar.songActions.addSongDirect}
         suggestions={sidebar.suggestions}
         approveSuggestion={sidebar.approveSuggestion}
-        approvePlaylistSuggestion={sidebar.approvePlaylistSuggestion}
         rejectSuggestion={sidebar.rejectSuggestion}
         showThumbnails={sidebar.showThumbnails}
         showAddedBy={sidebar.showAddedBy}
@@ -118,10 +53,6 @@ export function OwnerRoomView({
         importPlaylist={sidebar.playlistActions.importPlaylist}
         exportPlaylist={sidebar.playlistActions.exportPlaylist}
         queueSong={voting.queueSong}
-        removeFromQueue={playback.removeFromQueue}
-        copyAdminLink={sharing.shareLinks.copyAdminLink}
-        copied={sharing.copied}
-        roomType={sidebar.roomType}
         onRenameRoom={sidebar.renameRoom}
         onChangeRoomCode={sidebar.changeRoomCode}
         onCreateRoomFromYt={sidebar.onCreateRoomFromYt}
@@ -142,7 +73,6 @@ export function OwnerRoomView({
         onSubmitMessage={sidebar.onSubmitMessage}
         removeVotingProposal={sidebar.removeVotingProposal}
         roomMode={sidebar.settings.roomMode ?? 'party_prep'}
-        openParty={sidebar.settings.openParty ?? false}
         partyDate={sidebar.settings.partyDate ?? ''}
         partyLocation={sidebar.settings.partyLocation ?? ''}
         partyDescription={sidebar.settings.partyDescription ?? ''}
@@ -161,50 +91,7 @@ export function OwnerRoomView({
       <div className="player-area player-area-admin" onPointerDown={handlePointerDown} onPointerUp={handlePointerUp}>
         <div className="scroll-ticker-wrap">
           <div className="admin-scroll-area">
-            {viewMode.isViewMode && (
-              <div className="view-mode-banner">
-                <span className="view-mode-label">{t('viewModeLabel')}</span>
-                <button
-                  className="view-mode-copy-btn"
-                  onClick={viewMode.handleCopyRoom}
-                  disabled={viewMode.copyingRoom}
-                >
-                  {viewMode.copyingRoom ? t('copying') : t('copyThisList')}
-                </button>
-                {viewMode.ownedRooms?.length > 0 && (
-                  <div className="view-mode-append-row">
-                    <select
-                      className="view-mode-append-select"
-                      value={appendTargetId}
-                      onChange={(event) => {
-                        setAppendTargetId(event.target.value)
-                        setAppendDone(false)
-                      }}
-                    >
-                      <option value="">{t('appendSongsTo')}</option>
-                      {viewMode.ownedRooms.map((ownedRoom) => (
-                        <option key={ownedRoom.id} value={ownedRoom.id}>
-                          {ownedRoom.name || t('privateRoom')}
-                        </option>
-                      ))}
-                    </select>
-                    {appendTargetId && (
-                      <button
-                        className="view-mode-append-btn"
-                        onClick={handleAppend}
-                        disabled={viewMode.appendingRoom || appendDone}
-                      >
-                        {appendDone
-                          ? t('appended')
-                          : viewMode.appendingRoom
-                            ? t('appending')
-                            : t('append')}
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
+            <OwnerViewModeBanner isViewMode={viewMode.isViewMode} viewMode={viewMode} t={t} />
 
             <div className="admin-top-row">
               <NowPlayingPanel
@@ -243,35 +130,15 @@ export function OwnerRoomView({
             </div>
           </div>
 
-          {ui.panelOpen.showQueue && (
-            <div className="queue-overlay" onPointerDown={(e) => e.stopPropagation()} onPointerUp={(e) => e.stopPropagation()}>
-              {playback.queue.length > 0 ? (
-                <ol className="queue-overlay-list">
-                  {playback.queue.map((song) => (
-                    <div
-                      key={song.id}
-                      className={`queue-overlay-item${canEditRoom ? ' queue-overlay-item--clickable' : ''}`}
-                      onClick={canEditRoom ? () => { voting.playSongNow(song); playback.removeFromQueue(song.id) } : undefined}
-                    >
-                      <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="queue-overlay-thumb" />
-                      <ScrollText className="queue-overlay-title">{song.title}</ScrollText>
-                      {canEditRoom && (
-                        <button
-                          className="queue-overlay-delete"
-                          onClick={(e) => { e.stopPropagation(); playback.removeFromQueue(song.id) }}
-                          title={t('removeFromQueue')}
-                        >
-                          ×
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </ol>
-              ) : (
-                <p className="queue-overlay-empty">{playback.isPlaying ? t('queueEmpty') : t('playbackStopped')}</p>
-              )}
-            </div>
-          )}
+          <OwnerQueueOverlay
+            isOpen={ui.panelOpen.showQueue}
+            queue={playback.queue}
+            canEditRoom={canEditRoom}
+            playback={playback}
+            voting={voting}
+            t={t}
+          />
+
           {sidebar.settings.tickerOnScreen && sidebar.settings.tickerText && (
             <div className="admin-ticker">{sidebar.settings.tickerText}</div>
           )}
@@ -279,59 +146,20 @@ export function OwnerRoomView({
 
         {playback.isPlaying && playback.skipThreshold > 0 && playback.skipCount > 0 && (
           <div className="skip-votes-banner">
-            {Array.from({ length: playback.skipCount }, (_, i) => (
-              <span key={i} className="skip-vote-x">❌</span>
+            {Array.from({ length: playback.skipCount }, (_, index) => (
+              <span key={index} className="skip-vote-x">âťŚ</span>
             ))}
           </div>
         )}
 
-        {roomMode !== 'party_prep' && <div className="voting-panel-bottom" onPointerDown={(e) => e.stopPropagation()} onPointerUp={(e) => e.stopPropagation()}>
-          <div className="voting-bottom-bar" onClick={(e) => {
-            e.stopPropagation()
-            const willOpen = !ui.panelOpen.voting
-            ui.togglePanel('voting')
-            if (willOpen && ui.leftPanel) ui.toggleLeftPanel(ui.leftPanel)
-          }}>
-            {playback.isPlaying && voting.nextOptionKeys.length > 0 ? voting.nextOptionKeys.map((key, index) => {
-              const count = voteCounts[index]
-              const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0
-              const isWinning = count > 0 && count === maxCount
-
-              return (
-                <div key={key} className={`voting-bar-opt${isWinning ? ' winning' : ''}`}>
-                  <div className="vbo-fill" style={{ height: `${pct}%` }} />
-                  <span className="vbo-thumb">👍</span>
-                  <span className="vbo-num">{count}</span>
-                  <span className="vbo-sep"> - </span>
-                  <span className="vbo-pct">{pct}%</span>
-                </div>
-              )
-            }) : (
-              <h2 className="section-title" style={{ flex: 1, padding: '0 1rem' }}>{t('votingOptionsTitle')}</h2>
-            )}
-            <span className="section-arrow" style={{ padding: '0 1rem' }}>{ui.panelOpen.voting ? 'v' : '^'}</span>
-          </div>
-
-          {ui.panelOpen.voting && (
-            <div className="voting-bottom-content">
-              {playback.isPlaying && voting.nextOptionKeys.length > 0 && (
-                <VotingPanel
-                  nextOptionKeys={voting.nextOptionKeys}
-                  nextOptions={voting.nextOptions}
-                  nextVotesData={voting.nextVotesData}
-                  showPlayNow
-                  onPlayNow={voting.playSongNow}
-                  onQueueSong={voting.queueSong}
-                  onRemoveOption={voting.removeVotingOption}
-                  onReplaceSong={voting.replaceSong}
-                  columns
-                  onChooseOption={voting.advanceToOption}
-                  showThumbnails={sidebar.showThumbnails}
-                />
-              )}
-            </div>
-          )}
-        </div>}
+        <OwnerVotingDock
+          roomMode={roomMode}
+          ui={ui}
+          playback={playback}
+          voting={voting}
+          showThumbnails={sidebar.showThumbnails}
+          t={t}
+        />
       </div>
     </>
   )

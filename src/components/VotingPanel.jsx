@@ -30,7 +30,7 @@ export function VotingPanel({ nextOptionKeys, nextOptions, nextVotesData, onPlay
                 )}
               </div>
               <div className="option-songs">
-                {songs.map((song, i) => (
+                {songs.map((song) => (
                   <div key={song.id} className="option-song-item" onClick={() => onPlayNow && onPlayNow(song)} style={onPlayNow ? { cursor: 'pointer' } : {}}>
                     {showThumbnails && <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="slot-thumb" />}
                     <ScrollText className="slot-title">{song.title}</ScrollText>

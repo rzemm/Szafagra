@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ScrollText } from '../ScrollText'
-import { useLanguage } from '../../context/LanguageContext'
+import { useLanguage } from '../../context/useLanguage'
 import { searchYouTube } from '../../lib/youtube'
 
 function TrashIcon() {

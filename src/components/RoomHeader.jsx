@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { UserProfileModal } from './UserProfileModal'
-import { useLanguage } from '../context/LanguageContext'
+import { useLanguage } from '../context/useLanguage'
 import logoUrl from '../assets/logo.png'
 
 const GoogleIcon = () => (
@@ -14,16 +14,13 @@ const GoogleIcon = () => (
 
 export function RoomHeader({
   showOwnerUI,
-  canEditRoom,
   leftPanel,
   toggleLeftPanel,
-  room,
   user,
   signInWithGoogle,
   signOutUser,
   onShareGuestLink,
   guestCopied,
-  suggestions,
   proposalsCount = 0,
   onOpenCookieSettings,
   updateDisplayName,

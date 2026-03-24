@@ -1,7 +1,7 @@
 import { createPortal } from 'react-dom'
 import { useEffect, useState } from 'react'
 import { formatTime } from '../lib/jukebox'
-import { useLanguage } from '../context/LanguageContext'
+import { useLanguage } from '../context/useLanguage'
 
 export function NowPlayingPanel({ isPlaying, currentSong, remaining, ytPlayerState, loadProgress, playerRef, playerDivRef, playerReady, advanceToWinner, skipThreshold, skipCount, startJukebox, stopJukebox, room, canEditRoom }) {
   const { t } = useLanguage()

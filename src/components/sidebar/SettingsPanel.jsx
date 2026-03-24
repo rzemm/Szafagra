@@ -2,12 +2,11 @@ import { useRef, useState } from 'react'
 
 import { ContactMessageForm } from '../ContactMessageForm'
 import { NotePicker } from '../NotePicker'
-import { useLanguage } from '../../context/LanguageContext'
+import { useLanguage } from '../../context/useLanguage'
 
 export function SettingsPanel({
   room,
   showThumbnails,
-  showAddedBy,
   voteThreshold,
   voteMode,
   skipThreshold,
@@ -21,9 +20,6 @@ export function SettingsPanel({
   saveSettings,
   exportPlaylist,
   importPlaylist,
-  copyAdminLink,
-  copied,
-  roomType,
   onRenameRoom,
   onChangeRoomCode,
   showQr,
@@ -36,7 +32,6 @@ export function SettingsPanel({
   canEditRoom,
   onSubmitMessage,
   roomMode,
-  openParty,
   partyDate,
   partyLocation,
   partyDescription,
