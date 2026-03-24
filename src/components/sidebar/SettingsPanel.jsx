@@ -1,22 +1,7 @@
 import { useRef, useState } from 'react'
 
-const IconYouTube = () => (
-  <svg width="28" height="20" viewBox="0 0 28 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <rect width="28" height="20" rx="4" fill="#FF0000"/>
-    <path d="M11.5 6l6 4-6 4V6z" fill="#fff"/>
-  </svg>
-)
-
-const IconSpotify = () => (
-  <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <circle cx="11" cy="11" r="11" fill="#1DB954"/>
-    <path d="M15.5 14.5c-2.5-1.5-5.5-1.6-9-0.9-0.4 0.1-0.5-0.5-0.1-0.6 3.7-0.8 7-0.6 9.7 1 0.3 0.2 0.1 0.7-0.6 0.5zm1-2.5c-2.9-1.8-7.3-2.3-10.7-1.3-0.4 0.1-0.7-0.3-0.4-0.6 3.8-1.1 8.5-0.6 11.7 1.4 0.4 0.2 0.1 0.8-0.6 0.5zm0.1-2.6C13.2 7.5 8 7.4 5 8.3c-0.5 0.1-0.8-0.4-0.4-0.7 3.4-1 9-0.9 12.5 1.2 0.4 0.3 0.1 0.9-0.5 0.6z" fill="#fff"/>
-  </svg>
-)
 import { ContactMessageForm } from '../ContactMessageForm'
 import { NotePicker } from '../NotePicker'
-import { YouTubeImportModal } from '../YouTubeImportModal'
-import { useYouTubeAuth } from '../../hooks/useYouTubeAuth'
 import { useLanguage } from '../../context/LanguageContext'
 
 export function SettingsPanel({
@@ -41,9 +26,6 @@ export function SettingsPanel({
   roomType,
   onRenameRoom,
   onChangeRoomCode,
-  onCreateRoomFromYt,
-  onAddYtToRoom,
-  ownedRooms,
   showQr,
   showQueueOverlay,
   showRoomCode,
@@ -60,10 +42,8 @@ export function SettingsPanel({
   partyDescription,
 }) {
   const { t, lang } = useLanguage()
-  const yt = useYouTubeAuth()
   const [openGroup, setOpenGroup] = useState('voting')
   const toggleGroup = (key) => setOpenGroup((current) => current === key ? null : key)
-  const [showYtImport, setShowYtImport] = useState(false)
 
   const [showEventPopup, setShowEventPopup] = useState(false)
   const [eventDate, setEventDate] = useState('')
@@ -363,27 +343,6 @@ export function SettingsPanel({
             </label>
           </div>
 
-          <div className="setting-row setting-row--service-icon">
-            <IconYouTube />
-            {yt.accessToken ? (
-              <div className="service-btns-inline">
-                <button className="btn-setting-action" onClick={() => setShowYtImport(true)}>{t('ytImportOpen')}</button>
-                <button className="btn-setting-action" onClick={() => { yt.disconnect(); yt.connect() }}>{t('ytSwitchAccount')}</button>
-                <button className="btn-setting-action btn-setting-action--dim" onClick={yt.disconnect}>{t('ytDisconnect')}</button>
-              </div>
-            ) : (
-              <button className="btn-setting-action" style={{ flex: 1 }} onClick={yt.connect} disabled={yt.connecting}>
-                {yt.connecting ? t('ytConnecting') : t('ytConnect')}
-              </button>
-            )}
-            {yt.error && <span className="code-error-msg">{yt.error}</span>}
-          </div>
-
-          <div className="setting-row setting-row--service-disabled">
-            <IconSpotify />
-            <span className="service-soon">{t('comingSoon')}</span>
-          </div>
-
           <div className="setting-row setting-row--stats">
             <div className="settings-stats">
               <div className="settings-stat settings-stat--rating">
@@ -437,25 +396,6 @@ export function SettingsPanel({
           </>}
         </div>
       </div>
-
-      {showYtImport && yt.accessToken && (
-        <YouTubeImportModal
-          accessToken={yt.accessToken}
-          onClose={() => setShowYtImport(false)}
-          onCreateRoom={async (name, songs) => {
-            await onCreateRoomFromYt(name, songs)
-            yt.disconnect()
-            setShowYtImport(false)
-          }}
-          onAddToRoom={async (roomId, songs) => {
-            await onAddYtToRoom(roomId, songs)
-            yt.disconnect()
-            setShowYtImport(false)
-          }}
-          currentRoomId={room?.id ?? null}
-          ownedRooms={ownedRooms ?? []}
-        />
-      )}
 
       {showEventPopup && (
         <div className="song-settings-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowEventPopup(false) }}>

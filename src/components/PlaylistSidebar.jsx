@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { SongsPanel } from './sidebar/SongsPanel'
-import { QueuePanel } from './sidebar/QueuePanel'
 import { SettingsPanel } from './sidebar/SettingsPanel'
 import { ProposalsPanel } from './sidebar/ProposalsPanel'
 
@@ -62,6 +61,16 @@ export function PlaylistSidebar({
   partyDate,
   partyLocation,
   partyDescription,
+  newSongUrl,
+  handleSongUrlChange,
+  handleUrlBlur,
+  addSongByUrl,
+  songSearchSuggestions,
+  selectSuggestion,
+  clearSuggestions,
+  newSongTitle,
+  fetchingTitle,
+  urlErr,
 }) {
   const [sidebarWidth, setSidebarWidth] = useState(360)
   const isResizing = useRef(false)
@@ -122,19 +131,6 @@ export function PlaylistSidebar({
         />
       )}
 
-      {leftPanel === 'queue' && (
-        <QueuePanel
-          isPlaying={isPlaying}
-          queue={queue}
-          voteThreshold={voteThreshold}
-          saveSettings={saveSettings}
-          showThumbnails={showThumbnails}
-          canEditRoom={canEditRoom}
-          playSongNow={playSongNow}
-          removeFromQueue={removeFromQueue}
-        />
-      )}
-
       {leftPanel === 'settings' && (
         <SettingsPanel
           room={room}
@@ -158,9 +154,6 @@ export function PlaylistSidebar({
           roomType={roomType}
           onRenameRoom={onRenameRoom}
           onChangeRoomCode={onChangeRoomCode}
-          onCreateRoomFromYt={onCreateRoomFromYt}
-          onAddYtToRoom={onAddYtToRoom}
-          ownedRooms={ownedRooms}
           showQr={showQr}
           showQueueOverlay={showQueueOverlay}
           showRoomCode={showRoomCode}
@@ -187,6 +180,19 @@ export function PlaylistSidebar({
           approveSuggestion={approveSuggestion}
           rejectSuggestion={rejectSuggestion}
           canEditRoom={canEditRoom}
+          onCreateRoomFromYt={onCreateRoomFromYt}
+          onAddYtToRoom={onAddYtToRoom}
+          ownedRooms={ownedRooms}
+          newSongUrl={newSongUrl}
+          handleSongUrlChange={handleSongUrlChange}
+          handleUrlBlur={handleUrlBlur}
+          addSongByUrl={addSongByUrl}
+          songSearchSuggestions={songSearchSuggestions}
+          selectSuggestion={selectSuggestion}
+          clearSuggestions={clearSuggestions}
+          newSongTitle={newSongTitle}
+          fetchingTitle={fetchingTitle}
+          urlErr={urlErr}
         />
       )}
     </aside>

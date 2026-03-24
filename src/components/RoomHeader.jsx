@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { ScrollText } from './ScrollText'
 import { UserProfileModal } from './UserProfileModal'
 import { useLanguage } from '../context/LanguageContext'
 import logoUrl from '../assets/logo.png'
@@ -18,13 +17,6 @@ export function RoomHeader({
   canEditRoom,
   leftPanel,
   toggleLeftPanel,
-  newSongUrl,
-  setNewSongUrl,
-  handleUrlBlur,
-  addSong,
-  newSongTitle,
-  fetchingTitle,
-  urlErr,
   room,
   user,
   signInWithGoogle,
@@ -33,9 +25,6 @@ export function RoomHeader({
   guestCopied,
   suggestions,
   proposalsCount = 0,
-  searchSuggestions = [],
-  selectSuggestion,
-  clearSuggestions,
   onOpenCookieSettings,
   updateDisplayName,
   onCreateRoomFromYt,
@@ -57,13 +46,6 @@ export function RoomHeader({
               title={t('panelSongsTitle')}
             >
               🎵 {t('panelSongs')}
-            </button>
-            <button
-              className={`btn-panel-toggle${leftPanel === 'queue' ? ' active' : ''}`}
-              onClick={() => toggleLeftPanel('queue')}
-              title={t('panelQueueTitle')}
-            >
-              ⏭️ {t('panelQueue')}
             </button>
             <button
               className={`btn-panel-toggle${leftPanel === 'proposals' ? ' active' : ''}`}
@@ -88,42 +70,6 @@ export function RoomHeader({
         )}
       </div>
 
-      {showOwnerUI && canEditRoom && (
-        <div className="header-add-song">
-          <div className="song-input-wrapper">
-            <input
-              className="header-song-input"
-              value={newSongUrl}
-              onChange={(event) => setNewSongUrl(event.target.value)}
-              onBlur={handleUrlBlur}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') addSong()
-                if (event.key === 'Escape') clearSuggestions()
-              }}
-              placeholder={fetchingTitle ? t('fetchingTitlePlaceholder') : newSongTitle ? `${t('addSongTitlePrefix')} ${newSongTitle}` : t('addSongPlaceholder')}
-              title={urlErr || undefined}
-              style={urlErr ? { borderColor: 'var(--accent)' } : undefined}
-              disabled={!room}
-            />
-            {searchSuggestions.length > 0 && (
-              <ul className="song-suggestions-dropdown">
-                {searchSuggestions.map((s) => (
-                  <li
-                    key={s.ytId}
-                    className="song-suggestion-item"
-                    onMouseDown={(event) => event.preventDefault()}
-                    onClick={() => selectSuggestion(s)}
-                  >
-                    {s.thumbnail && <img src={s.thumbnail} className="suggestion-thumb" alt="" />}
-                    <ScrollText className="suggestion-title">{s.title}</ScrollText>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-          <button className="btn-header-add" onClick={addSong} disabled={!newSongUrl.trim() || !room}>+</button>
-        </div>
-      )}
 
       <div className="header-actions">
         {showOwnerUI && (

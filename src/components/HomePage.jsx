@@ -185,6 +185,10 @@ export function HomePage({
   const [appendRoomId, setAppendRoomId] = useState('')
   const [discoverTab, setDiscoverTab] = useState('parties')
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showPartyConfig, setShowPartyConfig] = useState(false)
+  const [partyUnlimited, setPartyUnlimited] = useState(true)
+  const [partySuggestionsLimit, setPartySuggestionsLimit] = useState(5)
+  const [partyRequireLogin, setPartyRequireLogin] = useState(true)
   const [headerSlide, setHeaderSlide] = useState(0)
 
   useEffect(() => {
@@ -279,6 +283,15 @@ export function HomePage({
     await onCreateRoom(roomMode)
   }
 
+  const handleCreateParty = async () => {
+    setShowPartyConfig(false)
+    await onCreateRoom('party_shared', {
+      allowSuggestions: true,
+      suggestionsPerUser: partyUnlimited ? null : partySuggestionsLimit,
+      suggestionsRequireLogin: partyUnlimited ? true : partyRequireLogin,
+    })
+  }
+
   const handleSeed = async () => {
     setSeeding(true)
     await onSeedRooms()
@@ -298,6 +311,11 @@ export function HomePage({
           <img src={logoUrl} alt="Szafagra" className="homepage-logo-img" />
         </div>
         <div className="homepage-header-carousel">
+          <div className="homepage-header-dots">
+            {[0, 1, 2].map(i => (
+              <button key={i} className={`homepage-header-dot${i === headerSlide ? ' active' : ''}`} onClick={() => setHeaderSlide(i)}>♪</button>
+            ))}
+          </div>
           <div className="homepage-header-carousel-wrap">
             {[
               { icon: '🎬', text: t('howStep1Desc') },
@@ -308,11 +326,6 @@ export function HomePage({
                 <span className="homepage-header-slide-icon">{slide.icon}</span>
                 <span className="homepage-header-slide-text">{slide.text}</span>
               </div>
-            ))}
-          </div>
-          <div className="homepage-header-dots">
-            {[0, 1, 2].map(i => (
-              <button key={i} className={`homepage-header-dot${i === headerSlide ? ' active' : ''}`} onClick={() => setHeaderSlide(i)}>♪</button>
             ))}
           </div>
         </div>
@@ -412,20 +425,12 @@ export function HomePage({
                   })
                 ) : (
                   <div className="home-no-rooms">
-                    <p className="home-no-rooms-text">{t('noRoomsYet')}</p>
                     <p className="home-no-rooms-hint">{t('noRoomsHint')}</p>
-                    <button className="home-how-it-works" disabled>
-                      {t('howItWorks')}
-                    </button>
                   </div>
                 )
               ) : (
                 <div className="home-no-rooms">
-                  <p className="home-no-rooms-text">{t('noRoomsYet')}</p>
                   <p className="home-no-rooms-hint">{t('noRoomsHint')}</p>
-                  <button className="home-how-it-works" disabled>
-                    {t('howItWorks')}
-                  </button>
                 </div>
               )}
             </div>
@@ -673,7 +678,7 @@ export function HomePage({
             <button className="create-room-close" onClick={() => setShowCreateModal(false)}>✕</button>
           </div>
           <div className="create-room-options">
-            <button className="create-room-option" onClick={() => handleCreate('party_shared')} disabled={creatingRoom}>
+            <button className="create-room-option" onClick={() => { setShowCreateModal(false); setShowPartyConfig(true) }} disabled={creatingRoom}>
               <span className="create-room-option-icon">🎉</span>
               <div className="create-room-option-text">
                 <span className="create-room-option-name">{t('createPartyShared')}</span>
@@ -696,6 +701,70 @@ export function HomePage({
             </button>
           </div>
           <p className="create-room-footnote">{t('createRoomFootnote')}</p>
+        </div>
+      </div>
+    )}
+
+    {showPartyConfig && (
+      <div className="create-room-overlay" onClick={() => { setShowPartyConfig(false); setShowCreateModal(true) }}>
+        <div className="party-config-modal" onClick={e => e.stopPropagation()}>
+          <div className="create-room-header">
+            <span className="create-room-title">{t('partyConfigTitle')}</span>
+            <button className="create-room-close" onClick={() => { setShowPartyConfig(false); setShowCreateModal(true) }}>✕</button>
+          </div>
+
+          <div className="party-config-body">
+            <label className="party-config-label">{t('partyConfigMaxSuggestionsLabel')}</label>
+
+            <div className="party-config-row">
+              <input
+                type="checkbox"
+                id="party-unlimited"
+                checked={partyUnlimited}
+                onChange={e => {
+                  setPartyUnlimited(e.target.checked)
+                  if (e.target.checked) setPartyRequireLogin(true)
+                }}
+              />
+              <label htmlFor="party-unlimited">{t('partyConfigUnlimited')}</label>
+            </div>
+
+            {!partyUnlimited && (
+              <div className="party-config-slider-row">
+                <input
+                  type="range"
+                  min={1}
+                  max={50}
+                  value={partySuggestionsLimit}
+                  onChange={e => setPartySuggestionsLimit(Number(e.target.value))}
+                  className="party-config-slider"
+                />
+                <span className="party-config-slider-val">{partySuggestionsLimit}</span>
+              </div>
+            )}
+
+            <div className="party-config-row">
+              <input
+                type="checkbox"
+                id="party-require-login"
+                checked={partyUnlimited ? true : partyRequireLogin}
+                disabled={partyUnlimited}
+                onChange={e => setPartyRequireLogin(e.target.checked)}
+              />
+              <label htmlFor="party-require-login" className={partyUnlimited ? 'party-config-label--dim' : ''}>
+                {t('partyConfigRequireLogin')}
+              </label>
+            </div>
+          </div>
+
+          <div className="party-config-footer">
+            <button className="party-config-btn party-config-btn--back" onClick={() => { setShowPartyConfig(false); setShowCreateModal(true) }}>
+              {t('partyConfigBack')}
+            </button>
+            <button className="party-config-btn party-config-btn--create" onClick={handleCreateParty} disabled={creatingRoom}>
+              {creatingRoom ? t('creating') : t('partyConfigCreate')}
+            </button>
+          </div>
         </div>
       </div>
     )}

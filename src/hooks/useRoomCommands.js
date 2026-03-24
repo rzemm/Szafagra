@@ -68,13 +68,13 @@ export function useRoomCommands({
     )
   }, [executeAction])
 
-  const handleCreateRoom = useCallback(async (roomMode = null) => {
+  const handleCreateRoom = useCallback(async (roomMode = null, extraSettings = {}) => {
     if (!auth.user) return
     setCreatingRoom(true)
 
     const ref = auth.user.isAnonymous
-      ? await executeAction(() => createPublicRoom('Nowa szafa publiczna', auth.user.uid, roomMode), 'Nie udało się utworzyć szafy publicznej.')
-      : await executeAction(() => createPrivateRoom(auth.user.uid, 'Nowa szafa prywatna', roomMode), 'Nie udało się utworzyć szafy prywatnej.')
+      ? await executeAction(() => createPublicRoom('Nowa szafa publiczna', auth.user.uid, roomMode, extraSettings), 'Nie udało się utworzyć szafy publicznej.')
+      : await executeAction(() => createPrivateRoom(auth.user.uid, 'Nowa szafa prywatna', roomMode, extraSettings), 'Nie udało się utworzyć szafy prywatnej.')
 
     setCreatingRoom(false)
     if (ref?.id) route.navigateToRoom(ref.id)

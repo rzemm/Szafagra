@@ -1,4 +1,5 @@
 import { HomePage } from './components/HomePage'
+import { UsernamePickerModal } from './components/UsernamePickerModal'
 import {
   CookieConsentBanner,
   CookieSettingsModal,
@@ -66,16 +67,6 @@ export default function App() {
           canEditRoom={screen.canEditRoom}
           leftPanel={screen.leftPanel}
           toggleLeftPanel={screen.toggleLeftPanel}
-          newSongUrl={screen.uiState.newSongUrl}
-          setNewSongUrl={screen.handleSongUrlChange}
-          handleUrlBlur={screen.songActions.handleUrlBlur}
-          addSong={screen.songActions.addSong}
-          searchSuggestions={screen.songActions.suggestions}
-          selectSuggestion={screen.songActions.selectSuggestion}
-          clearSuggestions={screen.songActions.clearSuggestions}
-          newSongTitle={screen.uiState.newSongTitle}
-          fetchingTitle={screen.uiState.fetchingTitle}
-          urlErr={screen.uiState.urlErr}
           room={screen.room}
           user={screen.auth.user}
           signInWithGoogle={screen.auth.signInWithGoogle}
@@ -123,6 +114,16 @@ export default function App() {
                 rejectSuggestion: screen.rejectSuggestion,
                 removeVotingProposal: screen.removeVotingProposal,
                 onSubmitMessage: screen.submitContactMessage,
+                newSongUrl: screen.uiState.newSongUrl,
+                handleSongUrlChange: screen.handleSongUrlChange,
+                handleUrlBlur: screen.songActions.handleUrlBlur,
+                addSong: screen.songActions.addSong,
+                songSearchSuggestions: screen.songActions.suggestions,
+                selectSuggestion: screen.songActions.selectSuggestion,
+                clearSuggestions: screen.songActions.clearSuggestions,
+                newSongTitle: screen.uiState.newSongTitle,
+                fetchingTitle: screen.uiState.fetchingTitle,
+                urlErr: screen.uiState.urlErr,
               }}
               playback={{
                 isPlaying: screen.isPlaying,
@@ -207,6 +208,9 @@ export default function App() {
 
   return (
     <div className="app">
+      {screen.auth.needsUsername && (
+        <UsernamePickerModal onConfirm={screen.auth.confirmUsername} />
+      )}
       {content}
 
       {consent.isBannerVisible && (

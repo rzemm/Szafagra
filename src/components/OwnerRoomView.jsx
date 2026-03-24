@@ -144,6 +144,16 @@ export function OwnerRoomView({
         partyDate={sidebar.settings.partyDate ?? ''}
         partyLocation={sidebar.settings.partyLocation ?? ''}
         partyDescription={sidebar.settings.partyDescription ?? ''}
+        newSongUrl={sidebar.newSongUrl}
+        handleSongUrlChange={sidebar.handleSongUrlChange}
+        handleUrlBlur={sidebar.handleUrlBlur}
+        addSongByUrl={sidebar.addSong}
+        songSearchSuggestions={sidebar.songSearchSuggestions}
+        selectSuggestion={sidebar.selectSuggestion}
+        clearSuggestions={sidebar.clearSuggestions}
+        newSongTitle={sidebar.newSongTitle}
+        fetchingTitle={sidebar.fetchingTitle}
+        urlErr={sidebar.urlErr}
       />
 
       <div className="player-area player-area-admin" onPointerDown={handlePointerDown} onPointerUp={handlePointerUp}>
@@ -231,14 +241,33 @@ export function OwnerRoomView({
             </div>
           </div>
 
-          {ui.panelOpen.showQueue && playback.queue.length > 0 && (
-            <div className="queue-overlay">
-              {playback.queue.map((song) => (
-                <div key={song.id} className="queue-overlay-item">
-                  <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="queue-overlay-thumb" />
-                  <ScrollText className="queue-overlay-title">{song.title}</ScrollText>
-                </div>
-              ))}
+          {ui.panelOpen.showQueue && (
+            <div className="queue-overlay" onPointerDown={(e) => e.stopPropagation()} onPointerUp={(e) => e.stopPropagation()}>
+              {playback.queue.length > 0 ? (
+                <ol className="queue-overlay-list">
+                  {playback.queue.map((song) => (
+                    <div
+                      key={song.id}
+                      className={`queue-overlay-item${canEditRoom ? ' queue-overlay-item--clickable' : ''}`}
+                      onClick={canEditRoom ? () => { voting.playSongNow(song); playback.removeFromQueue(song.id) } : undefined}
+                    >
+                      <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="queue-overlay-thumb" />
+                      <ScrollText className="queue-overlay-title">{song.title}</ScrollText>
+                      {canEditRoom && (
+                        <button
+                          className="queue-overlay-delete"
+                          onClick={(e) => { e.stopPropagation(); playback.removeFromQueue(song.id) }}
+                          title={t('removeFromQueue')}
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </ol>
+              ) : (
+                <p className="queue-overlay-empty">{playback.isPlaying ? t('queueEmpty') : t('playbackStopped')}</p>
+              )}
             </div>
           )}
           {sidebar.settings.tickerOnScreen && sidebar.settings.tickerText && (

@@ -203,14 +203,30 @@
   flex: 1;
 }
 
+.proposals-add-song {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.1rem;
+}
+
+.proposals-add-song .song-input-wrapper {
+  flex: 1;
+}
+
 .proposals-section-label {
   font-size: 0.75rem;
   font-weight: 600;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.3rem 0.5rem;
   color: var(--text-dim);
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  padding: 0.5rem 0 0.25rem;
-  margin: 0;
+  margin: 0.75rem 0 0;
 }
 
 .proposals-empty {
@@ -559,10 +575,19 @@
   max-width: 40%;
   overflow-y: auto;
   scrollbar-width: none;
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 .queue-overlay::-webkit-scrollbar { display: none; }
+
+.queue-overlay-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
 
 .queue-overlay-item {
   display: flex;
@@ -571,7 +596,15 @@
   background: rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(4px);
   border-radius: 6px;
-  padding: 0.2rem 0.6rem 0.2rem 0.25rem;
+  padding: 0.2rem 0.4rem 0.2rem 0.25rem;
+}
+
+.queue-overlay-item--clickable {
+  cursor: pointer;
+}
+
+.queue-overlay-item--clickable:hover {
+  background: rgba(0, 0, 0, 0.75);
 }
 
 .queue-overlay-thumb {
@@ -589,6 +622,32 @@
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 200px;
+  flex: 1;
+}
+
+.queue-overlay-delete {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 0 0.1rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.queue-overlay-delete:hover {
+  color: rgba(255, 80, 80, 0.9);
+}
+
+.queue-overlay-empty {
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 0.3rem 0.5rem;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  border-radius: 6px;
+  margin: 0;
 }
 
 .skip-votes-banner {

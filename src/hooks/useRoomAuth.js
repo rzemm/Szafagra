@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { signInAnonymously, signInWithPopup, signOut, updateProfile, GoogleAuthProvider, onAuthStateChanged } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import { auth, db } from '../firebase'
-import { ensurePublicRoomAccess, recordGuestVisit } from '../services/jukeboxService'
+import { ensurePublicRoomAccess, recordGuestVisit, hasSetUsername, claimUsername } from '../services/jukeboxService'
 
 const googleProvider = new GoogleAuthProvider()
 
@@ -14,6 +14,7 @@ export function useRoomAuth(roomParam) {
   const [canEditRoom, setCanEditRoom] = useState(false)
   const [authReady, setAuthReady] = useState(false)
   const [roomError, setRoomError] = useState('')
+  const [needsUsername, setNeedsUsername] = useState(false)
 
   const signInWithGoogle = async () => {
     try {
@@ -41,6 +42,14 @@ export function useRoomAuth(roomParam) {
     }
   }
 
+  const confirmUsername = async (name) => {
+    if (!auth.currentUser) return
+    await claimUsername(auth.currentUser.uid, name)
+    await updateProfile(auth.currentUser, { displayName: name })
+    setUser((prev) => ({ ...prev, displayName: name }))
+    setNeedsUsername(false)
+  }
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async currentUser => {
       setRoomError('')
@@ -57,6 +66,12 @@ export function useRoomAuth(roomParam) {
       }
 
       setUser(currentUser)
+
+      if (!currentUser.isAnonymous) {
+        hasSetUsername(currentUser.uid).then(has => {
+          if (!has) setNeedsUsername(true)
+        }).catch(() => {})
+      }
 
       if (!roomParam) {
         setRoomId(null)
@@ -111,5 +126,5 @@ export function useRoomAuth(roomParam) {
     return () => unsub()
   }, [roomParam])
 
-  return { user, roomId, roomType, isOwner, canEditRoom, authReady, roomError, signInWithGoogle, signOutUser, updateDisplayName }
+  return { user, roomId, roomType, isOwner, canEditRoom, authReady, roomError, needsUsername, confirmUsername, signInWithGoogle, signOutUser, updateDisplayName }
 }

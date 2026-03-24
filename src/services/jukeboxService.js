@@ -26,6 +26,8 @@ const tokenRef = token => doc(db, 'tokenIndex', token)
 const userRoomsRef = uid => doc(db, 'userRooms', uid)
 const publicAccessRef = (uid, roomId) => doc(db, 'publicAccess', uid, 'rooms', roomId)
 const contactMessagesRef = collection(db, 'contactMessages')
+const usernameDoc = name => doc(db, 'usernames', name.trim().toLowerCase())
+const userProfileDoc = uid => doc(db, 'userProfiles', uid)
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -89,7 +91,7 @@ async function createUniqueGuestToken(maxAttempts = 10) {
   throw new Error('Could not generate a unique guest token')
 }
 
-export async function createPrivateRoom(ownerId, name = 'Nowa szafa prywatna', roomMode = null) {
+export async function createPrivateRoom(ownerId, name = 'Nowa szafa prywatna', roomMode = null, extraSettings = {}) {
   const guestToken = await createUniqueGuestToken()
   const newRoomRef = doc(roomsRef)
 
@@ -98,7 +100,7 @@ export async function createPrivateRoom(ownerId, name = 'Nowa szafa prywatna', r
     name,
     ownerId,
     guestToken,
-    extraSettings: roomMode ? { roomMode } : {},
+    extraSettings: { ...(roomMode ? { roomMode } : {}), ...extraSettings },
   }))
 
   await setDoc(tokenRef(guestToken), {
@@ -140,7 +142,7 @@ export async function createPrivateRoomCopy(ownerId, sourceRoom) {
   return newRoomRef
 }
 
-export async function createPublicRoom(name = 'Nowa szafa publiczna', creatorUid, roomMode = null) {
+export async function createPublicRoom(name = 'Nowa szafa publiczna', creatorUid, roomMode = null, extraSettings = {}) {
   const guestToken = await createUniqueGuestToken()
   const newRoomRef = doc(roomsRef)
 
@@ -149,7 +151,7 @@ export async function createPublicRoom(name = 'Nowa szafa publiczna', creatorUid
     name,
     ownerId: null,
     guestToken,
-    extraSettings: roomMode ? { roomMode } : {},
+    extraSettings: { ...(roomMode ? { roomMode } : {}), ...extraSettings },
   }))
 
   await setDoc(tokenRef(guestToken), {
@@ -372,6 +374,23 @@ export async function deleteRoom(roomId, guestToken) {
   if (guestToken) {
     await deleteDoc(tokenRef(guestToken)).catch(() => {})
   }
+}
+
+export async function hasSetUsername(uid) {
+  const snap = await getDoc(userProfileDoc(uid))
+  return snap.exists() && !!snap.data()?.hasSetUsername
+}
+
+export async function isUsernameAvailable(name) {
+  const snap = await getDoc(usernameDoc(name))
+  return !snap.exists()
+}
+
+export async function claimUsername(uid, name) {
+  const snap = await getDoc(usernameDoc(name))
+  if (snap.exists() && snap.data().uid !== uid) throw new Error('taken')
+  await setDoc(usernameDoc(name), { uid, username: name })
+  await setDoc(userProfileDoc(uid), { username: name, hasSetUsername: true }, { merge: true })
 }
 
 export async function changeRoomGuestToken(roomId, currentToken, newToken, roomType) {
