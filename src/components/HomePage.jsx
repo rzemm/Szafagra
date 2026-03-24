@@ -96,7 +96,7 @@ export function HomePage({
 
   const handleCreateParty = async () => {
     setShowPartyConfig(false)
-    await onCreateRoom('party_prep', {
+    await onCreateRoom('party', {
       allowSuggestions: true,
       suggestionsPerUser: partyUnlimited ? null : partySuggestionsLimit,
       suggestionsRequireLogin: partyUnlimited ? true : partyRequireLogin,

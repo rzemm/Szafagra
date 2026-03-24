@@ -14,7 +14,7 @@ import { useLanguage } from './context/useLanguage'
 import './App.css'
 
 function SplashScreen({ message }) {
-  return <div className="splash"><div className="splash-icon">đźŽµ</div><p>{message}</p></div>
+  return <div className="splash"><div className="splash-icon" aria-hidden="true">{'\u266B'}</div><p>{message}</p></div>
 }
 
 export default function App() {

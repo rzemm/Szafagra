@@ -72,7 +72,7 @@ export function OwnerRoomView({
         localCurrentSongId={viewMode.localCurrentSongId}
         onSubmitMessage={sidebar.onSubmitMessage}
         removeVotingProposal={sidebar.removeVotingProposal}
-        roomMode={sidebar.settings.roomMode ?? 'party_prep'}
+        roomMode={sidebar.settings.roomMode ?? 'party'}
         partyDate={sidebar.settings.partyDate ?? ''}
         partyLocation={sidebar.settings.partyLocation ?? ''}
         partyDescription={sidebar.settings.partyDescription ?? ''}

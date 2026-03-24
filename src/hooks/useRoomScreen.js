@@ -271,7 +271,7 @@ export function useRoomScreen(route) {
   }
   votingState.nextOptionKeys = Object.keys(votingState.nextOptions).sort()
 
-  const roomMode = settings.roomMode ?? 'party_prep'
+  const roomMode = settings.roomMode ?? 'party'
   const showOwnerUI = (() => {
     if (!auth.user) return false
     if (roomMode === 'party_prep') return true
