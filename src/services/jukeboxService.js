@@ -305,7 +305,7 @@ export function addPlaylistSuggestion(roomId, userId, { playlistTitle, playlistI
 
 export function setVotingProposal(roomId, key, song) {
   return updateDoc(roomRef(roomId), {
-    [`votingProposals.${key}`]: { id: song.id, title: song.title, ytId: song.ytId },
+    [`votingProposals.${key}`]: { id: song.id, title: song.title, ytId: song.ytId, addedAt: Date.now() },
   })
 }
 

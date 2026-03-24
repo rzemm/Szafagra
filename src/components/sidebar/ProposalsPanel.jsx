@@ -30,7 +30,7 @@ export function ProposalsPanel({
   const [showYtImport, setShowYtImport] = useState(false)
 
   const votingProposals = room?.votingProposals ?? {}
-  const proposalEntries = Object.entries(votingProposals)
+  const proposalEntries = Object.entries(votingProposals).sort(([, a], [, b]) => (a.addedAt ?? 0) - (b.addedAt ?? 0))
   const newSongs = suggestions ?? []
   const totalCount = proposalEntries.length + newSongs.length
 

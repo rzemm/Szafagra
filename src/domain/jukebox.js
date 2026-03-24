@@ -48,31 +48,32 @@ export function chooseWinningOption(keys, votes, voteMode) {
 
 // votingProposalsMap: { [userId]: { id, title, ytId } }
 export function generateVotingOptions(playlist, groupSize, exclude = [], votingProposalsMap = {}) {
-  const proposalEntries = Object.entries(votingProposalsMap)
-  const nextOptions = {}
+  const proposalEntries = Object.entries(votingProposalsMap).sort(([, a], [, b]) => (a.addedAt ?? 0) - (b.addedAt ?? 0))
   const used = [...exclude]
   const consumedProposalKeys = []
+
+  // Filter out proposals already in the exclude set
+  const usedIdsAtStart = new Set(used.map(s => s.id))
+  const validProposals = proposalEntries.filter(([, song]) => !usedIdsAtStart.has(song.id))
+
+  // Randomly assign groups, fill each with up to groupSize proposals first
+  const shuffledSlots = [0, 1, 2].sort(() => Math.random() - 0.5)
+  const proposalPoolByGroup = { 0: [], 1: [], 2: [] }
   let proposalIdx = 0
+  for (const slot of shuffledSlots) {
+    for (let j = 0; j < groupSize && proposalIdx < validProposals.length; j++) {
+      proposalPoolByGroup[slot].push(validProposals[proposalIdx++])
+    }
+  }
 
+  const nextOptions = {}
   for (let i = 0; i < 3; i++) {
-    const usedIds = new Set(used.map(s => s.id))
+    const groupProposals = proposalPoolByGroup[i]
+    const proposalSongs = groupProposals.map(([, song]) => song)
+    for (const [uid] of groupProposals) consumedProposalKeys.push(uid)
 
-    // skip proposals already in used set
-    while (proposalIdx < proposalEntries.length && usedIds.has(proposalEntries[proposalIdx][1].id)) {
-      proposalIdx++
-    }
-
-    let songs
-    if (proposalIdx < proposalEntries.length) {
-      const [uid, proposedSong] = proposalEntries[proposalIdx]
-      proposalIdx++
-      const fill = groupSize > 1 ? pickRandom(playlist?.songs ?? [], groupSize - 1, [...used, proposedSong]) : []
-      songs = [proposedSong, ...fill]
-      consumedProposalKeys.push(uid)
-    } else {
-      songs = pickRandom(playlist?.songs ?? [], groupSize, used)
-    }
-
+    const fill = pickRandom(playlist?.songs ?? [], groupSize - proposalSongs.length, [...used, ...proposalSongs])
+    const songs = [...proposalSongs, ...fill]
     nextOptions[String(i)] = songs
     used.push(...songs)
   }
