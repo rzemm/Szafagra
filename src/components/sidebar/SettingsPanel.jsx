@@ -288,9 +288,9 @@ export function SettingsPanel({
           <div className="setting-row">
             <span className="setting-label">{t('roomModeLabel')}</span>
             <div className="setting-toggle-group">
-              <button className={`btn-setting${roomMode === 'party_shared' ? ' active' : ''}`} onClick={() => saveSettings('roomMode', 'party_shared')} disabled={!canEditRoom}>{t('modeSharedParty')}</button>
-              <button className={`btn-setting${roomMode === 'jukebox' ? ' active' : ''}`} onClick={() => saveSettings('roomMode', 'jukebox')} disabled={!canEditRoom}>{t('modeJukebox')}</button>
-              <button className={`btn-setting${roomMode === 'listening' ? ' active' : ''}`} onClick={() => saveSettings('roomMode', 'listening')} disabled={!canEditRoom}>{t('modeListening')}</button>
+              <button className={`btn-setting${roomMode === 'party_prep' ? ' active' : ''}`} onClick={() => saveSettings('roomMode', 'party_prep')} disabled={!canEditRoom}>{t('modePartyPrep')}</button>
+              <button className={`btn-setting${roomMode === 'party' ? ' active' : ''}`} onClick={() => saveSettings('roomMode', 'party')} disabled={!canEditRoom}>{t('modeParty')}</button>
+              <button className={`btn-setting${roomMode === 'player' ? ' active' : ''}`} onClick={() => saveSettings('roomMode', 'player')} disabled={!canEditRoom}>{t('modePlayer')}</button>
             </div>
           </div>
 

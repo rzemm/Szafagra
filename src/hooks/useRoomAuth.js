@@ -12,6 +12,7 @@ export function useRoomAuth(roomParam) {
   const [roomType, setRoomType] = useState(null)
   const [isOwner, setIsOwner] = useState(false)
   const [canEditRoom, setCanEditRoom] = useState(false)
+  const [isGuestLink, setIsGuestLink] = useState(false)
   const [authReady, setAuthReady] = useState(false)
   const [roomError, setRoomError] = useState('')
   const [needsUsername, setNeedsUsername] = useState(false)
@@ -78,13 +79,15 @@ export function useRoomAuth(roomParam) {
         setRoomType(null)
         setIsOwner(false)
         setCanEditRoom(false)
+        setIsGuestLink(false)
         setAuthReady(true)
         return
       }
 
       try {
         const tokenSnap = await getDoc(doc(db, 'tokenIndex', roomParam))
-        const resolvedRoomId = tokenSnap.exists() ? tokenSnap.data().roomId : roomParam
+        const tokenExists = tokenSnap.exists()
+        const resolvedRoomId = tokenExists ? tokenSnap.data().roomId : roomParam
         const roomSnap = await getDoc(doc(db, 'rooms', resolvedRoomId))
 
         if (!roomSnap.exists()) {
@@ -92,6 +95,7 @@ export function useRoomAuth(roomParam) {
           setRoomType(null)
           setIsOwner(false)
           setCanEditRoom(false)
+          setIsGuestLink(false)
           setRoomError('Ta szafa nie istnieje albo link jest nieprawidłowy.')
           setAuthReady(true)
           return
@@ -111,6 +115,7 @@ export function useRoomAuth(roomParam) {
         setRoomType(room.type ?? null)
         setIsOwner(owner)
         setCanEditRoom(canEdit)
+        setIsGuestLink(tokenExists)
       } catch (err) {
         console.error('Room auth failed', err)
         setRoomError('Nie udało się otworzyć szafy.')
@@ -118,6 +123,7 @@ export function useRoomAuth(roomParam) {
         setRoomType(null)
         setIsOwner(false)
         setCanEditRoom(false)
+        setIsGuestLink(false)
       }
 
       setAuthReady(true)
@@ -126,5 +132,5 @@ export function useRoomAuth(roomParam) {
     return () => unsub()
   }, [roomParam])
 
-  return { user, roomId, roomType, isOwner, canEditRoom, authReady, roomError, needsUsername, confirmUsername, signInWithGoogle, signOutUser, updateDisplayName }
+  return { user, roomId, roomType, isOwner, canEditRoom, isGuestLink, authReady, roomError, needsUsername, confirmUsername, signInWithGoogle, signOutUser, updateDisplayName }
 }

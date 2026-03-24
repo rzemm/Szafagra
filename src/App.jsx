@@ -88,6 +88,7 @@ export default function App() {
             <OwnerRoomView
               room={screen.room}
               canEditRoom={screen.canEditRoom}
+              roomMode={screen.roomMode}
               ui={{
                 leftPanel: screen.leftPanel,
                 panelOpen: screen.panelOpen,
@@ -169,6 +170,8 @@ export default function App() {
                 handleLocalPlay: screen.handleLocalPlay,
               }}
             />
+          ) : screen.roomMode === 'player' ? (
+            <SplashScreen message={t('accessBlocked')} />
           ) : (
             <GuestRoomView
               isOwner={screen.auth.isOwner}

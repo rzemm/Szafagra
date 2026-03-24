@@ -285,7 +285,7 @@ export function HomePage({
 
   const handleCreateParty = async () => {
     setShowPartyConfig(false)
-    await onCreateRoom('party_shared', {
+    await onCreateRoom('party_prep', {
       allowSuggestions: true,
       suggestionsPerUser: partyUnlimited ? null : partySuggestionsLimit,
       suggestionsRequireLogin: partyUnlimited ? true : partyRequireLogin,
@@ -681,22 +681,22 @@ export function HomePage({
             <button className="create-room-option" onClick={() => { setShowCreateModal(false); setShowPartyConfig(true) }} disabled={creatingRoom}>
               <span className="create-room-option-icon">🎉</span>
               <div className="create-room-option-text">
-                <span className="create-room-option-name">{t('createPartyShared')}</span>
-                <span className="create-room-option-desc">{t('createPartySharedDesc')}</span>
+                <span className="create-room-option-name">{t('createPartyPrep')}</span>
+                <span className="create-room-option-desc">{t('createPartyPrepDesc')}</span>
               </div>
             </button>
-            <button className="create-room-option" onClick={() => handleCreate('jukebox')} disabled={creatingRoom}>
+            <button className="create-room-option" onClick={() => handleCreate('party')} disabled={creatingRoom}>
               <span className="create-room-option-icon">🎵</span>
               <div className="create-room-option-text">
-                <span className="create-room-option-name">{t('createJukebox')}</span>
-                <span className="create-room-option-desc">{t('createJukeboxDesc')}</span>
+                <span className="create-room-option-name">{t('createParty')}</span>
+                <span className="create-room-option-desc">{t('createPartyDesc')}</span>
               </div>
             </button>
-            <button className="create-room-option" onClick={() => handleCreate(null)} disabled={creatingRoom}>
-              <span className="create-room-option-icon">📦</span>
+            <button className="create-room-option" onClick={() => handleCreate('player')} disabled={creatingRoom}>
+              <span className="create-room-option-icon">▶</span>
               <div className="create-room-option-text">
-                <span className="create-room-option-name">{t('createEmpty')}</span>
-                <span className="create-room-option-desc">{t('createEmptyDesc')}</span>
+                <span className="create-room-option-name">{t('createPlayer')}</span>
+                <span className="create-room-option-desc">{t('createPlayerDesc')}</span>
               </div>
             </button>
           </div>

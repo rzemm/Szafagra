@@ -52,6 +52,7 @@ export function PlaylistSidebar({
   isVisible,
   canEditRoom,
   isViewMode,
+  localPlayMode,
   onLocalPlay,
   localCurrentSongId,
   onSubmitMessage,
@@ -126,6 +127,7 @@ export function PlaylistSidebar({
           queueSong={queueSong}
           canEditRoom={canEditRoom}
           isViewMode={isViewMode}
+          localPlayMode={localPlayMode}
           onLocalPlay={onLocalPlay}
           localCurrentSongId={localCurrentSongId}
         />

@@ -62,8 +62,16 @@ export function useRoomScreen(route) {
   const skipCount = Object.keys(room?.skipVoters ?? {}).length
   const userId = auth.user?.uid ?? null
   const mySkipVote = userId ? ((room?.skipVoters ?? {})[userId] ?? false) : false
-  const showOwnerUI = !!auth.user && !auth.user.isAnonymous
   const myRating = (room?.ratings ?? {})[userId] ?? 0
+
+  const roomMode = settings.roomMode ?? 'party_prep'
+  const showOwnerUI = (() => {
+    if (!auth.user) return false
+    if (roomMode === 'party_prep') return true
+    if (roomMode === 'party') return auth.isOwner && !auth.isGuestLink
+    if (roomMode === 'player') return auth.isOwner && !auth.isGuestLink
+    return !auth.user.isAnonymous
+  })()
 
   const commands = useRoomCommands({
     auth,
@@ -119,6 +127,7 @@ export function useRoomScreen(route) {
     authReady: auth.authReady,
     canEditRoom,
     showOwnerUI,
+    roomMode,
     userId,
     currentSong,
     isPlaying,

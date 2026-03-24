@@ -101,6 +101,7 @@ export function SongsPanel({
   queueSong,
   canEditRoom,
   isViewMode,
+  localPlayMode,
   onLocalPlay,
   localCurrentSongId,
 }) {
@@ -187,15 +188,17 @@ export function SongsPanel({
           {filteredSongs.map((song) => (
             <div
               key={song.id}
-              className={`song-item${(canEditRoom && currentSong?.id === song.id && isPlaying) || (isViewMode && localCurrentSongId === song.id) ? ' song-playing' : ''}${!bulkDeleteMode && (canEditRoom || isViewMode) ? ' song-item-clickable' : ''}${bulkDeleteMode ? ' song-item-selectable' : ''}${bulkDeleteMode && selectedIds.has(song.id) ? ' song-item-selected' : ''}`}
+              className={`song-item${(canEditRoom && !localPlayMode && currentSong?.id === song.id && isPlaying) || ((isViewMode || localPlayMode) && localCurrentSongId === song.id) ? ' song-playing' : ''}${!bulkDeleteMode && (canEditRoom || isViewMode || localPlayMode) ? ' song-item-clickable' : ''}${bulkDeleteMode ? ' song-item-selectable' : ''}${bulkDeleteMode && selectedIds.has(song.id) ? ' song-item-selected' : ''}`}
               onClick={
                 bulkDeleteMode
                   ? () => toggleSelectSong(song.id)
-                  : canEditRoom
-                    ? () => playSongNow(song)
-                    : isViewMode
-                      ? () => onLocalPlay(song)
-                      : undefined
+                  : localPlayMode
+                    ? () => onLocalPlay(song)
+                    : canEditRoom
+                      ? () => playSongNow(song)
+                      : isViewMode
+                        ? () => onLocalPlay(song)
+                        : undefined
               }
             >
               {bulkDeleteMode && (

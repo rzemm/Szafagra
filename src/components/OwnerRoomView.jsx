@@ -9,6 +9,7 @@ import { useLanguage } from '../context/LanguageContext'
 export function OwnerRoomView({
   room,
   canEditRoom,
+  roomMode,
   ui,
   sidebar,
   playback,
@@ -135,11 +136,12 @@ export function OwnerRoomView({
         isVisible={sidebar.isVisible}
         canEditRoom={canEditRoom}
         isViewMode={viewMode.isViewMode}
+        localPlayMode={roomMode === 'party_prep'}
         onLocalPlay={viewMode.handleLocalPlay}
         localCurrentSongId={viewMode.localCurrentSongId}
         onSubmitMessage={sidebar.onSubmitMessage}
         removeVotingProposal={sidebar.removeVotingProposal}
-        roomMode={sidebar.settings.roomMode ?? 'party_shared'}
+        roomMode={sidebar.settings.roomMode ?? 'party_prep'}
         openParty={sidebar.settings.openParty ?? false}
         partyDate={sidebar.settings.partyDate ?? ''}
         partyLocation={sidebar.settings.partyLocation ?? ''}
@@ -283,7 +285,7 @@ export function OwnerRoomView({
           </div>
         )}
 
-        <div className="voting-panel-bottom" onPointerDown={(e) => e.stopPropagation()} onPointerUp={(e) => e.stopPropagation()}>
+        {roomMode !== 'party_prep' && <div className="voting-panel-bottom" onPointerDown={(e) => e.stopPropagation()} onPointerUp={(e) => e.stopPropagation()}>
           <div className="voting-bottom-bar" onClick={(e) => {
             e.stopPropagation()
             const willOpen = !ui.panelOpen.voting
@@ -329,7 +331,7 @@ export function OwnerRoomView({
               )}
             </div>
           )}
-        </div>
+        </div>}
       </div>
     </>
   )
