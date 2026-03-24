@@ -33,12 +33,13 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function defaultSettings() {
   return {
-    roomMode: 'party',
     voteMode: 'highest',
     voteThreshold: 1,
     skipThreshold: 0,
     queueSize: 1,
     allowSuggestions: false,
+    suggestionsPerUser: null,
+    suggestionsRequireLogin: true,
     requireSuggestionApproval: true,
     allowPlaybackStop: false,
     playbackStopThreshold: 2,

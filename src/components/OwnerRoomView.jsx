@@ -10,7 +10,6 @@ import { useLanguage } from '../context/useLanguage'
 export function OwnerRoomView({
   room,
   canEditRoom,
-  roomMode,
   ui,
   sidebar,
   playback,
@@ -67,12 +66,11 @@ export function OwnerRoomView({
         isVisible={sidebar.isVisible}
         canEditRoom={canEditRoom}
         isViewMode={viewMode.isViewMode}
-        localPlayMode={roomMode === 'party_prep'}
+        localPlayMode={false}
         onLocalPlay={viewMode.handleLocalPlay}
         localCurrentSongId={viewMode.localCurrentSongId}
         onSubmitMessage={sidebar.onSubmitMessage}
         removeVotingProposal={sidebar.removeVotingProposal}
-        roomMode={sidebar.settings.roomMode ?? 'party'}
         partyDate={sidebar.settings.partyDate ?? ''}
         partyLocation={sidebar.settings.partyLocation ?? ''}
         partyDescription={sidebar.settings.partyDescription ?? ''}
@@ -153,7 +151,6 @@ export function OwnerRoomView({
         )}
 
         <OwnerVotingDock
-          roomMode={roomMode}
           ui={ui}
           playback={playback}
           voting={voting}

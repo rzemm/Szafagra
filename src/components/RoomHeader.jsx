@@ -118,7 +118,11 @@ export function RoomHeader({
           <a className="btn-share" href="https://buycoffee.to/szafifi" target="_blank" rel="noreferrer">{t('buyCoffee')}</a>
         ) : (
           <button className="btn-header-share" onClick={onShareGuestLink} title={t('shareLink')}>
-            {guestCopied ? 'OK' : t('shareBtn')}
+            {guestCopied ? 'OK' : (
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/>
+              </svg>
+            )}
           </button>
         )}
       </div>

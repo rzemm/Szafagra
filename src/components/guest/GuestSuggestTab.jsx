@@ -1,5 +1,4 @@
 import { ScrollText } from '../ScrollText'
-import { YouTubeAuthNotice } from '../YouTubeAuthNotice'
 
 export function GuestSuggestTab({
   allowSuggestions,
@@ -69,7 +68,6 @@ export function GuestSuggestTab({
 
       {submitPlaylistSuggestion && (
         <div className="guest-suggest">
-          <p className="guest-suggest-label">{t('suggestPlaylist')}</p>
           {playlist.submittedPlaylist ? (
             <p className="guest-suggest-ok">{t('suggestPlaylistSent')}</p>
           ) : !ytAuth.accessToken ? (
@@ -79,7 +77,6 @@ export function GuestSuggestTab({
                 {ytAuth.connecting ? t('suggestPlaylistConnecting') : t('suggestPlaylistConnect')}
               </button>
               {ytAuth.error && <p className="guest-suggest-err">{ytAuth.error}</p>}
-              <YouTubeAuthNotice helpText={ytAuth.helpText} className="guest-suggest-hint guest-suggest-hint--stacked" />
             </>
           ) : (
             <>

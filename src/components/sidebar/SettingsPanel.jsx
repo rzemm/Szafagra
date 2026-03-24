@@ -1,7 +1,8 @@
-﻿import { useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 
 import { ContactMessageForm } from '../ContactMessageForm'
 import { NotePicker } from '../NotePicker'
+import { CollaborativeModeSettings } from './CollaborativeModeSettings'
 import { useLanguage } from '../../context/useLanguage'
 
 export function SettingsPanel({
@@ -31,7 +32,6 @@ export function SettingsPanel({
   isVisible,
   canEditRoom,
   onSubmitMessage,
-  roomMode,
   partyDate,
   partyLocation,
   partyDescription,
@@ -43,6 +43,8 @@ export function SettingsPanel({
   const allowPlaybackStop = room?.settings?.allowPlaybackStop ?? false
   const playbackStopThreshold = Math.max(1, room?.settings?.playbackStopThreshold ?? 2)
   const playbackStopMinutes = Math.max(1, room?.settings?.playbackStopMinutes ?? 5)
+  const suggestionsPerUser = room?.settings?.suggestionsPerUser ?? null
+  const suggestionsRequireLogin = room?.settings?.suggestionsRequireLogin ?? true
 
   const [showEventPopup, setShowEventPopup] = useState(false)
   const [eventDate, setEventDate] = useState('')
@@ -192,14 +194,6 @@ export function SettingsPanel({
 
           {openGroup === 'userPermissions' && <>
           <div className="setting-row">
-            <span className="setting-label">{t('permAddSongs')}</span>
-            <label className="toggle-switch">
-              <input type="checkbox" checked={!!allowSuggestions} onChange={(event) => saveSettings('allowSuggestions', event.target.checked)} disabled={!canEditRoom} />
-              <span className="toggle-slider" />
-            </label>
-          </div>
-
-          <div className="setting-row">
             <span className="setting-label">{t('requireSuggestionApproval')}</span>
             <label className="toggle-switch">
               <input
@@ -333,16 +327,25 @@ export function SettingsPanel({
             <span className="settings-group-arrow">{openGroup === 'room' ? '\u25be' : '\u25b8'}</span>
           </span>
 
-          {openGroup === 'room' && <>
-          <div className="setting-row">
-            <span className="setting-label">{t('roomModeLabel')}</span>
-            <div className="setting-toggle-group">
-              <button className={`btn-setting${roomMode === 'party_prep' ? ' active' : ''}`} onClick={() => saveSettings('roomMode', 'party_prep')} disabled={!canEditRoom}>{t('modePartyPrep')}</button>
-              <button className={`btn-setting${roomMode === 'party' ? ' active' : ''}`} onClick={() => saveSettings('roomMode', 'party')} disabled={!canEditRoom}>{t('modeParty')}</button>
-              <button className={`btn-setting${roomMode === 'player' ? ' active' : ''}`} onClick={() => saveSettings('roomMode', 'player')} disabled={!canEditRoom}>{t('modePlayer')}</button>
-            </div>
-          </div>
+          {openGroup === 'room' && (
+            <CollaborativeModeSettings
+              allowSuggestions={allowSuggestions}
+              suggestionsPerUser={suggestionsPerUser}
+              suggestionsRequireLogin={suggestionsRequireLogin}
+              canEditRoom={canEditRoom}
+              saveSettings={saveSettings}
+              t={t}
+            />
+          )}
+        </div>
 
+        <div className="settings-group">
+          <span className="settings-group-title settings-group-title--clickable" onClick={() => toggleGroup('event')}>
+            {t('eventGroup')}
+            <span className="settings-group-arrow">{openGroup === 'event' ? '\u25be' : '\u25b8'}</span>
+          </span>
+
+          {openGroup === 'event' && <>
           {canEditRoom && (
             <div className="setting-row setting-row--event">
               {partyDate ? (
@@ -371,6 +374,13 @@ export function SettingsPanel({
             </div>
           )}
 
+          {canEditRoom && (
+            <div className="setting-row">
+              <button className="btn-setting-action" style={{ flex: 1 }} onClick={openCodePopup}>
+                {t('changeRoomCode')}
+              </button>
+            </div>
+          )}
           </>}
         </div>
 
@@ -421,14 +431,6 @@ export function SettingsPanel({
               </div>
             </div>
           </div>
-
-          {canEditRoom && (
-            <div className="setting-row">
-              <button className="btn-setting-action" style={{ flex: 1 }} onClick={openCodePopup}>
-                {t('changeRoomCode')}
-              </button>
-            </div>
-          )}
 
           <div className="setting-row setting-row--import-export">
             <button className="btn-setting-action" style={{ flex: 1 }} onClick={exportPlaylist}>{t('exportBtn')}</button>
@@ -516,7 +518,7 @@ export function SettingsPanel({
           <div className="song-settings-modal">
             <div className="song-settings-header">
               <h3 className="song-settings-title">{t('changeRoomCode')}</h3>
-              <button className="song-settings-close" onClick={() => setShowCodePopup(false)}>âś•</button>
+              <button className="song-settings-close" onClick={() => setShowCodePopup(false)}>&#x2715;</button>
             </div>
             <div className="song-settings-body">
               <span className="song-settings-label">{t('codeLabel')}</span>
@@ -545,5 +547,3 @@ export function SettingsPanel({
     </>
   )
 }
-
-

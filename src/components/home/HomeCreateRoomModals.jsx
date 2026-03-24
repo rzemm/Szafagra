@@ -62,42 +62,45 @@ export function HomeCreateRoomModals({
             </div>
 
             <div className="party-config-body">
-              <label className="party-config-label">{t('partyConfigMaxSuggestionsLabel')}</label>
-
-              <div className="party-config-row">
-                <input
-                  type="checkbox"
-                  id="party-unlimited"
-                  checked={partyUnlimited}
-                  onChange={(event) => onTogglePartyUnlimited(event.target.checked)}
-                />
-                <label htmlFor="party-unlimited">{t('partyConfigUnlimited')}</label>
+              <div className="setting-row">
+                <span className="setting-label">{t('partyConfigUnlimited')}</span>
+                <label className="toggle-switch">
+                  <input
+                    type="checkbox"
+                    checked={partyUnlimited}
+                    onChange={(event) => onTogglePartyUnlimited(event.target.checked)}
+                  />
+                  <span className="toggle-slider" />
+                </label>
               </div>
 
               {!partyUnlimited && (
-                <div className="party-config-slider-row">
-                  <input
-                    type="range"
-                    min={1}
-                    max={50}
-                    value={partySuggestionsLimit}
-                    onChange={(event) => onPartySuggestionsLimitChange(Number(event.target.value))}
-                    className="party-config-slider"
-                  />
-                  <span className="party-config-slider-val">{partySuggestionsLimit}</span>
+                <div className="setting-row" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '0.4rem' }}>
+                  <span className="setting-label">{t('partyConfigMaxSuggestionsLabel')}</span>
+                  <div className="party-config-slider-row">
+                    <input
+                      type="range"
+                      min={1}
+                      max={50}
+                      value={partySuggestionsLimit}
+                      onChange={(event) => onPartySuggestionsLimitChange(Number(event.target.value))}
+                      className="party-config-slider"
+                    />
+                    <span className="party-config-slider-val">{partySuggestionsLimit}</span>
+                  </div>
                 </div>
               )}
 
-              <div className="party-config-row">
-                <input
-                  type="checkbox"
-                  id="party-require-login"
-                  checked={partyUnlimited ? true : partyRequireLogin}
-                  disabled={partyUnlimited}
-                  onChange={(event) => onPartyRequireLoginChange(event.target.checked)}
-                />
-                <label htmlFor="party-require-login" className={partyUnlimited ? 'party-config-label--dim' : ''}>
-                  {t('partyConfigRequireLogin')}
+              <div className="setting-row">
+                <span className="setting-label" style={partyUnlimited ? { color: 'var(--text-dim)' } : {}}>{t('partyConfigRequireLogin')}</span>
+                <label className="toggle-switch">
+                  <input
+                    type="checkbox"
+                    checked={partyUnlimited ? true : partyRequireLogin}
+                    disabled={partyUnlimited}
+                    onChange={(event) => onPartyRequireLoginChange(event.target.checked)}
+                  />
+                  <span className="toggle-slider" />
                 </label>
               </div>
             </div>

@@ -1,16 +1,16 @@
 import { useMemo, useRef, useState } from 'react'
-import { useGuestPlayer } from '../hooks/useGuestPlayer'
 import { useGuestPlaylistSuggestion } from '../hooks/useGuestPlaylistSuggestion'
 import { useGuestSongSuggestion } from '../hooks/useGuestSongSuggestion'
 import { useYouTubeAuth } from '../hooks/useYouTubeAuth'
 import { ContactMessageForm } from './ContactMessageForm'
+import { GuestEventTab } from './guest/GuestEventTab'
 import { GuestListTab } from './guest/GuestListTab'
 import { GuestQueueTab } from './guest/GuestQueueTab'
 import { GuestSuggestTab } from './guest/GuestSuggestTab'
 import { GuestVotingTab } from './guest/GuestVotingTab'
 import { useLanguage } from '../context/useLanguage'
 
-const ALL_TABS = ['voting', 'queue', 'suggest', 'list']
+const ALL_TABS = ['voting', 'suggest', 'queue', 'list', 'event']
 
 export function GuestView({
   isOwner,
@@ -35,14 +35,12 @@ export function GuestView({
   myRating,
   onRate,
   jukeboxState,
-  allowGuestListening = true,
   tickerText = '',
   tickerForGuests = false,
   onSubmitMessage,
   onOpenCookieSettings,
 }) {
-  const { t, toggleLang } = useLanguage()
-  const { listening, toggleListening, playerDivRef: guestPlayerDivRef } = useGuestPlayer({ jukeboxState, isPlaying })
+  const { t, lang, toggleLang } = useLanguage()
   const ytAuth = useYouTubeAuth()
   const suggestion = useGuestSongSuggestion({ submitSuggestion, t })
   const playlist = useGuestPlaylistSuggestion({
@@ -53,10 +51,14 @@ export function GuestView({
   const [listSearch, setListSearch] = useState('')
   const [showThumbs, setShowThumbs] = useState(true)
 
+  const hasEvent = !!(jukeboxState?.settings?.partyDate)
   const visibleTabs = useMemo(() => {
-    if (!allowSuggestions) return ['voting', 'queue', 'list']
-    return ALL_TABS
-  }, [allowSuggestions])
+    const tabs = allowSuggestions
+      ? ['voting', 'suggest', 'queue', 'list']
+      : ['voting', 'queue', 'list']
+    if (hasEvent) tabs.push('event')
+    return tabs
+  }, [allowSuggestions, hasEvent])
 
   const [activeTab, setActiveTab] = useState('voting')
   const currentTab = visibleTabs.includes(activeTab) ? activeTab : visibleTabs[0]
@@ -118,9 +120,10 @@ export function GuestView({
 
   const tabLabels = {
     voting: t('tabVoting'),
-    queue: t('tabQueue'),
     suggest: t('tabSuggest'),
+    queue: t('tabQueue'),
     list: t('tabList'),
+    event: t('tabEvent'),
   }
 
   return (
@@ -137,24 +140,11 @@ export function GuestView({
         </div>
       )}
 
-      {!isOwner && allowGuestListening && isPlaying && currentSong && (
-        <div className="guest-player">
-          <button className={`guest-player-toggle${listening ? ' active' : ''}`} onClick={toggleListening}>
-            {listening ? t('disableListening') : t('listen')}
-          </button>
-          {listening && (
-            <div className="guest-player-yt">
-              <div ref={guestPlayerDivRef} />
-            </div>
-          )}
-        </div>
-      )}
-
       <div className="guest-tab-nav">
         {visibleTabs.map((tab) => (
           <button
             key={tab}
-            className={`guest-tab-btn${currentTab === tab ? ' active' : ''}`}
+            className={`guest-tab-btn${currentTab === tab ? ' active' : ''}${tab === 'suggest' && allowSuggestions ? ' guest-tab-btn--collab' : ''}`}
             onClick={() => setActiveTab(tab)}
           >
             {tabLabels[tab]}
@@ -188,6 +178,15 @@ export function GuestView({
             t={t}
           />
 
+          <GuestSuggestTab
+            allowSuggestions={allowSuggestions}
+            submitPlaylistSuggestion={submitPlaylistSuggestion}
+            suggestion={suggestion}
+            playlist={playlist}
+            ytAuth={ytAuth}
+            t={t}
+          />
+
           <GuestQueueTab
             isPlaying={isPlaying}
             skipThreshold={skipThreshold}
@@ -197,15 +196,6 @@ export function GuestView({
             remaining={remaining}
             queue={queue}
             showThumbs={showThumbs}
-            t={t}
-          />
-
-          <GuestSuggestTab
-            allowSuggestions={allowSuggestions}
-            submitPlaylistSuggestion={submitPlaylistSuggestion}
-            suggestion={suggestion}
-            playlist={playlist}
-            ytAuth={ytAuth}
             t={t}
           />
 
@@ -219,6 +209,14 @@ export function GuestView({
             myProposedIds={myProposedIds}
             handleSuggestFromList={handleSuggestFromList}
             showThumbs={showThumbs}
+            t={t}
+          />
+
+          <GuestEventTab
+            partyDate={jukeboxState?.settings?.partyDate}
+            partyLocation={jukeboxState?.settings?.partyLocation}
+            partyDescription={jukeboxState?.settings?.partyDescription}
+            lang={lang}
             t={t}
           />
         </div>

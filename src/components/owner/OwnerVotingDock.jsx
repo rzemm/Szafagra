@@ -1,8 +1,6 @@
 import { VotingPanel } from '../VotingPanel'
 
-export function OwnerVotingDock({ roomMode, ui, playback, voting, showThumbnails, t }) {
-  if (roomMode === 'party_prep') return null
-
+export function OwnerVotingDock({ ui, playback, voting, showThumbnails, t }) {
   const voteCounts = voting.nextOptionKeys.map((key) =>
     Object.values(voting.nextVotesData).filter((value) => value === key).length
   )

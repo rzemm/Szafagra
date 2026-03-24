@@ -72,7 +72,6 @@ function buildHeaderModel({
 function buildOwnerViewModel({
   room,
   canEditRoom,
-  roomMode,
   route,
   ownedRooms,
   settings,
@@ -90,7 +89,6 @@ function buildOwnerViewModel({
   return {
     room,
     canEditRoom,
-    roomMode,
     ui: {
       leftPanel: ui.leftPanel,
       panelOpen: ui.panelOpen,
@@ -271,14 +269,7 @@ export function useRoomScreen(route) {
   }
   votingState.nextOptionKeys = Object.keys(votingState.nextOptions).sort()
 
-  const roomMode = settings.roomMode ?? 'party'
-  const showOwnerUI = (() => {
-    if (!auth.user) return false
-    if (roomMode === 'party_prep') return true
-    if (roomMode === 'party') return auth.isOwner && !auth.isGuestLink
-    if (roomMode === 'player') return auth.isOwner && !auth.isGuestLink
-    return !auth.user.isAnonymous
-  })()
+  const showOwnerUI = !!(auth.user && auth.isOwner && !auth.isGuestLink)
 
   const commands = useRoomCommands({
     auth,
@@ -350,7 +341,6 @@ export function useRoomScreen(route) {
       room,
       roomError: auth.roomError,
       showOwnerUI,
-      roomMode,
       uiError: ui.uiState.uiError,
       header: buildHeaderModel({
         auth,
@@ -367,7 +357,6 @@ export function useRoomScreen(route) {
       ownerView: buildOwnerViewModel({
         room,
         canEditRoom,
-        roomMode,
         route,
         ownedRooms,
         settings,

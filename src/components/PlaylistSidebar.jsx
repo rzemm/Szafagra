@@ -51,7 +51,6 @@ export function PlaylistSidebar({
   localCurrentSongId,
   onSubmitMessage,
   removeVotingProposal,
-  roomMode,
   partyDate,
   partyLocation,
   partyDescription,
@@ -155,7 +154,6 @@ export function PlaylistSidebar({
           isVisible={isVisible}
           canEditRoom={canEditRoom}
           onSubmitMessage={onSubmitMessage}
-          roomMode={roomMode}
           partyDate={partyDate}
           partyLocation={partyLocation}
           partyDescription={partyDescription}

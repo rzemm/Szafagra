@@ -53,8 +53,6 @@ export default function App() {
         <main className="main">
           {screen.roomScreen.showOwnerUI ? (
             <OwnerRoomView {...screen.roomScreen.ownerView} />
-          ) : screen.roomScreen.roomMode === 'player' ? (
-            <SplashScreen message={t('accessBlocked')} />
           ) : (
             <GuestRoomView
               {...screen.roomScreen.guestView}

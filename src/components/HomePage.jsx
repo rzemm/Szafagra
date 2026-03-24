@@ -418,15 +418,16 @@ export function HomePage({
         <footer className="homepage-footer">
           <ContactMessageForm
             triggerClassName="homepage-footer-btn"
-            triggerLabel={t('writeMessage')}
+            triggerLabel={'✉️ ' + t('writeMessage')}
             title={t('writeMessageToCreators')}
             submitLabel={t('send')}
             successMessage={t('thanksSaved')}
             panelClassName="homepage-contact-form"
             onSubmit={(payload) => onSubmitMessage?.({ ...payload, source: 'homepage' })}
           />
-          <button className="homepage-footer-btn" onClick={onOpenCookieSettings}>{t('cookieSettings')}</button>
-          <a className="homepage-footer-btn" href="/privacy.html" target="_blank" rel="noreferrer">{t('privacy')}</a>
+          <button className="homepage-footer-btn" onClick={onOpenCookieSettings}>🍪 {t('cookieSettings')}</button>
+          <a className="homepage-footer-btn" href="/privacy.html" target="_blank" rel="noreferrer">🔒 {t('privacy')}</a>
+          <a className="homepage-footer-btn" href="/terms.html" target="_blank" rel="noreferrer">📄 {t('terms')}</a>
           <button className="homepage-footer-btn" onClick={toggleLang}>{t('langToggle')}</button>
         </footer>
       </div>
