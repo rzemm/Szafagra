@@ -132,6 +132,10 @@ export function ProposalsPanel({ model }) {
               await onAddYtToRoom(room?.id, [song])
               setShowYtImport(false)
             }}
+            onImportAllSongs={async (songs) => {
+              await onAddYtToRoom(room?.id, songs)
+              setShowYtImport(false)
+            }}
             currentRoomId={room?.id ?? null}
             ownedRooms={ownedRooms ?? []}
           />

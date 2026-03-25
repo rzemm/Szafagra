@@ -385,6 +385,8 @@ export const pl = {
   ytImportCreate: 'Utwórz nową szafę',
   ytImportAddToCurrent: 'Dodaj do bieżącej szafy',
   ytImportAddToOther: 'Dodaj do innej szafy...',
+  ytImportAll: 'Zaimportuj wszystko',
+  ytImportingProgress: (done, total) => `Importowanie ${done}/${total}...`,
 
   // UsernamePicker
   usernamePickerTitle: 'Wybierz swój pseudonim',

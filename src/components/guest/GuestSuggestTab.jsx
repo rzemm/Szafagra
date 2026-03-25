@@ -125,6 +125,17 @@ export function GuestSuggestTab({
                   </div>
                   {playlist.playlistSongs && playlist.playlistSongs.length > 0 && (
                     <>
+                      {playlist.selectedPlaylist.id !== YT_LIKED_PLAYLIST_ID && (
+                        <button
+                          className="guest-playlist-control-btn"
+                          onClick={() => playlist.handleImportAll()}
+                          disabled={playlist.submittingPlaylist}
+                        >
+                          {playlist.importProgress
+                            ? t('ytImportingProgress', playlist.importProgress.done, playlist.importProgress.total)
+                            : t('ytImportAll')}
+                        </button>
+                      )}
                       <div className="guest-playlist-songs-list">
                         {playlist.playlistSongs.map((song) => (
                           <button

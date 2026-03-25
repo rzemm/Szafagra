@@ -3,7 +3,7 @@ import { useLanguage } from '../context/useLanguage'
 import { fetchUserYtPlaylists, fetchYtPlaylistPage, fetchLikedVideosPage, YT_LIKED_PLAYLIST_ID } from '../lib/youtube'
 import { ScrollText } from './ScrollText'
 
-export function YouTubeImportModal({ accessToken, onClose, onCreateRoom, onAddToRoom, onPickSong, currentRoomId, ownedRooms = [] }) {
+export function YouTubeImportModal({ accessToken, onClose, onCreateRoom, onAddToRoom, onPickSong, onImportAllSongs, currentRoomId, ownedRooms = [] }) {
   const { t } = useLanguage()
   const [playlists, setPlaylists] = useState(null)
   const [loadingPlaylists, setLoadingPlaylists] = useState(true)
@@ -15,6 +15,7 @@ export function YouTubeImportModal({ accessToken, onClose, onCreateRoom, onAddTo
   const [loadingMore, setLoadingMore] = useState(false)
   const [songsError, setSongsError] = useState(null)
   const [busy, setBusy] = useState(false)
+  const [importProgress, setImportProgress] = useState(null)
 
   const currentRoom = ownedRooms.find((r) => r.id === currentRoomId) ?? null
 
@@ -74,6 +75,33 @@ export function YouTubeImportModal({ accessToken, onClose, onCreateRoom, onAddTo
     setBusy(false)
   }
 
+  const handleImportAll = async () => {
+    if (busy || !selected || !onImportAllSongs) return
+    setBusy(true)
+    setImportProgress({ done: 0, total: null })
+
+    // fetch all remaining pages
+    const isLiked = selected.id === YT_LIKED_PLAYLIST_ID
+    let allSongs = [...(songs ?? [])]
+    let token = nextPageToken
+    while (token) {
+      try {
+        const { items, nextPageToken: next } = isLiked
+          ? await fetchLikedVideosPage(accessToken, token)
+          : await fetchYtPlaylistPage(selected.id, accessToken, token)
+        allSongs = [...allSongs, ...items]
+        token = next
+      } catch {
+        break
+      }
+    }
+
+    await onImportAllSongs(allSongs)
+    setBusy(false)
+    setImportProgress(null)
+    onClose()
+  }
+
   const handleBack = () => {
     setSelected(null)
     setSongs(null)
@@ -129,6 +157,11 @@ export function YouTubeImportModal({ accessToken, onClose, onCreateRoom, onAddTo
 
               {songs && songs.length > 0 && (
                 <>
+                  {selected.id !== YT_LIKED_PLAYLIST_ID && onImportAllSongs && (
+                    <button className="ytimport-action-btn" onClick={handleImportAll} disabled={busy}>
+                      {importProgress ? '...' : t('ytImportAll')}
+                    </button>
+                  )}
                   <div className="ytimport-songs-list">
                     {songs.map((song) => (
                       <button

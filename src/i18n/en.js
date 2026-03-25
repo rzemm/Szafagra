@@ -385,6 +385,8 @@ export const en = {
   ytImportCreate: 'Create new room',
   ytImportAddToCurrent: 'Add to current room',
   ytImportAddToOther: 'Add to another room...',
+  ytImportAll: 'Import all',
+  ytImportingProgress: (done, total) => `Importing ${done}/${total}...`,
 
   // UsernamePicker
   usernamePickerTitle: 'Choose your username',
