@@ -87,24 +87,25 @@ function SongSettingsModal({ song, onClose, onSave, t }) {
   )
 }
 
-export function SongsPanel({
-  room,
-  isPlaying,
-  currentSong,
-  playSongNow,
-  deleteSong,
-  deleteSongs,
-  updateSong,
-  addSong,
-  showThumbnails,
-  showAddedBy,
-  queueSong,
-  canEditRoom,
-  isViewMode,
-  localPlayMode,
-  onLocalPlay,
-  localCurrentSongId,
-}) {
+export function SongsPanel({ model }) {
+  const {
+    room,
+    isPlaying,
+    currentSong,
+    playSongNow,
+    deleteSong,
+    deleteSongs,
+    updateSong,
+    addSong,
+    showThumbnails,
+    showAddedBy,
+    queueSong,
+    canEditRoom,
+    isViewMode,
+    localPlayMode,
+    onLocalPlay,
+    localCurrentSongId,
+  } = model
   const { t } = useLanguage()
   const [searchQuery, setSearchQuery] = useState('')
   const [bulkDeleteMode, setBulkDeleteMode] = useState(false)

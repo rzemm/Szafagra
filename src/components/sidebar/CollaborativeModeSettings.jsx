@@ -1,4 +1,12 @@
-export function CollaborativeModeSettings({ allowSuggestions, requireSuggestionApproval, suggestionsPerUser, suggestionsRequireLogin, canEditRoom, saveSettings, t }) {
+export function CollaborativeModeSettings({ model, t }) {
+  const {
+    allowSuggestions,
+    requireSuggestionApproval,
+    suggestionsPerUser,
+    suggestionsRequireLogin,
+    canEditRoom,
+    saveSettings,
+  } = model
   const unlimited = suggestionsPerUser === null
 
   const handleUnlimitedChange = (checked) => {
@@ -30,7 +38,7 @@ export function CollaborativeModeSettings({ allowSuggestions, requireSuggestionA
             <span className="setting-label">{t('newSongsDestLabel')}</span>
             <div className="setting-toggle-group">
               <button
-                className={`btn-setting${!!requireSuggestionApproval ? ' active' : ''}`}
+                className={`btn-setting${requireSuggestionApproval ? ' active' : ''}`}
                 onClick={() => saveSettings('requireSuggestionApproval', true)}
                 disabled={!canEditRoom}
               >{t('newSongsDestQueue')}</button>
@@ -78,7 +86,7 @@ export function CollaborativeModeSettings({ allowSuggestions, requireSuggestionA
             <label className="toggle-switch">
               <input
                 type="checkbox"
-                checked={unlimited ? true : !!suggestionsRequireLogin}
+                checked={unlimited ? true : Boolean(suggestionsRequireLogin)}
                 onChange={(e) => saveSettings('suggestionsRequireLogin', e.target.checked)}
                 disabled={!canEditRoom || unlimited}
               />

@@ -4,9 +4,7 @@ import { YT_LIKED_PLAYLIST_ID } from '../../lib/youtube'
 
 export function GuestSuggestTab({
   allowSuggestions,
-  allowSuggestFromList,
   submitPlaylistSuggestion,
-  suggestionsPerUser,
   suggestion,
   playlist,
   ytAuth,

@@ -1,13 +1,14 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { ScrollText } from './ScrollText.jsx'
 import { useLanguage } from '../context/useLanguage'
-import { UserProfileModal } from './UserProfileModal.jsx'
 import { ContactMessageForm } from './ContactMessageForm.jsx'
-import { HomeCreateRoomModals } from './home/HomeCreateRoomModals.jsx'
-import { PartyPreviewModal } from './home/PartyPreviewModal.jsx'
-import { TopRatedRoomPreviewModal } from './home/TopRatedRoomPreviewModal.jsx'
 import { usePartyDiscovery } from '../hooks/usePartyDiscovery.js'
 import logoUrl from '../assets/logo.png'
+
+const LazyHomeCreateRoomModals = lazy(() => import('./home/HomeCreateRoomModals.jsx').then((module) => ({ default: module.HomeCreateRoomModals })))
+const LazyPartyPreviewModal = lazy(() => import('./home/PartyPreviewModal.jsx').then((module) => ({ default: module.PartyPreviewModal })))
+const LazyTopRatedRoomPreviewModal = lazy(() => import('./home/TopRatedRoomPreviewModal.jsx').then((module) => ({ default: module.TopRatedRoomPreviewModal })))
+const LazyUserProfileModal = lazy(() => import('./UserProfileModal.jsx').then((module) => ({ default: module.UserProfileModal })))
 
 const IconTrash = () => (
   <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">
@@ -61,8 +62,11 @@ export function HomePage({
   const [roomInput, setRoomInput] = useState('')
   const [seeding, setSeeding] = useState(false)
   const [showAccountSettings, setShowAccountSettings] = useState(false)
-  const [previewRoom, setPreviewRoom] = useState(null)
-  const [previewParty, setPreviewParty] = useState(null)
+  const [previewRoomId, setPreviewRoomId] = useState(null)
+  const [previewPartyId, setPreviewPartyId] = useState(() => {
+    if (typeof window === 'undefined') return ''
+    return new URLSearchParams(window.location.search).get('party')?.trim() ?? ''
+  })
   const [discoverTab, setDiscoverTab] = useState('parties')
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showPartyConfig, setShowPartyConfig] = useState(false)
@@ -87,19 +91,9 @@ export function HomePage({
     return () => clearInterval(timer)
   }, [])
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    const sharedPartyId = new URLSearchParams(window.location.search).get('party')?.trim()
-    if (!sharedPartyId) return
-
-    const sharedParty = upcomingOpenParties.find((party) => party.id === sharedPartyId)
-    if (!sharedParty) return
-
-    setDiscoverTab('parties')
-    setPreviewParty((currentParty) => (currentParty?.id === sharedParty.id ? currentParty : sharedParty))
-  }, [upcomingOpenParties])
-
   const isLoggedIn = user && !user.isAnonymous
+  const previewRoom = topRatedRooms.find((room) => room.id === previewRoomId) ?? null
+  const previewParty = upcomingOpenParties.find((party) => party.id === previewPartyId) ?? null
 
   const handleCreate = async (roomMode) => {
     setShowCreateModal(false)
@@ -127,7 +121,8 @@ export function HomePage({
   }
 
   const handleOpenPartyPreview = (party) => {
-    setPreviewParty(party)
+    setDiscoverTab('parties')
+    setPreviewPartyId(party.id)
     if (typeof window === 'undefined') return
 
     const url = new URL(window.location.href)
@@ -136,7 +131,7 @@ export function HomePage({
   }
 
   const handleClosePartyPreview = () => {
-    setPreviewParty(null)
+    setPreviewPartyId('')
     if (typeof window === 'undefined') return
 
     const url = new URL(window.location.href)
@@ -379,7 +374,7 @@ export function HomePage({
                       <button
                         key={room.id}
                         className="home-room-card home-room-card--clickable"
-                        onClick={() => setPreviewRoom(room)}
+                        onClick={() => setPreviewRoomId(room.id)}
                       >
                         <div className="home-room-card-body">
                           <span className="home-room-card-link">
@@ -427,68 +422,78 @@ export function HomePage({
       </div>
 
       {previewRoom && (
-        <TopRatedRoomPreviewModal
-          room={previewRoom}
-          ownedRooms={ownedRooms}
-          isLoggedIn={isLoggedIn}
-          t={t}
-          onClose={() => setPreviewRoom(null)}
-          onPreviewRoom={onPreviewRoom}
-          onCopyForeignRoom={onCopyForeignRoom}
-          onAppendForeignToRoom={onAppendForeignToRoom}
-        />
+        <Suspense fallback={null}>
+          <LazyTopRatedRoomPreviewModal
+            room={previewRoom}
+            ownedRooms={ownedRooms}
+            isLoggedIn={isLoggedIn}
+            t={t}
+            onClose={() => setPreviewRoomId(null)}
+            onPreviewRoom={onPreviewRoom}
+            onCopyForeignRoom={onCopyForeignRoom}
+            onAppendForeignToRoom={onAppendForeignToRoom}
+          />
+        </Suspense>
       )}
 
       {previewParty && (
-        <PartyPreviewModal
-          party={upcomingOpenParties.find((party) => party.id === previewParty.id) ?? previewParty}
-          onClose={handleClosePartyPreview}
-          lang={lang}
-          t={t}
-        />
+        <Suspense fallback={null}>
+          <LazyPartyPreviewModal
+            party={previewParty}
+            onClose={handleClosePartyPreview}
+            lang={lang}
+            t={t}
+          />
+        </Suspense>
       )}
 
-      <HomeCreateRoomModals
-        creatingRoom={creatingRoom}
-        showCreateModal={showCreateModal}
-        showPartyConfig={showPartyConfig}
-        partyUnlimited={partyUnlimited}
-        partySuggestionsLimit={partySuggestionsLimit}
-        partyRequireLogin={partyRequireLogin}
-        t={t}
-        onCloseCreateModal={() => setShowCreateModal(false)}
-        onOpenPartyConfig={() => {
-          setShowCreateModal(false)
-          setShowPartyConfig(true)
-        }}
-        onCreateRoom={handleCreate}
-        onBackToCreateModal={() => {
-          setShowPartyConfig(false)
-          setShowCreateModal(true)
-        }}
-        onClosePartyConfig={() => {
-          setShowPartyConfig(false)
-          setShowCreateModal(true)
-        }}
-        onTogglePartyUnlimited={(checked) => {
-          setPartyUnlimited(checked)
-          if (checked) setPartyRequireLogin(true)
-        }}
-        onPartySuggestionsLimitChange={setPartySuggestionsLimit}
-        onPartyRequireLoginChange={setPartyRequireLogin}
-        onCreateParty={handleCreateParty}
-      />
+      {(showCreateModal || showPartyConfig) && (
+        <Suspense fallback={null}>
+          <LazyHomeCreateRoomModals
+            creatingRoom={creatingRoom}
+            showCreateModal={showCreateModal}
+            showPartyConfig={showPartyConfig}
+            partyUnlimited={partyUnlimited}
+            partySuggestionsLimit={partySuggestionsLimit}
+            partyRequireLogin={partyRequireLogin}
+            t={t}
+            onCloseCreateModal={() => setShowCreateModal(false)}
+            onOpenPartyConfig={() => {
+              setShowCreateModal(false)
+              setShowPartyConfig(true)
+            }}
+            onCreateRoom={handleCreate}
+            onBackToCreateModal={() => {
+              setShowPartyConfig(false)
+              setShowCreateModal(true)
+            }}
+            onClosePartyConfig={() => {
+              setShowPartyConfig(false)
+              setShowCreateModal(true)
+            }}
+            onTogglePartyUnlimited={(checked) => {
+              setPartyUnlimited(checked)
+              if (checked) setPartyRequireLogin(true)
+            }}
+            onPartySuggestionsLimitChange={setPartySuggestionsLimit}
+            onPartyRequireLoginChange={setPartyRequireLogin}
+            onCreateParty={handleCreateParty}
+          />
+        </Suspense>
+      )}
 
       {showAccountSettings && isLoggedIn && (
-        <UserProfileModal
-          user={user}
-          onClose={() => setShowAccountSettings(false)}
-          onUpdateDisplayName={onUpdateDisplayName}
-          onCreateRoomFromYt={onCreateRoomFromYt}
-          onAddYtToRoom={onAddYtToRoom}
-          currentRoomId={null}
-          ownedRooms={ownedRooms}
-        />
+        <Suspense fallback={null}>
+          <LazyUserProfileModal
+            user={user}
+            onClose={() => setShowAccountSettings(false)}
+            onUpdateDisplayName={onUpdateDisplayName}
+            onCreateRoomFromYt={onCreateRoomFromYt}
+            onAddYtToRoom={onAddYtToRoom}
+            currentRoomId={null}
+            ownedRooms={ownedRooms}
+          />
+        </Suspense>
       )}
     </>
   )

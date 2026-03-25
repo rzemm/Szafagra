@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useGuestPlaylistSuggestion } from '../hooks/useGuestPlaylistSuggestion'
 import { useGuestSongSuggestion } from '../hooks/useGuestSongSuggestion'
 import { useYouTubeAuth } from '../hooks/useYouTubeAuth'
@@ -30,7 +30,6 @@ export function GuestView({
   submitSuggestion,
   submitVotingProposal,
   submitPlaylistSuggestion,
-  suggestionsRemaining,
   myRating,
   onRate,
   isLoggedIn,
@@ -97,14 +96,6 @@ export function GuestView({
 
   const myVote = nextVotesData[userId] ?? null
 
-  const prevMyVoteRef = useRef(null)
-  useEffect(() => {
-    if (myVote !== null && prevMyVoteRef.current === null) {
-      setVoteCount((c) => c + 1)
-    }
-    prevMyVoteRef.current = myVote
-  }, [myVote])
-
   useLayoutEffect(() => {
     const wrap = sliderWrapRef.current
     const slider = sliderRef.current
@@ -125,6 +116,13 @@ export function GuestView({
     if (!submitVotingProposal) return
     const key = allowSuggestFromList === true ? `${userId}_${song.id}` : undefined
     await submitVotingProposal(song, key)
+  }
+
+  const handleVote = async (optionKey) => {
+    if (myVote === null) {
+      setVoteCount((currentCount) => currentCount + 1)
+    }
+    await vote(optionKey)
   }
 
   const countsByOption = useMemo(() => {
@@ -201,7 +199,7 @@ export function GuestView({
             myVote={myVote}
             countsByOption={countsByOption}
             maxVotes={maxVotes}
-            vote={vote}
+            vote={handleVote}
             showThumbs={showThumbs}
             isLoggedIn={isLoggedIn}
             voteCount={voteCount}
@@ -214,9 +212,7 @@ export function GuestView({
 
           <GuestSuggestTab
             allowSuggestions={allowSuggestions}
-            allowSuggestFromList={allowSuggestFromList}
             submitPlaylistSuggestion={submitPlaylistSuggestion}
-            suggestionsPerUser={suggestionsRemaining}
             suggestion={suggestion}
             playlist={playlist}
             ytAuth={ytAuth}

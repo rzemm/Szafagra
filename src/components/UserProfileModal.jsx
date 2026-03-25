@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { useLanguage } from '../context/useLanguage'
 import { useYouTubeAuth } from '../hooks/useYouTubeAuth'
 import { YouTubeAuthNotice } from './YouTubeAuthNotice'
-import { YouTubeImportModal } from './YouTubeImportModal'
+
+const LazyYouTubeImportModal = lazy(() => import('./YouTubeImportModal').then((module) => ({ default: module.YouTubeImportModal })))
 
 const YouTubeIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -38,20 +39,22 @@ export function UserProfileModal({ user, onClose, onUpdateDisplayName, onCreateR
 
   if (showImport && yt.accessToken) {
     return (
-      <YouTubeImportModal
-        accessToken={yt.accessToken}
-        onClose={() => setShowImport(false)}
-        onCreateRoom={async (name, songs) => {
-          await onCreateRoomFromYt(name, songs)
-          yt.disconnect()
-        }}
-        onAddToRoom={async (roomId, songs) => {
-          await onAddYtToRoom(roomId, songs)
-          yt.disconnect()
-        }}
-        currentRoomId={currentRoomId}
-        ownedRooms={ownedRooms ?? []}
-      />
+      <Suspense fallback={null}>
+        <LazyYouTubeImportModal
+          accessToken={yt.accessToken}
+          onClose={() => setShowImport(false)}
+          onCreateRoom={async (name, songs) => {
+            await onCreateRoomFromYt(name, songs)
+            yt.disconnect()
+          }}
+          onAddToRoom={async (roomId, songs) => {
+            await onAddYtToRoom(roomId, songs)
+            yt.disconnect()
+          }}
+          currentRoomId={currentRoomId}
+          ownedRooms={ownedRooms ?? []}
+        />
+      </Suspense>
     )
   }
 

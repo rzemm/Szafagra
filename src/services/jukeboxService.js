@@ -303,17 +303,6 @@ export function deleteSuggestion(roomId, suggestionId) {
   return deleteDoc(suggestionRef(roomId, suggestionId))
 }
 
-export function addPlaylistSuggestion(roomId, userId, { playlistTitle, playlistId, songs }) {
-  return setDoc(doc(suggestionsRef(roomId)), {
-    type: 'playlist',
-    userId,
-    playlistTitle,
-    playlistId,
-    songs,
-    createdAt: serverTimestamp(),
-  })
-}
-
 export function setVotingProposal(roomId, key, song) {
   return updateDoc(roomRef(roomId), {
     [`votingProposals.${key}`]: { id: song.id, title: song.title, ytId: song.ytId, addedAt: Date.now() },

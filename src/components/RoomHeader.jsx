@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { HelpModal } from './HelpPage'
-import { UserProfileModal } from './UserProfileModal'
 import { useLanguage } from '../context/useLanguage'
 import logoUrl from '../assets/logo.png'
+
+const LazyUserProfileModal = lazy(() => import('./UserProfileModal').then((module) => ({ default: module.UserProfileModal })))
 
 const GoogleIcon = () => (
   <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true" style={{ flexShrink: 0 }}>
@@ -103,15 +104,17 @@ export function RoomHeader({
             </button>
             <button className="header-google-logout" onClick={signOutUser}>{t('signOut')}</button>
             {profileOpen && (
-              <UserProfileModal
-                user={user}
-                onClose={() => setProfileOpen(false)}
-                onUpdateDisplayName={updateDisplayName}
-                onCreateRoomFromYt={onCreateRoomFromYt}
-                onAddYtToRoom={onAddYtToRoom}
-                currentRoomId={currentRoomId}
-                ownedRooms={ownedRooms}
-              />
+              <Suspense fallback={null}>
+                <LazyUserProfileModal
+                  user={user}
+                  onClose={() => setProfileOpen(false)}
+                  onUpdateDisplayName={updateDisplayName}
+                  onCreateRoomFromYt={onCreateRoomFromYt}
+                  onAddYtToRoom={onAddYtToRoom}
+                  currentRoomId={currentRoomId}
+                  ownedRooms={ownedRooms}
+                />
+              </Suspense>
             )}
           </div>
         ) : null}

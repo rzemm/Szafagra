@@ -22,70 +22,7 @@ export function OwnerRoomView({
 
   return (
     <>
-      <PlaylistSidebar
-        leftPanel={ui.leftPanel}
-        isPlaying={playback.isPlaying}
-        room={room}
-        currentSong={playback.currentSong}
-        playSongNow={voting.playSongNow}
-        deleteSong={sidebar.songActions.deleteSong}
-        deleteSongs={sidebar.songActions.deleteSongs}
-        updateSong={sidebar.songActions.updateSong}
-        addSong={sidebar.songActions.addSongDirect}
-        suggestions={sidebar.suggestions}
-        approveSuggestion={sidebar.approveSuggestion}
-        approveAllSuggestions={sidebar.approveAllSuggestions}
-        rejectSuggestion={sidebar.rejectSuggestion}
-        showThumbnails={sidebar.showThumbnails}
-        showAddedBy={sidebar.showAddedBy}
-        queue={playback.queue}
-        voteThreshold={voting.voteThreshold}
-        voteMode={voting.voteMode}
-        skipThreshold={playback.skipThreshold}
-        allowSuggestions={sidebar.settings.allowSuggestions ?? true}
-        allowSuggestFromList={sidebar.settings.allowSuggestFromList ?? false}
-        allowGuestListening={sidebar.settings.allowGuestListening ?? false}
-        tickerText={sidebar.settings.tickerText ?? ''}
-        tickerOnScreen={sidebar.settings.tickerOnScreen ?? false}
-        tickerForGuests={sidebar.settings.tickerForGuests ?? false}
-        queueSize={Math.max(1, sidebar.settings.queueSize ?? 1)}
-        saveSettings={sidebar.saveSettings}
-        importPlaylist={sidebar.playlistActions.importPlaylist}
-        exportPlaylist={sidebar.playlistActions.exportPlaylist}
-        queueSong={voting.queueSong}
-        onRenameRoom={sidebar.renameRoom}
-        onChangeRoomCode={sidebar.changeRoomCode}
-        onCreateRoomFromYt={sidebar.onCreateRoomFromYt}
-        onAddYtToRoom={sidebar.onAddYtToRoom}
-        ownedRooms={sidebar.ownedRooms}
-        showQr={ui.panelOpen.qr}
-        showQueueOverlay={ui.panelOpen.showQueue}
-        showRoomCode={ui.panelOpen.showRoomCode}
-        onToggleQr={() => ui.togglePanel('qr')}
-        onToggleQueueOverlay={() => ui.togglePanel('showQueue')}
-        onToggleShowRoomCode={() => ui.togglePanel('showRoomCode')}
-        isVisible={sidebar.isVisible}
-        canEditRoom={canEditRoom}
-        isViewMode={viewMode.isViewMode}
-        localPlayMode={false}
-        onLocalPlay={viewMode.handleLocalPlay}
-        localCurrentSongId={viewMode.localCurrentSongId}
-        onSubmitMessage={sidebar.onSubmitMessage}
-        removeVotingProposal={sidebar.removeVotingProposal}
-        partyDate={sidebar.settings.partyDate ?? ''}
-        partyLocation={sidebar.settings.partyLocation ?? ''}
-        partyDescription={sidebar.settings.partyDescription ?? ''}
-        newSongUrl={sidebar.newSongUrl}
-        handleSongUrlChange={sidebar.handleSongUrlChange}
-        handleUrlBlur={sidebar.handleUrlBlur}
-        addSongByUrl={sidebar.addSong}
-        songSearchSuggestions={sidebar.songSearchSuggestions}
-        selectSuggestion={sidebar.selectSuggestion}
-        clearSuggestions={sidebar.clearSuggestions}
-        newSongTitle={sidebar.newSongTitle}
-        fetchingTitle={sidebar.fetchingTitle}
-        urlErr={sidebar.urlErr}
-      />
+      <PlaylistSidebar model={sidebar} />
 
       <div className="player-area player-area-admin" onPointerDown={handlePointerDown} onPointerUp={handlePointerUp}>
         <div className="scroll-ticker-wrap">
@@ -138,8 +75,8 @@ export function OwnerRoomView({
             t={t}
           />
 
-          {sidebar.settings.tickerOnScreen && sidebar.settings.tickerText && (
-            <div className="admin-ticker">{sidebar.settings.tickerText}</div>
+          {sidebar.settingsPanel.tickerOnScreen && sidebar.settingsPanel.tickerText && (
+            <div className="admin-ticker">{sidebar.settingsPanel.tickerText}</div>
           )}
         </div>
 
@@ -155,7 +92,7 @@ export function OwnerRoomView({
           ui={ui}
           playback={playback}
           voting={voting}
-          showThumbnails={sidebar.showThumbnails}
+          showThumbnails={sidebar.settingsPanel.showThumbnails}
           t={t}
         />
       </div>

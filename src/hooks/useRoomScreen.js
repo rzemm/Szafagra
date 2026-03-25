@@ -9,219 +9,34 @@ import { useRoomSubscriptions } from './useRoomSubscriptions'
 import { useRoomUiState } from './useRoomUiState'
 import { useShareLinks } from './useShareLinks'
 import { useSongActions } from './useSongActions'
+import {
+  buildGuestScreenModel,
+  buildHomeScreen,
+  buildOwnerScreenModel,
+  buildRoomHeaderModel,
+} from './useRoomScreenModels'
 
-function buildHomeScreen({
-  auth,
-  ownedRooms,
-  upcomingOpenParties,
-  topRatedRooms,
-  commands,
-  ui,
-}) {
+function buildPlaybackState({ room, settings, auth }) {
   return {
-    creatingRoom: ui.creatingRoom,
-    user: auth.user,
-    ownedRooms,
-    upcomingOpenParties,
-    topRatedRooms,
-    onCreateRoom: commands.handleCreateRoom,
-    onDeleteRoom: commands.handleDeleteRoom,
-    onJoinRoom: commands.handleJoinRoom,
-    onSeedRooms: commands.handleSeedRooms,
-    onSignIn: auth.signInWithGoogle,
-    onSignOut: auth.signOutUser,
-    onUpdateDisplayName: auth.updateDisplayName,
-    onCreateRoomFromYt: commands.handleCreateRoomFromYt,
-    onAddYtToRoom: commands.handleAddYtToRoom,
-    onCopyForeignRoom: (sourceRoom) => commands.handleCreateRoomFromYt(sourceRoom.name || 'Kopia', sourceRoom.songs ?? []),
-    onAppendForeignToRoom: commands.handleAddYtToRoom,
-    onSubmitMessage: commands.submitContactMessage,
+    isPlaying: room?.isPlaying ?? false,
+    currentSong: room?.currentSong ?? null,
+    queue: room?.queue ?? [],
+    voteThreshold: settings.voteThreshold ?? 1,
+    skipThreshold: settings.skipThreshold ?? 0,
+    showThumbnails: settings.showThumbnails ?? true,
+    skipCount: Object.keys(room?.skipVoters ?? {}).length,
+    userId: auth.user?.uid ?? null,
+    mySkipVote: auth.user?.uid ? ((room?.skipVoters ?? {})[auth.user.uid] ?? false) : false,
+    myRating: (room?.ratings ?? {})[auth.user?.uid ?? null] ?? 0,
   }
 }
 
-function buildHeaderModel({
-  auth,
-  ownedRooms,
-  room,
-  showOwnerUI,
-  leftPanel,
-  toggleLeftPanel,
-  shareLinks,
-  copied,
-  suggestions,
-  commands,
-}) {
+function buildVotingState(room) {
+  const nextOptions = room?.nextOptions ?? {}
   return {
-    showOwnerUI,
-    leftPanel,
-    toggleLeftPanel,
-    user: auth.user,
-    signInWithGoogle: auth.signInWithGoogle,
-    signOutUser: auth.signOutUser,
-    updateDisplayName: auth.updateDisplayName,
-    onCreateRoomFromYt: commands.handleCreateRoomFromYt,
-    onAddYtToRoom: commands.handleAddYtToRoom,
-    currentRoomId: auth.roomId,
-    ownedRooms,
-    onShareGuestLink: shareLinks.copyVoterLink,
-    guestCopied: copied === 'voter',
-    proposalsCount: Object.keys(room?.votingProposals ?? {}).length + (suggestions?.length ?? 0),
-  }
-}
-
-function buildOwnerViewModel({
-  room,
-  canEditRoom,
-  route,
-  ownedRooms,
-  settings,
-  suggestions,
-  shareLinks,
-  ui,
-  playback,
-  playbackState,
-  votingState,
-  commands,
-  playlistActions,
-  songActions,
-  handleLocalPlay,
-}) {
-  return {
-    room,
-    canEditRoom,
-    ui: {
-      leftPanel: ui.leftPanel,
-      panelOpen: ui.panelOpen,
-      togglePanel: ui.togglePanel,
-      toggleLeftPanel: ui.toggleLeftPanel,
-    },
-    sidebar: {
-      saveSettings: commands.saveSettings,
-      suggestions,
-      showThumbnails: playbackState.showThumbnails,
-      showAddedBy: settings.showAddedBy ?? false,
-      playlistActions,
-      songActions,
-      settings,
-      renameRoom: commands.renameRoom,
-      changeRoomCode: commands.changeRoomCode,
-      isVisible: settings.isVisible !== false,
-      ownedRooms,
-      onCreateRoomFromYt: commands.handleCreateRoomFromYt,
-      onAddYtToRoom: commands.handleAddYtToRoom,
-      approveSuggestion: commands.approveSuggestion,
-      approveAllSuggestions: commands.approveAllSuggestions,
-      rejectSuggestion: commands.rejectSuggestion,
-      removeVotingProposal: commands.removeVotingProposal,
-      onSubmitMessage: commands.submitContactMessage,
-      newSongUrl: ui.uiState.newSongUrl,
-      handleSongUrlChange: ui.handleSongUrlChange,
-      handleUrlBlur: songActions.handleUrlBlur,
-      addSong: songActions.addSong,
-      songSearchSuggestions: songActions.suggestions,
-      selectSuggestion: songActions.selectSuggestion,
-      clearSuggestions: songActions.clearSuggestions,
-      newSongTitle: ui.uiState.newSongTitle,
-      fetchingTitle: ui.uiState.fetchingTitle,
-      urlErr: ui.uiState.urlErr,
-    },
-    playback: {
-      isPlaying: playbackState.isPlaying,
-      currentSong: playbackState.currentSong,
-      remaining: playback.remaining,
-      ytPlayerState: playback.ytPlayerState,
-      loadProgress: playback.loadProgress,
-      playerRef: playback.playerRef,
-      playerDivRef: playback.playerDivRef,
-      playerReady: playback.playerReady,
-      advanceToWinner: playback.advanceToWinner,
-      skipThreshold: playbackState.skipThreshold,
-      skipCount: playbackState.skipCount,
-      startJukebox: playback.startJukebox,
-      stopJukebox: playback.stopJukebox,
-      queue: playbackState.queue,
-      removeFromQueue: playback.removeFromQueue,
-    },
-    voting: {
-      voteMode: playback.voteMode,
-      voteThreshold: playbackState.voteThreshold,
-      nextOptionKeys: votingState.nextOptionKeys,
-      nextOptions: votingState.nextOptions,
-      nextVotesData: votingState.nextVotesData,
-      playSongNow: playback.playSongNow,
-      queueSong: playback.queueSong,
-      replaceSong: playback.replaceSong,
-      removeVotingOption: playback.removeVotingOption,
-      advanceToOption: playback.advanceToOption,
-    },
-    sharing: {
-      shareLinks,
-      copied: ui.uiState.copied,
-    },
-    viewMode: {
-      isViewMode: route.isViewMode,
-      handleCopyRoom: commands.handleCopyRoom,
-      copyingRoom: ui.copyingRoom,
-      handleAppendToRoom: commands.handleAppendToRoom,
-      appendingRoom: ui.appendingRoom,
-      ownedRooms,
-      localCurrentSongId: ui.localCurrentSongId,
-      handleLocalPlay,
-    },
-  }
-}
-
-function buildGuestViewModel({
-  auth,
-  room,
-  settings,
-  suggestions,
-  playback,
-  playbackState,
-  votingState,
-  commands,
-  onOpenCookieSettings,
-  isLoggedIn,
-}) {
-  const suggestionsPerUser = settings.suggestionsPerUser ?? null
-  const existingUserCount = suggestionsPerUser != null
-    ? (suggestions ?? []).filter(s => s.userId === playbackState.userId).length
-    : 0
-  const suggestionsRemaining = suggestionsPerUser != null
-    ? Math.max(0, suggestionsPerUser - existingUserCount)
-    : null
-
-  return {
-    isLoggedIn: isLoggedIn ?? false,
-    isOwner: auth.isOwner,
-    playerDivRef: playback.playerDivRef,
-    isPlaying: playbackState.isPlaying,
-    currentSong: playbackState.currentSong,
-    remaining: playback.remaining,
-    queue: playbackState.queue,
-    nextOptionKeys: votingState.nextOptionKeys,
-    nextOptions: votingState.nextOptions,
-    nextVotesData: votingState.nextVotesData,
-    userId: playbackState.userId,
-    vote: commands.vote,
-    skipThreshold: playbackState.skipThreshold,
-    mySkipVote: playbackState.mySkipVote,
-    voteSkip: commands.voteSkip,
-    allowSuggestions: settings.allowSuggestions ?? true,
-    allowSuggestFromList: settings.allowSuggestFromList ?? false,
-    allowGuestListening: settings.allowGuestListening ?? false,
-    tickerText: settings.tickerText ?? '',
-    tickerForGuests: settings.tickerForGuests ?? false,
-    submitSuggestion: ((settings.allowSuggestions ?? false) && !(settings.requireSuggestionApproval ?? true)) ? commands.submitSongToList : commands.submitSuggestion,
-    submitVotingProposal: commands.submitVotingProposal,
-    submitPlaylistSuggestion: commands.submitPlaylistSuggestion,
-    suggestionsRemaining,
-    myRating: playbackState.myRating,
-    onRate: commands.rateActivePlaylist,
-    showThumbnails: playbackState.showThumbnails,
-    jukeboxState: room,
-    onSubmitMessage: commands.submitContactMessage,
-    onOpenCookieSettings,
+    nextOptions,
+    nextVotesData: room?.nextVotes ?? {},
+    nextOptionKeys: Object.keys(nextOptions).sort(),
   }
 }
 
@@ -263,25 +78,8 @@ export function useRoomScreen(route) {
     ui.setLocalCurrentSongId(song.id)
   }, [playback.playerRef, ui])
 
-  const playbackState = {
-    isPlaying: room?.isPlaying ?? false,
-    currentSong: room?.currentSong ?? null,
-    queue: room?.queue ?? [],
-    voteThreshold: settings.voteThreshold ?? 1,
-    skipThreshold: settings.skipThreshold ?? 0,
-    showThumbnails: settings.showThumbnails ?? true,
-    skipCount: Object.keys(room?.skipVoters ?? {}).length,
-    userId: auth.user?.uid ?? null,
-    mySkipVote: auth.user?.uid ? ((room?.skipVoters ?? {})[auth.user.uid] ?? false) : false,
-    myRating: (room?.ratings ?? {})[auth.user?.uid ?? null] ?? 0,
-  }
-
-  const votingState = {
-    nextOptions: room?.nextOptions ?? {},
-    nextVotesData: room?.nextVotes ?? {},
-  }
-  votingState.nextOptionKeys = Object.keys(votingState.nextOptions).sort()
-
+  const playbackState = buildPlaybackState({ room, settings, auth })
+  const votingState = buildVotingState(room)
   const showOwnerUI = !!(auth.user && auth.isOwner && !auth.isGuestLink)
 
   const commands = useRoomCommands({
@@ -356,7 +154,7 @@ export function useRoomScreen(route) {
       roomError: auth.roomError,
       showOwnerUI,
       uiError: ui.uiState.uiError,
-      header: buildHeaderModel({
+      header: buildRoomHeaderModel({
         auth,
         ownedRooms,
         room,
@@ -368,7 +166,7 @@ export function useRoomScreen(route) {
         suggestions,
         commands,
       }),
-      ownerView: buildOwnerViewModel({
+      ownerView: buildOwnerScreenModel({
         room,
         canEditRoom,
         route,
@@ -385,11 +183,10 @@ export function useRoomScreen(route) {
         songActions,
         handleLocalPlay,
       }),
-      guestView: buildGuestViewModel({
+      guestView: buildGuestScreenModel({
         auth,
         room,
         settings,
-        suggestions,
         playback,
         playbackState,
         votingState,

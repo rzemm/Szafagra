@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { useLanguage } from '../../context/useLanguage'
-import { YouTubeImportModal } from '../YouTubeImportModal'
 import { useYouTubeAuth } from '../../hooks/useYouTubeAuth'
 import { ScrollText } from '../ScrollText'
+
+const LazyYouTubeImportModal = lazy(() => import('../YouTubeImportModal').then((module) => ({ default: module.YouTubeImportModal })))
 
 const IconYouTube = () => (
   <svg width="28" height="20" viewBox="0 0 28 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -18,13 +19,30 @@ const IconSpotify = () => (
   </svg>
 )
 
-export function ProposalsPanel({
-  room, suggestions, showThumbnails, removeVotingProposal, approveSuggestion, approveAllSuggestions, rejectSuggestion, canEditRoom,
-  onCreateRoomFromYt, onAddYtToRoom, ownedRooms,
-  newSongUrl, handleSongUrlChange, handleUrlBlur, addSongByUrl,
-  songSearchSuggestions = [], selectSuggestion, clearSuggestions,
-  newSongTitle, fetchingTitle, urlErr,
-}) {
+export function ProposalsPanel({ model }) {
+  const {
+    room,
+    suggestions,
+    showThumbnails,
+    removeVotingProposal,
+    approveSuggestion,
+    approveAllSuggestions,
+    rejectSuggestion,
+    canEditRoom,
+    onCreateRoomFromYt,
+    onAddYtToRoom,
+    ownedRooms,
+    newSongUrl,
+    handleSongUrlChange,
+    handleUrlBlur,
+    addSongByUrl,
+    songSearchSuggestions = [],
+    selectSuggestion,
+    clearSuggestions,
+    newSongTitle,
+    fetchingTitle,
+    urlErr,
+  } = model
   const { t } = useLanguage()
   const yt = useYouTubeAuth()
   const [showYtImport, setShowYtImport] = useState(false)
@@ -36,7 +54,6 @@ export function ProposalsPanel({
 
   return (
     <div className="section proposals-panel">
-
       <div className="settings-group">
         {canEditRoom && (
           <div className="proposals-add-song">
@@ -44,11 +61,11 @@ export function ProposalsPanel({
               <input
                 className="header-song-input"
                 value={newSongUrl ?? ''}
-                onChange={(e) => handleSongUrlChange(e.target.value)}
+                onChange={(event) => handleSongUrlChange(event.target.value)}
                 onBlur={handleUrlBlur}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') addSongByUrl()
-                  if (e.key === 'Escape') clearSuggestions()
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') addSongByUrl()
+                  if (event.key === 'Escape') clearSuggestions()
                 }}
                 placeholder={fetchingTitle ? t('fetchingTitlePlaceholder') : newSongTitle ? `${t('addSongTitlePrefix')} ${newSongTitle}` : t('addSongPlaceholder')}
                 title={urlErr || undefined}
@@ -57,15 +74,15 @@ export function ProposalsPanel({
               />
               {songSearchSuggestions.length > 0 && (
                 <ul className="song-suggestions-dropdown">
-                  {songSearchSuggestions.map((s) => (
+                  {songSearchSuggestions.map((suggestion) => (
                     <li
-                      key={s.ytId}
+                      key={suggestion.ytId}
                       className="song-suggestion-item"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => selectSuggestion(s)}
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => selectSuggestion(suggestion)}
                     >
-                      {s.thumbnail && <img src={s.thumbnail} className="suggestion-thumb" alt="" />}
-                      <ScrollText className="suggestion-title">{s.title}</ScrollText>
+                      {suggestion.thumbnail && <img src={suggestion.thumbnail} className="suggestion-thumb" alt="" />}
+                      <ScrollText className="suggestion-title">{suggestion.title}</ScrollText>
                     </li>
                   ))}
                 </ul>
@@ -97,26 +114,28 @@ export function ProposalsPanel({
       </div>
 
       {showYtImport && yt.accessToken && (
-        <YouTubeImportModal
-          accessToken={yt.accessToken}
-          onClose={() => setShowYtImport(false)}
-          onCreateRoom={async (name, songs) => {
-            await onCreateRoomFromYt(name, songs)
-            yt.disconnect()
-            setShowYtImport(false)
-          }}
-          onAddToRoom={async (roomId, songs) => {
-            await onAddYtToRoom(roomId, songs)
-            yt.disconnect()
-            setShowYtImport(false)
-          }}
-          onPickSong={async (song) => {
-            await onAddYtToRoom(room?.id, [song])
-            setShowYtImport(false)
-          }}
-          currentRoomId={room?.id ?? null}
-          ownedRooms={ownedRooms ?? []}
-        />
+        <Suspense fallback={null}>
+          <LazyYouTubeImportModal
+            accessToken={yt.accessToken}
+            onClose={() => setShowYtImport(false)}
+            onCreateRoom={async (name, songs) => {
+              await onCreateRoomFromYt(name, songs)
+              yt.disconnect()
+              setShowYtImport(false)
+            }}
+            onAddToRoom={async (roomId, songs) => {
+              await onAddYtToRoom(roomId, songs)
+              yt.disconnect()
+              setShowYtImport(false)
+            }}
+            onPickSong={async (song) => {
+              await onAddYtToRoom(room?.id, [song])
+              setShowYtImport(false)
+            }}
+            currentRoomId={room?.id ?? null}
+            ownedRooms={ownedRooms ?? []}
+          />
+        </Suspense>
       )}
 
       {totalCount === 0 ? (
@@ -159,7 +178,7 @@ export function ProposalsPanel({
                     <span className="song-title proposals-item-title">{song.title}</span>
                     {canEditRoom && (
                       <>
-                        <button className="btn-icon" onClick={() => approveSuggestion(song)} title={t('approveAllSongs')}>✓</button>
+                        <button className="btn-icon" onClick={() => approveSuggestion(song)} title={t('approveAllSongs')}>âś“</button>
                         <button className="btn-icon danger" onClick={() => rejectSuggestion(song.id)} title={t('reject')}>x</button>
                       </>
                     )}

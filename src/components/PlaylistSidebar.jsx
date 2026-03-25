@@ -3,69 +3,8 @@ import { SongsPanel } from './sidebar/SongsPanel'
 import { SettingsPanel } from './sidebar/SettingsPanel'
 import { ProposalsPanel } from './sidebar/ProposalsPanel'
 
-export function PlaylistSidebar({
-  leftPanel,
-  isPlaying,
-  room,
-  currentSong,
-  playSongNow,
-  deleteSong,
-  deleteSongs,
-  updateSong,
-  addSong,
-  suggestions,
-  approveSuggestion,
-  approveAllSuggestions,
-  rejectSuggestion,
-  showThumbnails,
-  showAddedBy,
-  voteThreshold,
-  voteMode,
-  skipThreshold,
-  allowSuggestions,
-  allowSuggestFromList,
-  allowGuestListening,
-  tickerText,
-  tickerOnScreen,
-  tickerForGuests,
-  queueSize,
-  saveSettings,
-  importPlaylist,
-  exportPlaylist,
-  queueSong,
-  onRenameRoom,
-  onChangeRoomCode,
-  onCreateRoomFromYt,
-  onAddYtToRoom,
-  ownedRooms,
-  showQr,
-  showQueueOverlay,
-  showRoomCode,
-  onToggleQr,
-  onToggleQueueOverlay,
-  onToggleShowRoomCode,
-  isVisible,
-  canEditRoom,
-  isViewMode,
-  localPlayMode,
-  onLocalPlay,
-  localCurrentSongId,
-  onSubmitMessage,
-  removeVotingProposal,
-  partyDate,
-  partyLocation,
-  partyDescription,
-  newSongUrl,
-  handleSongUrlChange,
-  handleUrlBlur,
-  addSongByUrl,
-  songSearchSuggestions,
-  selectSuggestion,
-  clearSuggestions,
-  newSongTitle,
-  fetchingTitle,
-  urlErr,
-}) {
+export function PlaylistSidebar({ model }) {
+  const { ui, songsPanel, settingsPanel, proposalsPanel } = model
   const [sidebarWidth, setSidebarWidth] = useState(360)
   const isResizing = useRef(false)
   const startX = useRef(0)
@@ -102,92 +41,22 @@ export function PlaylistSidebar({
   return (
     <>
     <aside
-      className={`sidebar${leftPanel ? '' : ' sidebar-hidden'}`}
-      style={leftPanel ? { width: sidebarWidth } : undefined}
+      className={`sidebar${ui.leftPanel ? '' : ' sidebar-hidden'}`}
+      style={ui.leftPanel ? { width: sidebarWidth } : undefined}
     >
-      {leftPanel === 'songs' && room && (
-        <SongsPanel
-          room={room}
-          isPlaying={isPlaying}
-          currentSong={currentSong}
-          playSongNow={playSongNow}
-          deleteSong={deleteSong}
-          deleteSongs={deleteSongs}
-          updateSong={updateSong}
-          addSong={addSong}
-          showThumbnails={showThumbnails}
-          showAddedBy={showAddedBy}
-          queueSong={queueSong}
-          canEditRoom={canEditRoom}
-          isViewMode={isViewMode}
-          localPlayMode={localPlayMode}
-          onLocalPlay={onLocalPlay}
-          localCurrentSongId={localCurrentSongId}
-        />
+      {ui.leftPanel === 'songs' && songsPanel.room && (
+        <SongsPanel model={songsPanel} />
       )}
 
-      {leftPanel === 'settings' && (
-        <SettingsPanel
-          room={room}
-          showThumbnails={showThumbnails}
-          showAddedBy={showAddedBy}
-          voteThreshold={voteThreshold}
-          voteMode={voteMode}
-          skipThreshold={skipThreshold}
-          allowSuggestions={allowSuggestions}
-          allowSuggestFromList={allowSuggestFromList}
-          allowGuestListening={allowGuestListening}
-          tickerText={tickerText}
-          tickerOnScreen={tickerOnScreen}
-          tickerForGuests={tickerForGuests}
-          queueSize={queueSize}
-          saveSettings={saveSettings}
-          exportPlaylist={exportPlaylist}
-          importPlaylist={importPlaylist}
-          onRenameRoom={onRenameRoom}
-          onChangeRoomCode={onChangeRoomCode}
-          showQr={showQr}
-          showQueueOverlay={showQueueOverlay}
-          showRoomCode={showRoomCode}
-          onToggleQr={onToggleQr}
-          onToggleQueueOverlay={onToggleQueueOverlay}
-          onToggleShowRoomCode={onToggleShowRoomCode}
-          isVisible={isVisible}
-          canEditRoom={canEditRoom}
-          onSubmitMessage={onSubmitMessage}
-          partyDate={partyDate}
-          partyLocation={partyLocation}
-          partyDescription={partyDescription}
-        />
+      {ui.leftPanel === 'settings' && (
+        <SettingsPanel model={settingsPanel} />
       )}
 
-      {leftPanel === 'proposals' && (
-        <ProposalsPanel
-          room={room}
-          suggestions={suggestions}
-          showThumbnails={showThumbnails}
-          removeVotingProposal={removeVotingProposal}
-          approveSuggestion={approveSuggestion}
-          approveAllSuggestions={approveAllSuggestions}
-          rejectSuggestion={rejectSuggestion}
-          canEditRoom={canEditRoom}
-          onCreateRoomFromYt={onCreateRoomFromYt}
-          onAddYtToRoom={onAddYtToRoom}
-          ownedRooms={ownedRooms}
-          newSongUrl={newSongUrl}
-          handleSongUrlChange={handleSongUrlChange}
-          handleUrlBlur={handleUrlBlur}
-          addSongByUrl={addSongByUrl}
-          songSearchSuggestions={songSearchSuggestions}
-          selectSuggestion={selectSuggestion}
-          clearSuggestions={clearSuggestions}
-          newSongTitle={newSongTitle}
-          fetchingTitle={fetchingTitle}
-          urlErr={urlErr}
-        />
+      {ui.leftPanel === 'proposals' && (
+        <ProposalsPanel model={proposalsPanel} />
       )}
     </aside>
-    {leftPanel && (
+    {ui.leftPanel && (
       <div className="sidebar-resize-handle" onMouseDown={handleResizeMouseDown} />
     )}
     </>

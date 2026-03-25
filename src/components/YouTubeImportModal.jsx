@@ -15,10 +15,8 @@ export function YouTubeImportModal({ accessToken, onClose, onCreateRoom, onAddTo
   const [loadingMore, setLoadingMore] = useState(false)
   const [songsError, setSongsError] = useState(null)
   const [busy, setBusy] = useState(false)
-  const [showRoomPicker, setShowRoomPicker] = useState(false)
 
   const currentRoom = ownedRooms.find((r) => r.id === currentRoomId) ?? null
-  const otherRooms = ownedRooms.filter((r) => r.id !== currentRoomId)
 
   useEffect(() => {
     fetchUserYtPlaylists(accessToken)
@@ -31,7 +29,6 @@ export function YouTubeImportModal({ accessToken, onClose, onCreateRoom, onAddTo
     setSongs(null)
     setNextPageToken(null)
     setSongsError(null)
-    setShowRoomPicker(false)
     setLoadingSongs(true)
     const isLiked = playlist.id === YT_LIKED_PLAYLIST_ID
     try {
@@ -77,25 +74,11 @@ export function YouTubeImportModal({ accessToken, onClose, onCreateRoom, onAddTo
     setBusy(false)
   }
 
-  const handleCreate = async () => {
-    if (!selected || !songs || busy) return
-    setBusy(true)
-    const title = selected.id === YT_LIKED_PLAYLIST_ID ? t('ytLikedVideos') : selected.title
-    await onCreateRoom(title, songs)
-  }
-
-  const handleAddTo = async (roomId) => {
-    if (!songs || busy) return
-    setBusy(true)
-    await onAddToRoom(roomId, songs)
-  }
-
   const handleBack = () => {
     setSelected(null)
     setSongs(null)
     setNextPageToken(null)
     setSongsError(null)
-    setShowRoomPicker(false)
   }
 
   return (
