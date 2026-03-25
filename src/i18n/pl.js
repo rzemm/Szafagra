@@ -152,7 +152,7 @@ export const pl = {
   // GuestView - tabs
   tabVoting: 'Głosuj',
   tabQueue: 'Kolejka',
-  tabSuggest: 'Zaproponuj',
+  tabSuggest: 'Dodaj do listy',
   tabList: 'Lista',
   tabEvent: 'Wydarzenie',
   listSearchPlaceholder: 'Szukaj...',
@@ -236,6 +236,9 @@ export const pl = {
   minQueuedLabel: 'Kolejka',
   skipVotesRequired: 'Wymagane g\u0142osy do pomini\u0119cia',
   requireSuggestionApproval: 'Nowe utwory wymagaj\u0105 akceptacji',
+  newSongsDestLabel: 'Nowe utwory trafiaj\u0105 do:',
+  newSongsDestQueue: 'Kolejki',
+  newSongsDestList: 'Listy',
   allowPlaybackStop: 'Wy\u0142\u0105czenie muzyki',
   playbackStopThreshold: 'Min. u\u017cytkownik\u00f3w',
   playbackStopDuration: 'Na ile minut',
@@ -251,13 +254,16 @@ export const pl = {
   showQrCode: 'Pokaz QR code',
   showRoomCode: 'Pokaz kod szafy',
   showQueueOverlay: 'Pokaz kolejke',
-  roomOptionsGroup: 'Opcje szafy',
+  roomOptionsGroup: 'Wspólna lista',
   collaborativeModeLabel: 'Tryb wspólnego tworzenia listy',
   roomInfoGroup: 'Informacje o szafie',
   eventGroup: 'Wydarzenie',
   setEventBtn: 'Ustaw wydarzenie',
   editEventBtn: 'Edytuj wydarzenie',
   cancelEventBtn: 'Anuluj wydarzenie',
+  confirmQuestion: 'Na pewno?',
+  confirmYes: 'Tak',
+  confirmNo: 'Nie',
   setEventTitle: 'Ustaw wydarzenie',
   eventDateLabel: 'Data i godzina',
   eventLocationLabel: 'Miejsce',
@@ -383,6 +389,11 @@ export const pl = {
 
   // Language toggle
   langToggle: '🇵🇱',
+
+  // Help page
+  helpLink: 'Pomoc',
+  helpTitle: 'Pomoc',
+  helpBack: '← Wróć',
   showAddedBy: 'Pokazuj kto dodał piosenkę',
   notFoundOnList: 'Nie ma na liście – wyniki z YouTube:',
   searchingYt: 'Szukam na YouTube...',

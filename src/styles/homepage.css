@@ -51,12 +51,35 @@
 .homepage-logo {
   display: flex;
   align-items: center;
+  gap: 0.85rem;
 }
 
 .homepage-logo-img {
   height: 3rem;
   width: auto;
   display: block;
+}
+
+.homepage-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.homepage-brand-mark {
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  color: var(--text);
+}
+
+.homepage-brand-tagline {
+  font-size: 0.72rem;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
 }
 
 .homepage-body {

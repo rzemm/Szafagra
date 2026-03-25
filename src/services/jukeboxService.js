@@ -1,5 +1,6 @@
 import {
   addDoc,
+  arrayUnion,
   collection,
   deleteDoc,
   deleteField,
@@ -282,6 +283,10 @@ export function replaceRoomSongs(roomId, songs) {
   return updateRoom(roomId, {
     songs,
   })
+}
+
+export function addSongToList(roomId, song) {
+  return updateDoc(roomRef(roomId), { songs: arrayUnion(song) })
 }
 
 export function addSuggestion(roomId, userId, { title, ytId, url }) {

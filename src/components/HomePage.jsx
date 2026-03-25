@@ -149,7 +149,11 @@ export function HomePage({
       <div className="homepage">
         <div className="homepage-top">
           <div className="homepage-logo">
-            <img src={logoUrl} alt="Szafagra" className="homepage-logo-img" />
+            <img src={logoUrl} alt="szafi.fi" className="homepage-logo-img" />
+            <div className="homepage-brand">
+              <span className="homepage-brand-mark">szafi.fi</span>
+              <span className="homepage-brand-tagline">shared music rooms</span>
+            </div>
           </div>
           <div className="homepage-header-carousel">
             <div className="homepage-header-dots">

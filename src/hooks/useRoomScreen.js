@@ -200,7 +200,7 @@ function buildGuestViewModel({
     allowGuestListening: settings.allowGuestListening ?? false,
     tickerText: settings.tickerText ?? '',
     tickerForGuests: settings.tickerForGuests ?? false,
-    submitSuggestion: commands.submitSuggestion,
+    submitSuggestion: ((settings.allowSuggestions ?? false) && !(settings.requireSuggestionApproval ?? true)) ? commands.submitSongToList : commands.submitSuggestion,
     submitVotingProposal: commands.submitVotingProposal,
     submitPlaylistSuggestion: commands.submitPlaylistSuggestion,
     myRating: playbackState.myRating,

@@ -152,7 +152,7 @@ export const en = {
   // GuestView - tabs
   tabVoting: 'Vote',
   tabQueue: 'Queue',
-  tabSuggest: 'Suggest',
+  tabSuggest: 'Add to list',
   tabList: 'All songs',
   tabEvent: 'Event',
   listSearchPlaceholder: 'Search...',
@@ -236,6 +236,9 @@ export const en = {
   minQueuedLabel: 'Queue',
   skipVotesRequired: 'Votes required to skip',
   requireSuggestionApproval: 'New songs require approval',
+  newSongsDestLabel: 'New songs go to:',
+  newSongsDestQueue: 'Queue',
+  newSongsDestList: 'List',
   allowPlaybackStop: 'Turn music off',
   playbackStopThreshold: 'Min. users',
   playbackStopDuration: 'Duration in minutes',
@@ -251,13 +254,16 @@ export const en = {
   showQrCode: 'Show QR code',
   showRoomCode: 'Show room code',
   showQueueOverlay: 'Show queue',
-  roomOptionsGroup: 'Room options',
+  roomOptionsGroup: 'Collaborative playlist',
   collaborativeModeLabel: 'Collaborative playlist mode',
   roomInfoGroup: 'Room info',
   eventGroup: 'Event',
   setEventBtn: 'Set event',
   editEventBtn: 'Edit event',
   cancelEventBtn: 'Cancel event',
+  confirmQuestion: 'Are you sure?',
+  confirmYes: 'Yes',
+  confirmNo: 'No',
   setEventTitle: 'Set event',
   eventDateLabel: 'Date & time',
   eventLocationLabel: 'Location',
@@ -383,6 +389,11 @@ export const en = {
 
   // Language toggle
   langToggle: '🇬🇧',
+
+  // Help page
+  helpLink: 'Help',
+  helpTitle: 'Help',
+  helpBack: '← Back',
   showAddedBy: 'Show who added song',
   notFoundOnList: 'Not on the list — results from YouTube:',
   searchingYt: 'Searching YouTube...',

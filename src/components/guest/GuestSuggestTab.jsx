@@ -2,6 +2,7 @@ import { ScrollText } from '../ScrollText'
 
 export function GuestSuggestTab({
   allowSuggestions,
+  allowSuggestFromList,
   submitPlaylistSuggestion,
   suggestion,
   playlist,

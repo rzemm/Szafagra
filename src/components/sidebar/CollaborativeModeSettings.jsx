@@ -1,4 +1,4 @@
-export function CollaborativeModeSettings({ allowSuggestions, suggestionsPerUser, suggestionsRequireLogin, canEditRoom, saveSettings, t }) {
+export function CollaborativeModeSettings({ allowSuggestions, requireSuggestionApproval, suggestionsPerUser, suggestionsRequireLogin, canEditRoom, saveSettings, t }) {
   const unlimited = suggestionsPerUser === null
 
   const handleUnlimitedChange = (checked) => {
@@ -26,6 +26,22 @@ export function CollaborativeModeSettings({ allowSuggestions, suggestionsPerUser
 
       {allowSuggestions && (
         <>
+          <div className="setting-row">
+            <span className="setting-label">{t('newSongsDestLabel')}</span>
+            <div className="setting-toggle-group">
+              <button
+                className={`btn-setting${!!requireSuggestionApproval ? ' active' : ''}`}
+                onClick={() => saveSettings('requireSuggestionApproval', true)}
+                disabled={!canEditRoom}
+              >{t('newSongsDestQueue')}</button>
+              <button
+                className={`btn-setting${!requireSuggestionApproval ? ' active' : ''}`}
+                onClick={() => saveSettings('requireSuggestionApproval', false)}
+                disabled={!canEditRoom}
+              >{t('newSongsDestList')}</button>
+            </div>
+          </div>
+
           <div className="setting-row">
             <span className="setting-label">{t('partyConfigUnlimited')}</span>
             <label className="toggle-switch">

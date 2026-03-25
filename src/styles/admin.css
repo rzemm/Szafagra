@@ -1584,7 +1584,7 @@ body.disco-mode .sidebar {
 .settings-group-title--clickable {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 0.25rem;
   cursor: pointer;
   user-select: none;
   margin-bottom: 0;
@@ -1601,6 +1601,7 @@ body.disco-mode .sidebar {
   font-size: 0.65rem;
   color: var(--text-dim);
   flex-shrink: 0;
+  margin-left: auto;
 }
 
 .settings-group-title--clickable + * {
@@ -1750,6 +1751,20 @@ body.disco-mode .sidebar {
 .btn-setting-action--danger:hover {
   border-color: #e74c3c;
   color: #e74c3c;
+}
+
+/* ─── Inline confirm ─────────────────────────────────────────────────────── */
+.confirm-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.confirm-inline-label {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  white-space: nowrap;
 }
 
 /* ─── Event setting row ───────────────────────────────────────────────────── */

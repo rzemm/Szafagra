@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { HelpModal } from './HelpPage'
 import { UserProfileModal } from './UserProfileModal'
 import { useLanguage } from '../context/useLanguage'
 import logoUrl from '../assets/logo.png'
@@ -31,6 +32,7 @@ export function RoomHeader({
 }) {
   const { t, toggleLang } = useLanguage()
   const [profileOpen, setProfileOpen] = useState(false)
+  const [helpOpen, setHelpOpen] = useState(false)
 
   return (
     <header className={`header${!showOwnerUI ? ' header--guest' : ''}`}>
@@ -126,6 +128,7 @@ export function RoomHeader({
           </button>
         )}
       </div>
+      {helpOpen && <HelpModal onClose={() => setHelpOpen(false)} />}
     </header>
   )
 }

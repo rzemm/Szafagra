@@ -4,6 +4,7 @@ import { seedSampleRooms } from '../dev/seedRooms'
 import { genId } from '../lib/jukebox'
 import {
   addPlaylistSuggestion,
+  addSongToList,
   addSuggestion,
   clearVotingProposals,
   changeRoomGuestToken,
@@ -181,6 +182,16 @@ export function useRoomCommands({
     return done !== null
   }, [auth.roomId, executeAction, userId])
 
+  const submitSongToList = useCallback(async ({ title, ytId, url }) => {
+    if (!auth.roomId || !userId) return false
+    const song = createSong({ genId, title, ytId, url, addedBy: { uid: userId } })
+    const done = await executeAction(
+      () => addSongToList(auth.roomId, song),
+      'Nie udało się dodać piosenki do listy.'
+    )
+    return done !== null
+  }, [auth.roomId, executeAction, userId])
+
   const submitVotingProposal = useCallback(async (song, key) => {
     if (!auth.roomId || !userId) return false
     const done = await executeAction(
@@ -294,6 +305,7 @@ export function useRoomCommands({
     voteSkip,
     rateActivePlaylist,
     submitSuggestion,
+    submitSongToList,
     submitVotingProposal,
     submitPlaylistSuggestion,
     removeVotingProposal,

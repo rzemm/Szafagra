@@ -126,6 +126,14 @@ export function GuestView({
     event: t('tabEvent'),
   }
 
+  const tabEmoji = {
+    voting: '🗳️',
+    suggest: '➕',
+    queue: '▶️',
+    list: '🎵',
+    event: '📅',
+  }
+
   return (
     <div className="guest-view">
       {tickerForGuests && tickerText && (
@@ -144,13 +152,15 @@ export function GuestView({
         {visibleTabs.map((tab) => (
           <button
             key={tab}
-            className={`guest-tab-btn${currentTab === tab ? ' active' : ''}${tab === 'suggest' && allowSuggestions ? ' guest-tab-btn--collab' : ''}`}
+            className={`guest-tab-btn${currentTab === tab ? ' active' : ''}`}
             onClick={() => setActiveTab(tab)}
+            title={tabLabels[tab]}
           >
-            {tabLabels[tab]}
+            {tabEmoji[tab]}
           </button>
         ))}
       </div>
+      <div className="guest-tab-nav-title">{tabLabels[currentTab]}</div>
 
       <div
         className="guest-tab-slider-wrap"
@@ -180,6 +190,7 @@ export function GuestView({
 
           <GuestSuggestTab
             allowSuggestions={allowSuggestions}
+            allowSuggestFromList={allowSuggestFromList}
             submitPlaylistSuggestion={submitPlaylistSuggestion}
             suggestion={suggestion}
             playlist={playlist}

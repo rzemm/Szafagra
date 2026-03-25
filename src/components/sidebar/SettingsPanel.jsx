@@ -2,7 +2,9 @@ import { useRef, useState } from 'react'
 
 import { ContactMessageForm } from '../ContactMessageForm'
 import { NotePicker } from '../NotePicker'
+import { HelpModal } from '../HelpPage'
 import { CollaborativeModeSettings } from './CollaborativeModeSettings'
+import { SettingHint } from './SettingHint'
 import { useLanguage } from '../../context/useLanguage'
 
 export function SettingsPanel({
@@ -38,6 +40,7 @@ export function SettingsPanel({
 }) {
   const { t, lang } = useLanguage()
   const [openGroup, setOpenGroup] = useState('voting')
+  const [helpSection, setHelpSection] = useState(null)
   const toggleGroup = (key) => setOpenGroup((current) => current === key ? null : key)
   const requireSuggestionApproval = room?.settings?.requireSuggestionApproval ?? true
   const allowPlaybackStop = room?.settings?.allowPlaybackStop ?? false
@@ -47,6 +50,7 @@ export function SettingsPanel({
   const suggestionsRequireLogin = room?.settings?.suggestionsRequireLogin ?? true
 
   const [showEventPopup, setShowEventPopup] = useState(false)
+  const [confirmCancelEvent, setConfirmCancelEvent] = useState(false)
   const [eventDate, setEventDate] = useState('')
   const [eventLocation, setEventLocation] = useState('')
   const [eventDescription, setEventDescription] = useState('')
@@ -141,7 +145,7 @@ export function SettingsPanel({
       <div className="section sidebar-settings-list">
         <div className="settings-group">
           <span className="settings-group-title settings-group-title--clickable" onClick={() => toggleGroup('voting')}>
-            {t('votingOptionsGroup')}
+            {t('votingOptionsGroup')} <SettingHint onClick={() => setHelpSection('voting')} />
             <span className="settings-group-arrow">{openGroup === 'voting' ? '\u25be' : '\u25b8'}</span>
           </span>
 
@@ -187,25 +191,31 @@ export function SettingsPanel({
         </div>
 
         <div className="settings-group">
+          <span className="settings-group-title settings-group-title--clickable" onClick={() => toggleGroup('room')}>
+            {t('roomOptionsGroup')} <SettingHint onClick={() => setHelpSection('room')} />
+            <span className="settings-group-arrow">{openGroup === 'room' ? '\u25be' : '\u25b8'}</span>
+          </span>
+
+          {openGroup === 'room' && (
+            <CollaborativeModeSettings
+              allowSuggestions={allowSuggestions}
+              requireSuggestionApproval={requireSuggestionApproval}
+              suggestionsPerUser={suggestionsPerUser}
+              suggestionsRequireLogin={suggestionsRequireLogin}
+              canEditRoom={canEditRoom}
+              saveSettings={saveSettings}
+              t={t}
+            />
+          )}
+        </div>
+
+        <div className="settings-group">
           <span className="settings-group-title settings-group-title--clickable" onClick={() => toggleGroup('userPermissions')}>
-            {t('userPermissionsGroup')}
+            {t('userPermissionsGroup')} <SettingHint onClick={() => setHelpSection('userPermissions')} />
             <span className="settings-group-arrow">{openGroup === 'userPermissions' ? '\u25be' : '\u25b8'}</span>
           </span>
 
           {openGroup === 'userPermissions' && <>
-          <div className="setting-row">
-            <span className="setting-label">{t('requireSuggestionApproval')}</span>
-            <label className="toggle-switch">
-              <input
-                type="checkbox"
-                checked={!!requireSuggestionApproval}
-                onChange={(event) => saveSettings('requireSuggestionApproval', event.target.checked)}
-                disabled={!canEditRoom || !allowSuggestions}
-              />
-              <span className="toggle-slider" />
-            </label>
-          </div>
-
           <div className="setting-row">
             <span className="setting-label">{t('permSuggestFromList')}</span>
             <select
@@ -266,7 +276,7 @@ export function SettingsPanel({
 
         <div className="settings-group">
           <span className="settings-group-title settings-group-title--clickable" onClick={() => toggleGroup('display')}>
-            {t('displayGroup')}
+            {t('displayGroup')} <SettingHint onClick={() => setHelpSection('display')} />
             <span className="settings-group-arrow">{openGroup === 'display' ? '\u25be' : '\u25b8'}</span>
           </span>
 
@@ -322,26 +332,8 @@ export function SettingsPanel({
         </div>
 
         <div className="settings-group">
-          <span className="settings-group-title settings-group-title--clickable" onClick={() => toggleGroup('room')}>
-            {t('roomOptionsGroup')}
-            <span className="settings-group-arrow">{openGroup === 'room' ? '\u25be' : '\u25b8'}</span>
-          </span>
-
-          {openGroup === 'room' && (
-            <CollaborativeModeSettings
-              allowSuggestions={allowSuggestions}
-              suggestionsPerUser={suggestionsPerUser}
-              suggestionsRequireLogin={suggestionsRequireLogin}
-              canEditRoom={canEditRoom}
-              saveSettings={saveSettings}
-              t={t}
-            />
-          )}
-        </div>
-
-        <div className="settings-group">
           <span className="settings-group-title settings-group-title--clickable" onClick={() => toggleGroup('event')}>
-            {t('eventGroup')}
+            {t('eventGroup')} <SettingHint onClick={() => setHelpSection('event')} />
             <span className="settings-group-arrow">{openGroup === 'event' ? '\u25be' : '\u25b8'}</span>
           </span>
 
@@ -365,7 +357,15 @@ export function SettingsPanel({
                   </div>
                   <div className="event-set-actions">
                     <button className="btn-setting-action" onClick={openEventPopup}>{t('editEventBtn')}</button>
-                    <button className="btn-setting-action btn-setting-action--danger" onClick={handleCancelEvent}>{t('cancelEventBtn')}</button>
+                    {confirmCancelEvent ? (
+                      <span className="confirm-inline">
+                        <span className="confirm-inline-label">{t('confirmQuestion')}</span>
+                        <button className="btn-setting-action btn-setting-action--danger" onClick={() => { setConfirmCancelEvent(false); handleCancelEvent() }}>{t('confirmYes')}</button>
+                        <button className="btn-setting-action" onClick={() => setConfirmCancelEvent(false)}>{t('confirmNo')}</button>
+                      </span>
+                    ) : (
+                      <button className="btn-setting-action btn-setting-action--danger" onClick={() => setConfirmCancelEvent(true)}>{t('cancelEventBtn')}</button>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -386,7 +386,7 @@ export function SettingsPanel({
 
         <div className="settings-group">
           <span className="settings-group-title settings-group-title--clickable" onClick={() => toggleGroup('roomInfo')}>
-            {t('roomInfoGroup')}
+            {t('roomInfoGroup')} <SettingHint onClick={() => setHelpSection('roomInfo')} />
             <span className="settings-group-arrow">{openGroup === 'roomInfo' ? '\u25be' : '\u25b8'}</span>
           </span>
 
@@ -512,6 +512,8 @@ export function SettingsPanel({
           </div>
         </div>
       )}
+
+      {helpSection && <HelpModal activeSection={helpSection} onClose={() => setHelpSection(null)} />}
 
       {showCodePopup && (
         <div className="song-settings-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowCodePopup(false) }}>
