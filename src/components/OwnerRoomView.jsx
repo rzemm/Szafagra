@@ -34,6 +34,7 @@ export function OwnerRoomView({
         addSong={sidebar.songActions.addSongDirect}
         suggestions={sidebar.suggestions}
         approveSuggestion={sidebar.approveSuggestion}
+        approveAllSuggestions={sidebar.approveAllSuggestions}
         rejectSuggestion={sidebar.rejectSuggestion}
         showThumbnails={sidebar.showThumbnails}
         showAddedBy={sidebar.showAddedBy}

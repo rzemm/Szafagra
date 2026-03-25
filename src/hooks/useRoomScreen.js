@@ -110,6 +110,7 @@ function buildOwnerViewModel({
       onCreateRoomFromYt: commands.handleCreateRoomFromYt,
       onAddYtToRoom: commands.handleAddYtToRoom,
       approveSuggestion: commands.approveSuggestion,
+      approveAllSuggestions: commands.approveAllSuggestions,
       rejectSuggestion: commands.rejectSuggestion,
       removeVotingProposal: commands.removeVotingProposal,
       onSubmitMessage: commands.submitContactMessage,
@@ -174,6 +175,7 @@ function buildGuestViewModel({
   auth,
   room,
   settings,
+  suggestions,
   playback,
   playbackState,
   votingState,
@@ -181,6 +183,14 @@ function buildGuestViewModel({
   onOpenCookieSettings,
   isLoggedIn,
 }) {
+  const suggestionsPerUser = settings.suggestionsPerUser ?? null
+  const existingUserCount = suggestionsPerUser != null
+    ? (suggestions ?? []).filter(s => s.userId === playbackState.userId).length
+    : 0
+  const suggestionsRemaining = suggestionsPerUser != null
+    ? Math.max(0, suggestionsPerUser - existingUserCount)
+    : null
+
   return {
     isLoggedIn: isLoggedIn ?? false,
     isOwner: auth.isOwner,
@@ -205,6 +215,7 @@ function buildGuestViewModel({
     submitSuggestion: ((settings.allowSuggestions ?? false) && !(settings.requireSuggestionApproval ?? true)) ? commands.submitSongToList : commands.submitSuggestion,
     submitVotingProposal: commands.submitVotingProposal,
     submitPlaylistSuggestion: commands.submitPlaylistSuggestion,
+    suggestionsRemaining,
     myRating: playbackState.myRating,
     onRate: commands.rateActivePlaylist,
     showThumbnails: playbackState.showThumbnails,
@@ -277,6 +288,7 @@ export function useRoomScreen(route) {
     auth,
     canEditRoom,
     room,
+    suggestions,
     ownedRooms,
     route,
     executeAction,
@@ -377,6 +389,7 @@ export function useRoomScreen(route) {
         auth,
         room,
         settings,
+        suggestions,
         playback,
         playbackState,
         votingState,

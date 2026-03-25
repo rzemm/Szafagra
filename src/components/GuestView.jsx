@@ -30,6 +30,7 @@ export function GuestView({
   submitSuggestion,
   submitVotingProposal,
   submitPlaylistSuggestion,
+  suggestionsRemaining,
   myRating,
   onRate,
   isLoggedIn,
@@ -215,6 +216,7 @@ export function GuestView({
             allowSuggestions={allowSuggestions}
             allowSuggestFromList={allowSuggestFromList}
             submitPlaylistSuggestion={submitPlaylistSuggestion}
+            suggestionsPerUser={suggestionsRemaining}
             suggestion={suggestion}
             playlist={playlist}
             ytAuth={ytAuth}

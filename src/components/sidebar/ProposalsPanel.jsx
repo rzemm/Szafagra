@@ -19,7 +19,7 @@ const IconSpotify = () => (
 )
 
 export function ProposalsPanel({
-  room, suggestions, showThumbnails, removeVotingProposal, approveSuggestion, rejectSuggestion, canEditRoom,
+  room, suggestions, showThumbnails, removeVotingProposal, approveSuggestion, approveAllSuggestions, rejectSuggestion, canEditRoom,
   onCreateRoomFromYt, onAddYtToRoom, ownedRooms,
   newSongUrl, handleSongUrlChange, handleUrlBlur, addSongByUrl,
   songSearchSuggestions = [], selectSuggestion, clearSuggestions,
@@ -140,7 +140,12 @@ export function ProposalsPanel({
 
           {newSongs.length > 0 && (
             <>
-              <p className="proposals-section-label">{t('proposalsNewSongs')}</p>
+              <div className="proposals-section-header">
+                <p className="proposals-section-label">{t('proposalsNewSongs')}</p>
+                {canEditRoom && newSongs.length > 1 && (
+                  <button className="btn-setting-action" onClick={() => approveAllSuggestions(newSongs)}>{t('approveAll')}</button>
+                )}
+              </div>
               <ul className="proposals-list">
                 {newSongs.map((song) => (
                   <li key={song.id} className="proposals-item">

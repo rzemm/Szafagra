@@ -200,6 +200,7 @@ export const en = {
   suggestPlaylistVideos: 'videos',
   suggestPlaylistFetching: 'Fetching songs...',
   suggestPlaylistSongCount: (n) => `${n} songs`,
+  suggestPlaylistSongCountLimited: (n, total) => `${n} of ${total} songs (limit)`,
   suggestPlaylistSubmit: 'Suggest this playlist',
   suggestPlaylistSent: 'Playlist sent to the admin!',
   suggestPlaylistBack: 'Back',
@@ -209,6 +210,7 @@ export const en = {
   playlistSuggestionFrom: 'From guest',
   playlistSuggestionSongs: (n) => `${n} songs`,
   approveAllSongs: 'Add all',
+  approveAll: 'Approve all',
   showPlaylistSongs: 'Show songs',
   hidePlaylistSongs: 'Hide',
 

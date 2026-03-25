@@ -4,6 +4,7 @@ export function GuestSuggestTab({
   allowSuggestions,
   allowSuggestFromList,
   submitPlaylistSuggestion,
+  suggestionsPerUser,
   suggestion,
   playlist,
   ytAuth,
@@ -114,7 +115,11 @@ export function GuestSuggestTab({
                     <div>
                       <span className="guest-playlist-title">{playlist.selectedPlaylist.title}</span>
                       {playlist.loadingPlaylistSongs && <p className="guest-suggest-hint">{t('suggestPlaylistFetching')}</p>}
-                      {playlist.playlistSongs && <p className="guest-suggest-hint">{t('suggestPlaylistSongCount', playlist.playlistSongs.length)}</p>}
+                      {playlist.playlistSongs && (
+                        suggestionsPerUser != null && playlist.playlistSongs.length > suggestionsPerUser
+                          ? <p className="guest-suggest-hint">{t('suggestPlaylistSongCountLimited', suggestionsPerUser, playlist.playlistSongs.length)}</p>
+                          : <p className="guest-suggest-hint">{t('suggestPlaylistSongCount', playlist.playlistSongs.length)}</p>
+                      )}
                     </div>
                   </div>
                   {playlist.playlistSongs && playlist.playlistSongs.length > 0 && (

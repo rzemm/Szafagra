@@ -200,6 +200,7 @@ export const pl = {
   suggestPlaylistVideos: 'filmow',
   suggestPlaylistFetching: 'Pobieranie utworow...',
   suggestPlaylistSongCount: (n) => `${n} utworow`,
+  suggestPlaylistSongCountLimited: (n, total) => `${n} z ${total} utw. (limit)`,
   suggestPlaylistSubmit: 'Zaproponuj te liste',
   suggestPlaylistSent: 'Lista wyslana do admina!',
   suggestPlaylistBack: 'Wróc',
@@ -209,6 +210,7 @@ export const pl = {
   playlistSuggestionFrom: 'Od gościa',
   playlistSuggestionSongs: (n) => `${n} piosenek`,
   approveAllSongs: 'Dodaj wszystkie',
+  approveAll: 'Zatwierdź wszystko',
   showPlaylistSongs: 'Pokaż piosenki',
   hidePlaylistSongs: 'Ukryj',
 

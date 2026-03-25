@@ -42,6 +42,7 @@ export function useRoomCommands({
   auth,
   canEditRoom,
   room,
+  suggestions,
   ownedRooms,
   route,
   executeAction,
@@ -209,14 +210,22 @@ export function useRoomCommands({
     )
   }, [auth.roomId, canEditRoom, executeAction])
 
-  const submitPlaylistSuggestion = useCallback(async ({ playlistTitle, playlistId, songs }) => {
+  const submitPlaylistSuggestion = useCallback(async ({ songs }) => {
     if (!auth.roomId || !userId) return false
+    const suggestionsPerUser = room?.settings?.suggestionsPerUser ?? null
+    let songsToSubmit = songs
+    if (suggestionsPerUser != null) {
+      const existingCount = (suggestions ?? []).filter(s => s.userId === userId).length
+      const remaining = Math.max(0, suggestionsPerUser - existingCount)
+      songsToSubmit = songs.slice(0, remaining)
+    }
+    if (songsToSubmit.length === 0) return true
     const done = await executeAction(
-      () => addPlaylistSuggestion(auth.roomId, userId, { playlistTitle, playlistId, songs }),
+      () => Promise.all(songsToSubmit.map(s => addSuggestion(auth.roomId, userId, { title: s.title, ytId: s.ytId, url: s.url }))),
       'Nie udało się wysłać propozycji playlisty.'
     )
     return done !== null
-  }, [auth.roomId, executeAction, userId])
+  }, [auth.roomId, executeAction, room, suggestions, userId])
 
   const submitContactMessage = useCallback(async ({
     message,
@@ -274,6 +283,19 @@ export function useRoomCommands({
     }, 'Nie udało się zatwierdzić playlisty.')
   }, [auth.roomId, executeAction, room])
 
+  const approveAllSuggestions = useCallback(async (suggestions) => {
+    if (!auth.roomId || !room || !suggestions?.length) return
+    const existingYtIds = new Set((room.songs ?? []).map((s) => s.ytId))
+    const newSongs = suggestions
+      .filter((s) => !existingYtIds.has(s.ytId))
+      .map((s) => createSong({ genId, title: s.title, ytId: s.ytId, url: s.url, addedBy: createAddedBySuggestion(s) }))
+    await executeAction(async () => {
+      await replaceRoomSongs(auth.roomId, [...(room.songs ?? []), ...newSongs])
+      await Promise.all(suggestions.map((s) => deleteSuggestion(auth.roomId, s.id)))
+      await Promise.all(newSongs.map((s) => setVotingProposal(auth.roomId, s.id, s)))
+    }, 'Nie udało się zatwierdzić wszystkich propozycji.')
+  }, [auth.roomId, executeAction, room])
+
   const rejectSuggestion = useCallback(async (suggestionId) => {
     if (!auth.roomId) return
     await executeAction(() => deleteSuggestion(auth.roomId, suggestionId), 'Nie udało się odrzucić propozycji.')
@@ -311,6 +333,7 @@ export function useRoomCommands({
     removeVotingProposal,
     submitContactMessage,
     approveSuggestion,
+    approveAllSuggestions,
     approvePlaylistSuggestion,
     rejectSuggestion,
     changeRoomCode,
