@@ -173,6 +173,8 @@ export const pl = {
   ownerHasntStarted: 'Wlasciciel szafy jeszcze nie uruchomil jukeboxu...',
   yourRating: 'Twoja ocena',
   ratePlaylist: 'Ocen te playliste',
+  ratingLoggedInOnly: 'Ocena dost\u0119pna tylko dla zalogowanych',
+  ratingVotesLeft: (n) => `Oce\u0144 playlist\u0119 po ${n} ${n === 1 ? 'g\u0142osie' : 'g\u0142osach'}`,
   suggestSong: 'Zaproponuj utwor',
   suggestionSent: 'Propozycja wyslana!',
   suggestPlaceholder: 'Wpisz tytul lub wklej link YouTube...',

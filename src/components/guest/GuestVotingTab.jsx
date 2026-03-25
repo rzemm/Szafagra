@@ -6,6 +6,8 @@ const IconStar = () => (
   </svg>
 )
 
+const VOTES_NEEDED = 5
+
 export function GuestVotingTab({
   isPlaying,
   nextOptionKeys,
@@ -15,7 +17,8 @@ export function GuestVotingTab({
   maxVotes,
   vote,
   showThumbs,
-  userId,
+  isLoggedIn,
+  voteCount,
   myRating,
   hoverStar,
   setHoverStar,
@@ -59,25 +62,31 @@ export function GuestVotingTab({
         </div>
       )}
 
-      {isPlaying && userId && (
-        <div className="guest-rating">
-          <p className="guest-rating-label">{myRating > 0 ? t('yourRating') : t('ratePlaylist')}</p>
-          <div className="guest-rating-stars">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <button
-                key={star}
-                className={`rating-star${(hoverStar ? hoverStar >= star : myRating >= star) ? ' active' : ''}`}
-                onClick={() => onRate(myRating === star ? 0 : star)}
-                onMouseEnter={() => setHoverStar(star)}
-                onMouseLeave={() => setHoverStar(0)}
-                title={`${star}/5`}
-              >
-                <IconStar />
-              </button>
-            ))}
+      {isPlaying && (
+        isLoggedIn && voteCount >= VOTES_NEEDED ? (
+          <div className="guest-rating">
+            <p className="guest-rating-label">{myRating > 0 ? t('yourRating') : t('ratePlaylist')}</p>
+            <div className="guest-rating-stars">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  className={`rating-star${(hoverStar ? hoverStar >= star : myRating >= star) ? ' active' : ''}`}
+                  onClick={() => onRate(myRating === star ? 0 : star)}
+                  onMouseEnter={() => setHoverStar(star)}
+                  onMouseLeave={() => setHoverStar(0)}
+                  title={`${star}/5`}
+                >
+                  <IconStar />
+                </button>
+              ))}
+            </div>
+            {myRating > 0 && <span className="guest-rating-value">{myRating}/5</span>}
           </div>
-          {myRating > 0 && <span className="guest-rating-value">{myRating}/5</span>}
-        </div>
+        ) : (
+          <p className="guest-rating-hint">
+            {!isLoggedIn ? t('ratingLoggedInOnly') : t('ratingVotesLeft', VOTES_NEEDED - voteCount)}
+          </p>
+        )
       )}
     </div>
   )

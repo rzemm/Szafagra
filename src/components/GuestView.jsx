@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useGuestPlaylistSuggestion } from '../hooks/useGuestPlaylistSuggestion'
 import { useGuestSongSuggestion } from '../hooks/useGuestSongSuggestion'
 import { useYouTubeAuth } from '../hooks/useYouTubeAuth'
@@ -13,8 +13,6 @@ import { useLanguage } from '../context/useLanguage'
 const ALL_TABS = ['voting', 'suggest', 'queue', 'list', 'event']
 
 export function GuestView({
-  isOwner,
-  playerDivRef,
   isPlaying,
   currentSong,
   remaining,
@@ -34,6 +32,7 @@ export function GuestView({
   submitPlaylistSuggestion,
   myRating,
   onRate,
+  isLoggedIn,
   jukeboxState,
   tickerText = '',
   tickerForGuests = false,
@@ -50,6 +49,9 @@ export function GuestView({
   const [hoverStar, setHoverStar] = useState(0)
   const [listSearch, setListSearch] = useState('')
   const [showThumbs, setShowThumbs] = useState(true)
+  const [voteCount, setVoteCount] = useState(0)
+  const sliderWrapRef = useRef(null)
+  const sliderRef = useRef(null)
 
   const hasEvent = !!(jukeboxState?.settings?.partyDate)
   const visibleTabs = useMemo(() => {
@@ -66,7 +68,7 @@ export function GuestView({
   const swipeStart = useRef(null)
 
   const handlePointerDown = (event) => {
-    if (event.target.closest('button, input, select, a, label, [role="button"], ul, li')) return
+    if (event.target.closest('button, input, select, a, label, [role="button"]')) return
     swipeStart.current = { x: event.clientX, y: event.clientY }
   }
 
@@ -92,13 +94,37 @@ export function GuestView({
     )
   }, [userId, votingProposals])
 
+  const myVote = nextVotesData[userId] ?? null
+
+  const prevMyVoteRef = useRef(null)
+  useEffect(() => {
+    if (myVote !== null && prevMyVoteRef.current === null) {
+      setVoteCount((c) => c + 1)
+    }
+    prevMyVoteRef.current = myVote
+  }, [myVote])
+
+  useLayoutEffect(() => {
+    const wrap = sliderWrapRef.current
+    const slider = sliderRef.current
+    if (!wrap || !slider) return
+    const panel = slider.children[sliderIndex]
+    if (!panel) return
+    wrap.style.height = panel.scrollHeight + 'px'
+    const observer = new ResizeObserver(() => {
+      if (sliderWrapRef.current && slider.children[sliderIndex]) {
+        sliderWrapRef.current.style.height = slider.children[sliderIndex].scrollHeight + 'px'
+      }
+    })
+    observer.observe(panel)
+    return () => observer.disconnect()
+  }, [sliderIndex])
+
   const handleSuggestFromList = async (song) => {
     if (!submitVotingProposal) return
     const key = allowSuggestFromList === true ? `${userId}_${song.id}` : undefined
     await submitVotingProposal(song, key)
   }
-
-  const myVote = nextVotesData[userId] ?? null
 
   const countsByOption = useMemo(() => {
     const counts = Object.fromEntries(nextOptionKeys.map((key) => [key, 0]))
@@ -127,9 +153,9 @@ export function GuestView({
   }
 
   const tabEmoji = {
-    voting: '🗳️',
+    voting: '🗳',
     suggest: '➕',
-    queue: '▶️',
+    queue: '▶',
     list: '🎵',
     event: '📅',
   }
@@ -139,12 +165,6 @@ export function GuestView({
       {tickerForGuests && tickerText && (
         <div className="ticker-bar">
           <span className="ticker-bar-inner">{tickerText}</span>
-        </div>
-      )}
-
-      {isOwner && (
-        <div style={{ position: 'fixed', top: '-9999px', left: '-9999px', pointerEvents: 'none' }}>
-          <div ref={playerDivRef} />
         </div>
       )}
 
@@ -164,11 +184,13 @@ export function GuestView({
 
       <div
         className="guest-tab-slider-wrap"
+        ref={sliderWrapRef}
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
       >
         <div
           className="guest-tab-slider"
+          ref={sliderRef}
           style={{ transform: `translateX(-${sliderIndex * 100}%)` }}
         >
           <GuestVotingTab
@@ -180,7 +202,8 @@ export function GuestView({
             maxVotes={maxVotes}
             vote={vote}
             showThumbs={showThumbs}
-            userId={userId}
+            isLoggedIn={isLoggedIn}
+            voteCount={voteCount}
             myRating={myRating}
             hoverStar={hoverStar}
             setHoverStar={setHoverStar}

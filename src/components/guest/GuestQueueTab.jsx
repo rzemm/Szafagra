@@ -16,7 +16,7 @@ export function GuestQueueTab({
       {isPlaying && skipThreshold > 0 && (
         <div className="guest-skip-row guest-skip-row--top">
           <button className={`guest-skip-btn${mySkipVote ? ' active' : ''}`} onClick={voteSkip}>
-            {mySkipVote ? t('wantToSkip') : t('skipCurrent')}
+            {mySkipVote ? '❌ ' + t('wantToSkip') : t('skipCurrent')}
           </button>
         </div>
       )}

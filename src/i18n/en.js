@@ -173,6 +173,8 @@ export const en = {
   ownerHasntStarted: 'The room owner has not started the jukebox yet...',
   yourRating: 'Your rating',
   ratePlaylist: 'Rate this playlist',
+  ratingLoggedInOnly: 'Rating available for signed-in users only',
+  ratingVotesLeft: (n) => `Rate after ${n} more ${n === 1 ? 'vote' : 'votes'}`,
   suggestSong: 'Suggest a song',
   suggestionSent: 'Suggestion sent!',
   suggestPlaceholder: 'Enter title or paste YouTube link...',

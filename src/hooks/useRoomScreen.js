@@ -179,8 +179,10 @@ function buildGuestViewModel({
   votingState,
   commands,
   onOpenCookieSettings,
+  isLoggedIn,
 }) {
   return {
+    isLoggedIn: isLoggedIn ?? false,
     isOwner: auth.isOwner,
     playerDivRef: playback.playerDivRef,
     isPlaying: playbackState.isPlaying,
@@ -380,6 +382,7 @@ export function useRoomScreen(route) {
         votingState,
         commands,
         onOpenCookieSettings: null,
+        isLoggedIn,
       }),
     },
   }

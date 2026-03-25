@@ -371,6 +371,7 @@
 .guest-tab-slider-wrap {
   overflow: hidden;
   width: 100%;
+  transition: height 0.28s ease;
 }
 
 .guest-tab-slider {
@@ -871,6 +872,13 @@
 .guest-rating-value {
   font-size: 0.78rem;
   color: var(--gold);
+}
+
+.guest-rating-hint {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  text-align: center;
+  padding: 0.5rem 0;
 }
 
 /* ─── Playlist stats (admin) ─────────────────────────────────────────────────── */
