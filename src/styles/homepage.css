@@ -60,6 +60,15 @@
   display: block;
 }
 
+.homepage-logo-title {
+  font-size: 0.65rem;
+  color: var(--text-dim, rgba(255,255,255,0.3));
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  margin: 0;
+  user-select: none;
+}
+
 .homepage-brand {
   display: flex;
   flex-direction: column;

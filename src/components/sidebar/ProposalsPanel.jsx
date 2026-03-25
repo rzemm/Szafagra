@@ -125,7 +125,6 @@ export function ProposalsPanel({ model }) {
             }}
             onAddToRoom={async (roomId, songs) => {
               await onAddYtToRoom(roomId, songs)
-              yt.disconnect()
               setShowYtImport(false)
             }}
             onPickSong={async (song) => {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { fetchUserYtPlaylists, fetchYtPlaylistPage, fetchLikedVideosPage, YT_LIKED_PLAYLIST_ID } from '../lib/youtube'
+import { fetchUserYtPlaylists, fetchYtPlaylistItems, fetchLikedVideosPage, YT_LIKED_PLAYLIST_ID } from '../lib/youtube'
 
 export function useGuestPlaylistSuggestion({ ytAccessToken, submitPlaylistSuggestion }) {
   const [playlists, setPlaylists] = useState(null)
@@ -11,6 +11,7 @@ export function useGuestPlaylistSuggestion({ ytAccessToken, submitPlaylistSugges
   const [loadingMore, setLoadingMore] = useState(false)
   const [submittingPlaylist, setSubmittingPlaylist] = useState(false)
   const [submittedPlaylist, setSubmittedPlaylist] = useState(false)
+  const [submittedSingle, setSubmittedSingle] = useState(false)
 
   useEffect(() => {
     if (!ytAccessToken) return
@@ -24,15 +25,31 @@ export function useGuestPlaylistSuggestion({ ytAccessToken, submitPlaylistSugges
   }, [ytAccessToken])
 
   const handleSelectPlaylist = async (playlist) => {
+    const isLiked = playlist.id === YT_LIKED_PLAYLIST_ID
+
+    if (!isLiked) {
+      setSubmittingPlaylist(true)
+      try {
+        const items = await fetchYtPlaylistItems(playlist.id, ytAccessToken)
+        const ok = await submitPlaylistSuggestion({ songs: items })
+        if (ok) {
+          setSubmittedPlaylist(true)
+          setTimeout(() => setSubmittedPlaylist(false), 4000)
+        }
+      } catch {
+        // ignore
+      } finally {
+        setSubmittingPlaylist(false)
+      }
+      return
+    }
+
     setSelectedPlaylist(playlist)
     setPlaylistSongs(null)
     setNextPageToken(null)
     setLoadingPlaylistSongs(true)
-    const isLiked = playlist.id === YT_LIKED_PLAYLIST_ID
     try {
-      const { items, nextPageToken: next } = isLiked
-        ? await fetchLikedVideosPage(ytAccessToken)
-        : await fetchYtPlaylistPage(playlist.id, ytAccessToken)
+      const { items, nextPageToken: next } = await fetchLikedVideosPage(ytAccessToken)
       setPlaylistSongs(items)
       setNextPageToken(next)
     } catch {
@@ -65,11 +82,11 @@ export function useGuestPlaylistSuggestion({ ytAccessToken, submitPlaylistSugges
     const ok = await submitPlaylistSuggestion({ songs: [song] })
     setSubmittingPlaylist(false)
     if (ok) {
-      setSubmittedPlaylist(true)
+      setSubmittedSingle(true)
       setSelectedPlaylist(null)
       setPlaylistSongs(null)
       setNextPageToken(null)
-      setTimeout(() => setSubmittedPlaylist(false), 4000)
+      setTimeout(() => setSubmittedSingle(false), 4000)
     }
   }
 
@@ -89,6 +106,7 @@ export function useGuestPlaylistSuggestion({ ytAccessToken, submitPlaylistSugges
     loadingMore,
     submittingPlaylist,
     submittedPlaylist,
+    submittedSingle,
     handleSelectPlaylist,
     handleLoadMore,
     handlePickSong,

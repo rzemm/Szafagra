@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useLanguage } from '../context/useLanguage'
-import { fetchUserYtPlaylists, fetchYtPlaylistPage, fetchLikedVideosPage, YT_LIKED_PLAYLIST_ID } from '../lib/youtube'
+import { fetchUserYtPlaylists, fetchYtPlaylistItems, fetchLikedVideosPage, YT_LIKED_PLAYLIST_ID } from '../lib/youtube'
 import { ScrollText } from './ScrollText'
 
 export function YouTubeImportModal({ accessToken, onClose, onCreateRoom, onAddToRoom, onPickSong, currentRoomId, ownedRooms = [] }) {
@@ -25,18 +25,40 @@ export function YouTubeImportModal({ accessToken, onClose, onCreateRoom, onAddTo
   }, [accessToken])
 
   const handleSelect = async (playlist) => {
+    const isLiked = playlist.id === YT_LIKED_PLAYLIST_ID
+
+    // W trybie ProposalsPanel (onPickSong): nie-liked playlist → od razu importuj wszystko
+    if (!isLiked && onPickSong) {
+      setBusy(true)
+      try {
+        const items = await fetchYtPlaylistItems(playlist.id, accessToken)
+        if (currentRoom) {
+          await onAddToRoom(currentRoom.id, items)
+        } else {
+          await onCreateRoom(playlist.title, items)
+        }
+      } catch (err) {
+        // import failed silently — modal stays open
+      } finally {
+        setBusy(false)
+      }
+      return
+    }
+
     setSelected(playlist)
     setSongs(null)
     setNextPageToken(null)
     setSongsError(null)
     setLoadingSongs(true)
-    const isLiked = playlist.id === YT_LIKED_PLAYLIST_ID
     try {
-      const { items, nextPageToken: next } = isLiked
-        ? await fetchLikedVideosPage(accessToken)
-        : await fetchYtPlaylistPage(playlist.id, accessToken)
-      setSongs(items)
-      setNextPageToken(next)
+      if (isLiked) {
+        const { items, nextPageToken: next } = await fetchLikedVideosPage(accessToken)
+        setSongs(items)
+        setNextPageToken(next)
+      } else {
+        const items = await fetchYtPlaylistItems(playlist.id, accessToken)
+        setSongs(items)
+      }
     } catch (err) {
       setSongsError(err.message)
     } finally {
@@ -59,6 +81,17 @@ export function YouTubeImportModal({ accessToken, onClose, onCreateRoom, onAddTo
     } finally {
       setLoadingMore(false)
     }
+  }
+
+  const handleImportAll = async () => {
+    if (busy || !songs || songs.length === 0 || !selected) return
+    setBusy(true)
+    if (currentRoom) {
+      await onAddToRoom(currentRoom.id, songs)
+    } else {
+      await onCreateRoom(selected.title, songs)
+    }
+    setBusy(false)
   }
 
   const handlePickSong = async (song) => {
@@ -119,6 +152,11 @@ export function YouTubeImportModal({ accessToken, onClose, onCreateRoom, onAddTo
                     <div className="ytimport-detail-count">
                       {t('ytImportSongCount', songs.length)}{nextPageToken ? '+' : ''}
                     </div>
+                  )}
+                  {songs && songs.length > 0 && selected.id !== YT_LIKED_PLAYLIST_ID && !onPickSong && (
+                    <button className="ytimport-action-btn" onClick={handleImportAll} disabled={busy}>
+                      {busy ? '...' : t('ytImportAll')}
+                    </button>
                   )}
                 </div>
               </div>
