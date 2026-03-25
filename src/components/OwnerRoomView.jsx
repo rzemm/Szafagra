@@ -146,7 +146,7 @@ export function OwnerRoomView({
         {playback.isPlaying && playback.skipThreshold > 0 && playback.skipCount > 0 && (
           <div className="skip-votes-banner">
             {Array.from({ length: playback.skipCount }, (_, index) => (
-              <span key={index} className="skip-vote-x">âťŚ</span>
+              <span key={index} className="skip-vote-x">❌</span>
             ))}
           </div>
         )}
