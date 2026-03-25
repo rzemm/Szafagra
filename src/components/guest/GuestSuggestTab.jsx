@@ -70,10 +70,8 @@ export function GuestSuggestTab({
 
       {submitPlaylistSuggestion && (
         <div className="guest-suggest">
-          {playlist.submittedPlaylist || playlist.submittedSingle ? (
-            <p className="guest-suggest-ok">
-              {playlist.submittedSingle ? t('suggestionSent') : t('suggestPlaylistSent')}
-            </p>
+          {playlist.submittedPlaylist ? (
+            <p className="guest-suggest-ok">{t('suggestPlaylistSent')}</p>
           ) : !ytAuth.accessToken ? (
             <>
               <p className="guest-suggest-playlist-desc">{t('suggestPlaylistDesc')}</p>

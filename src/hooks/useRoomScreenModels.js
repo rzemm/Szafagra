@@ -130,6 +130,7 @@ function buildOwnerSidebarModel({
       approveSuggestion: commands.approveSuggestion,
       approveAllSuggestions: commands.approveAllSuggestions,
       rejectSuggestion: commands.rejectSuggestion,
+      rejectAllSuggestions: commands.rejectAllSuggestions,
       canEditRoom,
       onCreateRoomFromYt: commands.handleCreateRoomFromYt,
       onAddYtToRoom: commands.handleAddYtToRoom,

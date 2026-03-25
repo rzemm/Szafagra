@@ -391,6 +391,14 @@ export function useRoomSuggestionCommands({
     )
   }, [auth.roomId, canEditRoom, executeAction])
 
+  const rejectAllSuggestions = useCallback(async (pendingSuggestions) => {
+    if (!auth.roomId || !canEditRoom || !pendingSuggestions?.length) return
+    await executeAction(
+      () => Promise.all(pendingSuggestions.map((s) => deleteSuggestion(auth.roomId, s.id))),
+      'Nie udało się odrzucić wszystkich propozycji.',
+    )
+  }, [auth.roomId, canEditRoom, executeAction])
+
   return {
     submitSuggestion,
     submitSongToList,
@@ -399,5 +407,6 @@ export function useRoomSuggestionCommands({
     approveSuggestion,
     approveAllSuggestions,
     rejectSuggestion,
+    rejectAllSuggestions,
   }
 }

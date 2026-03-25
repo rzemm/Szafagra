@@ -28,6 +28,7 @@ export function ProposalsPanel({ model }) {
     approveSuggestion,
     approveAllSuggestions,
     rejectSuggestion,
+    rejectAllSuggestions,
     canEditRoom,
     onCreateRoomFromYt,
     onAddYtToRoom,
@@ -165,21 +166,25 @@ export function ProposalsPanel({ model }) {
               <div className="proposals-section-header">
                 <p className="proposals-section-label">{t('proposalsNewSongs')}</p>
                 {canEditRoom && newSongs.length > 1 && (
-                  <button className="btn-setting-action" onClick={() => approveAllSuggestions(newSongs)}>{t('approveAll')}</button>
+                  <>
+                    <button className="btn-setting-action" onClick={() => approveAllSuggestions(newSongs)}>{t('approveAll')}</button>
+                    <button className="btn-setting-action btn-setting-action--dim" onClick={() => rejectAllSuggestions(newSongs)}>{t('rejectAll')}</button>
+                  </>
                 )}
               </div>
               <ul className="proposals-list">
                 {newSongs.map((song) => (
-                  <li key={song.id} className="proposals-item">
+                  <li
+                    key={song.id}
+                    className="proposals-item proposals-item--clickable"
+                    onClick={() => canEditRoom && approveSuggestion(song)}
+                  >
                     {showThumbnails && (
                       <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="song-thumb" />
                     )}
                     <span className="song-title proposals-item-title">{song.title}</span>
                     {canEditRoom && (
-                      <>
-                        <button className="btn-icon" onClick={() => approveSuggestion(song)} title={t('approveAllSongs')}>âś“</button>
-                        <button className="btn-icon danger" onClick={() => rejectSuggestion(song.id)} title={t('reject')}>x</button>
-                      </>
+                      <button className="btn-icon danger" onClick={(e) => { e.stopPropagation(); rejectSuggestion(song.id) }} title={t('reject')}>x</button>
                     )}
                   </li>
                 ))}

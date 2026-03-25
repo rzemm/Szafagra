@@ -252,6 +252,14 @@
   background: var(--surface2);
 }
 
+.proposals-item--clickable {
+  cursor: pointer;
+}
+
+.proposals-item--clickable:hover {
+  filter: brightness(1.15);
+}
+
 .proposals-item-title {
   flex: 1;
   min-width: 0;

@@ -212,6 +212,7 @@ export const en = {
   playlistSuggestionSongs: (n) => `${n} songs`,
   approveAllSongs: 'Add all',
   approveAll: 'Approve all',
+  rejectAll: 'Reject all',
   showPlaylistSongs: 'Show songs',
   hidePlaylistSongs: 'Hide',
 
@@ -384,7 +385,6 @@ export const en = {
   ytImportCreate: 'Create new room',
   ytImportAddToCurrent: 'Add to current room',
   ytImportAddToOther: 'Add to another room...',
-  ytImportAll: 'Import entire playlist',
 
   // UsernamePicker
   usernamePickerTitle: 'Choose your username',

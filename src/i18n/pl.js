@@ -212,6 +212,7 @@ export const pl = {
   playlistSuggestionSongs: (n) => `${n} piosenek`,
   approveAllSongs: 'Dodaj wszystkie',
   approveAll: 'Zatwierdź wszystko',
+  rejectAll: 'Odrzuć wszystko',
   showPlaylistSongs: 'Pokaż piosenki',
   hidePlaylistSongs: 'Ukryj',
 
@@ -384,7 +385,6 @@ export const pl = {
   ytImportCreate: 'Utwórz nową szafę',
   ytImportAddToCurrent: 'Dodaj do bieżącej szafy',
   ytImportAddToOther: 'Dodaj do innej szafy...',
-  ytImportAll: 'Importuj całą listę',
 
   // UsernamePicker
   usernamePickerTitle: 'Wybierz swój pseudonim',
