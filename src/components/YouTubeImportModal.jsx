@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react'
 import { useLanguage } from '../context/useLanguage'
-import { fetchUserYtPlaylists, fetchYtPlaylistItems } from '../lib/youtube'
+import { fetchUserYtPlaylists, fetchYtPlaylistPage, fetchLikedVideosPage, YT_LIKED_PLAYLIST_ID } from '../lib/youtube'
+import { ScrollText } from './ScrollText'
 
-export function YouTubeImportModal({ accessToken, onClose, onCreateRoom, onAddToRoom, currentRoomId, ownedRooms = [] }) {
+export function YouTubeImportModal({ accessToken, onClose, onCreateRoom, onAddToRoom, onPickSong, currentRoomId, ownedRooms = [] }) {
   const { t } = useLanguage()
   const [playlists, setPlaylists] = useState(null)
   const [loadingPlaylists, setLoadingPlaylists] = useState(true)
   const [playlistsError, setPlaylistsError] = useState(null)
   const [selected, setSelected] = useState(null)
   const [songs, setSongs] = useState(null)
+  const [nextPageToken, setNextPageToken] = useState(null)
   const [loadingSongs, setLoadingSongs] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [songsError, setSongsError] = useState(null)
   const [busy, setBusy] = useState(false)
   const [showRoomPicker, setShowRoomPicker] = useState(false)
@@ -26,12 +29,17 @@ export function YouTubeImportModal({ accessToken, onClose, onCreateRoom, onAddTo
   const handleSelect = async (playlist) => {
     setSelected(playlist)
     setSongs(null)
+    setNextPageToken(null)
     setSongsError(null)
     setShowRoomPicker(false)
     setLoadingSongs(true)
+    const isLiked = playlist.id === YT_LIKED_PLAYLIST_ID
     try {
-      const items = await fetchYtPlaylistItems(playlist.id, accessToken)
+      const { items, nextPageToken: next } = isLiked
+        ? await fetchLikedVideosPage(accessToken)
+        : await fetchYtPlaylistPage(playlist.id, accessToken)
       setSongs(items)
+      setNextPageToken(next)
     } catch (err) {
       setSongsError(err.message)
     } finally {
@@ -39,10 +47,41 @@ export function YouTubeImportModal({ accessToken, onClose, onCreateRoom, onAddTo
     }
   }
 
+  const handleLoadMore = async () => {
+    if (!nextPageToken || !selected || loadingMore) return
+    setLoadingMore(true)
+    const isLiked = selected.id === YT_LIKED_PLAYLIST_ID
+    try {
+      const { items, nextPageToken: next } = isLiked
+        ? await fetchLikedVideosPage(accessToken, nextPageToken)
+        : await fetchYtPlaylistPage(selected.id, accessToken, nextPageToken)
+      setSongs((prev) => [...(prev ?? []), ...items])
+      setNextPageToken(next)
+    } catch {
+      // silently ignore
+    } finally {
+      setLoadingMore(false)
+    }
+  }
+
+  const handlePickSong = async (song) => {
+    if (busy) return
+    setBusy(true)
+    if (onPickSong) {
+      await onPickSong(song)
+    } else if (currentRoom) {
+      await onAddToRoom(currentRoom.id, [song])
+    } else {
+      await onCreateRoom(song.title, [song])
+    }
+    setBusy(false)
+  }
+
   const handleCreate = async () => {
     if (!selected || !songs || busy) return
     setBusy(true)
-    await onCreateRoom(selected.title, songs)
+    const title = selected.id === YT_LIKED_PLAYLIST_ID ? t('ytLikedVideos') : selected.title
+    await onCreateRoom(title, songs)
   }
 
   const handleAddTo = async (roomId) => {
@@ -54,6 +93,7 @@ export function YouTubeImportModal({ accessToken, onClose, onCreateRoom, onAddTo
   const handleBack = () => {
     setSelected(null)
     setSongs(null)
+    setNextPageToken(null)
     setSongsError(null)
     setShowRoomPicker(false)
   }
@@ -83,7 +123,9 @@ export function YouTubeImportModal({ accessToken, onClose, onCreateRoom, onAddTo
                   <img src={selected.thumbnail} alt="" className="ytimport-detail-thumb" />
                 )}
                 <div className="ytimport-detail-info">
-                  <div className="ytimport-detail-name">{selected.title}</div>
+                  <div className="ytimport-detail-name">
+                    {selected.id === YT_LIKED_PLAYLIST_ID ? t('ytLikedVideos') : selected.title}
+                  </div>
                   {loadingSongs && (
                     <div className="ytimport-status">{t('ytImportFetchingSongs')}</div>
                   )}
@@ -92,7 +134,7 @@ export function YouTubeImportModal({ accessToken, onClose, onCreateRoom, onAddTo
                   )}
                   {songs && (
                     <div className="ytimport-detail-count">
-                      {t('ytImportSongCount', songs.length)}
+                      {t('ytImportSongCount', songs.length)}{nextPageToken ? '+' : ''}
                     </div>
                   )}
                 </div>
@@ -103,50 +145,28 @@ export function YouTubeImportModal({ accessToken, onClose, onCreateRoom, onAddTo
               )}
 
               {songs && songs.length > 0 && (
-                <div className="ytimport-actions">
-                  <button
-                    className="ytimport-action-btn ytimport-action-btn--primary"
-                    onClick={handleCreate}
-                    disabled={busy}
-                  >
-                    {busy ? t('creating') : t('ytImportCreate')}
-                  </button>
-
-                  {currentRoom && (
-                    <button
-                      className="ytimport-action-btn"
-                      onClick={() => handleAddTo(currentRoom.id)}
-                      disabled={busy}
-                    >
-                      {t('ytImportAddToCurrent')}: <em>{currentRoom.name}</em>
-                    </button>
-                  )}
-
-                  {otherRooms.length > 0 && (
-                    <div className="ytimport-room-picker">
+                <>
+                  <div className="ytimport-songs-list">
+                    {songs.map((song) => (
                       <button
-                        className="ytimport-action-btn ytimport-action-btn--subtle"
-                        onClick={() => setShowRoomPicker((v) => !v)}
+                        key={song.ytId}
+                        className="song-item song-item-clickable"
+                        onClick={() => handlePickSong(song)}
                         disabled={busy}
                       >
-                        {t('ytImportAddToOther')} {showRoomPicker ? '▲' : '▼'}
+                        <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="song-thumb" />
+                        <div className="song-title-col">
+                          <ScrollText className="song-title">{song.title}</ScrollText>
+                        </div>
                       </button>
-                      {showRoomPicker && (
-                        <ul className="ytimport-room-list">
-                          {otherRooms.map((r) => (
-                            <li
-                              key={r.id}
-                              className="ytimport-room-item"
-                              onClick={() => handleAddTo(r.id)}
-                            >
-                              {r.name || t('defaultRoomName')}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
+                    ))}
+                  </div>
+                  {nextPageToken && (
+                    <button className="ytimport-action-btn ytimport-action-btn--subtle" onClick={handleLoadMore} disabled={loadingMore}>
+                      {loadingMore ? '...' : t('loadMore')}
+                    </button>
                   )}
-                </div>
+                </>
               )}
             </div>
           ) : (
@@ -177,9 +197,11 @@ export function YouTubeImportModal({ accessToken, onClose, onCreateRoom, onAddTo
                         <div className="ytimport-thumb ytimport-thumb--empty" />
                       )}
                       <div className="ytimport-item-info">
-                        <div className="ytimport-item-title">{pl.title}</div>
+                        <div className="ytimport-item-title">
+                          {pl.id === YT_LIKED_PLAYLIST_ID ? t('ytLikedVideos') : pl.title}
+                        </div>
                         <div className="ytimport-item-count">
-                          {pl.itemCount} {t('ytImportVideos')}
+                          {pl.itemCount != null ? `${pl.itemCount} ${t('ytImportVideos')}` : ''}
                         </div>
                       </div>
                     </li>

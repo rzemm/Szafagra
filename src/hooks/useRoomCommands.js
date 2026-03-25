@@ -109,8 +109,10 @@ export function useRoomCommands({
       () => replaceRoomSongs(targetRoomId, merged),
       'Nie udało się dodać piosenek do szafy.'
     )
-    route.navigateToRoom(targetRoomId)
-  }, [executeAction, ownedRooms, route])
+    if (targetRoomId !== auth.roomId) {
+      route.navigateToRoom(targetRoomId)
+    }
+  }, [auth.roomId, executeAction, ownedRooms, route])
 
   const handleCopyRoom = useCallback(async () => {
     if (!auth.user || auth.user.isAnonymous || !room || canEditRoom) return

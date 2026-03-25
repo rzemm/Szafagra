@@ -1,5 +1,7 @@
 import { ScrollText } from '../ScrollText'
 
+import { YT_LIKED_PLAYLIST_ID } from '../../lib/youtube'
+
 export function GuestSuggestTab({
   allowSuggestions,
   allowSuggestFromList,
@@ -97,8 +99,12 @@ export function GuestSuggestTab({
                       <li key={item.id} className="guest-playlist-item" onClick={() => playlist.handleSelectPlaylist(item)}>
                         {item.thumbnail && <img src={item.thumbnail} alt="" className="guest-playlist-thumb" />}
                         <div className="guest-playlist-info">
-                          <span className="guest-playlist-title">{item.title}</span>
-                          <span className="guest-playlist-count">{item.itemCount} {t('suggestPlaylistVideos')}</span>
+                          <span className="guest-playlist-title">
+                            {item.id === YT_LIKED_PLAYLIST_ID ? t('ytLikedVideos') : item.title}
+                          </span>
+                          {item.itemCount != null && (
+                            <span className="guest-playlist-count">{item.itemCount} {t('suggestPlaylistVideos')}</span>
+                          )}
                         </div>
                       </li>
                     ))}
@@ -113,19 +119,35 @@ export function GuestSuggestTab({
                   <div className="guest-playlist-selected-info">
                     {playlist.selectedPlaylist.thumbnail && <img src={playlist.selectedPlaylist.thumbnail} alt="" className="guest-playlist-thumb" />}
                     <div>
-                      <span className="guest-playlist-title">{playlist.selectedPlaylist.title}</span>
+                      <span className="guest-playlist-title">
+                        {playlist.selectedPlaylist.id === YT_LIKED_PLAYLIST_ID ? t('ytLikedVideos') : playlist.selectedPlaylist.title}
+                      </span>
                       {playlist.loadingPlaylistSongs && <p className="guest-suggest-hint">{t('suggestPlaylistFetching')}</p>}
-                      {playlist.playlistSongs && (
-                        suggestionsPerUser != null && playlist.playlistSongs.length > suggestionsPerUser
-                          ? <p className="guest-suggest-hint">{t('suggestPlaylistSongCountLimited', suggestionsPerUser, playlist.playlistSongs.length)}</p>
-                          : <p className="guest-suggest-hint">{t('suggestPlaylistSongCount', playlist.playlistSongs.length)}</p>
-                      )}
                     </div>
                   </div>
                   {playlist.playlistSongs && playlist.playlistSongs.length > 0 && (
-                    <button className="guest-suggest-btn" onClick={playlist.handleSubmitPlaylist} disabled={playlist.submittingPlaylist}>
-                      {playlist.submittingPlaylist ? '...' : t('suggestPlaylistSubmit')}
-                    </button>
+                    <>
+                      <div className="guest-playlist-songs-list">
+                        {playlist.playlistSongs.map((song) => (
+                          <button
+                            key={song.ytId}
+                            className="song-item song-item-clickable"
+                            onClick={() => playlist.handlePickSong(song)}
+                            disabled={playlist.submittingPlaylist}
+                          >
+                            <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="song-thumb" />
+                          <div className="song-title-col">
+                            <ScrollText className="song-title">{song.title}</ScrollText>
+                          </div>
+                          </button>
+                        ))}
+                      </div>
+                      {playlist.nextPageToken && (
+                        <button className="guest-playlist-control-btn guest-playlist-load-more" onClick={playlist.handleLoadMore} disabled={playlist.loadingMore}>
+                          {playlist.loadingMore ? '...' : t('loadMore')}
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               )}

@@ -110,6 +110,10 @@ export function ProposalsPanel({
             yt.disconnect()
             setShowYtImport(false)
           }}
+          onPickSong={async (song) => {
+            await onAddYtToRoom(room?.id, [song])
+            setShowYtImport(false)
+          }}
           currentRoomId={room?.id ?? null}
           ownedRooms={ownedRooms ?? []}
         />

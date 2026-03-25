@@ -192,6 +192,7 @@ export const en = {
   // GuestView - playlist suggestion
   suggestPlaylist: 'Suggest your playlist',
   suggestPlaylistDesc: 'Sign in with YouTube to import your playlists',
+  ytLikedVideos: 'Liked videos',
   suggestPlaylistConnect: 'Sign in with YouTube',
   suggestPlaylistConnecting: 'Connecting...',
   suggestPlaylistLoading: 'Loading playlists...',
@@ -223,6 +224,9 @@ export const en = {
   deleteMore: 'Delete more',
   noResultsFor: 'No results for',
   selectedCount: 'selected',
+  selectAll: 'Select all',
+  clearAll: 'Deselect all',
+  loadMore: 'Load more',
   deleteSelected: 'Delete selected',
   queueHeader: 'Queue',
   minQueued: 'Min. queued:',

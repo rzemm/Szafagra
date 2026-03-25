@@ -34,6 +34,51 @@ export function extractYtPlaylistId(url) {
   }
 }
 
+export async function fetchLikedVideosPage(accessToken, pageToken = null) {
+  const endpoint = new URL('https://www.googleapis.com/youtube/v3/videos')
+  endpoint.searchParams.set('part', 'snippet')
+  endpoint.searchParams.set('myRating', 'like')
+  endpoint.searchParams.set('maxResults', '20')
+  if (pageToken) endpoint.searchParams.set('pageToken', pageToken)
+  const res = await fetch(endpoint.toString(), { headers: { Authorization: `Bearer ${accessToken}` } })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err?.error?.message ?? `YouTube API błąd ${res.status}`)
+  }
+  const data = await res.json()
+  const items = (data.items ?? [])
+    .filter((item) => item.id && item.snippet?.title)
+    .map((item) => ({ ytId: item.id, title: item.snippet.title, url: `https://youtu.be/${item.id}` }))
+  return { items, nextPageToken: data.nextPageToken ?? null }
+}
+
+export async function fetchYtPlaylistPage(playlistId, accessToken = null, pageToken = null) {
+  if (!accessToken && !YT_API_KEY) throw new Error('Brak klucza YouTube API (VITE_YOUTUBE_API_KEY)')
+  if (playlistId.startsWith('RD')) throw new Error('Listy "Mix" i "Polecane przez YouTube" nie są dostępne przez API. Dodaj utwory ręcznie lub użyj zwykłej playlisty YT.')
+  const endpoint = new URL('https://www.googleapis.com/youtube/v3/playlistItems')
+  endpoint.searchParams.set('part', 'snippet')
+  endpoint.searchParams.set('playlistId', playlistId)
+  endpoint.searchParams.set('maxResults', '20')
+  if (!accessToken) endpoint.searchParams.set('key', YT_API_KEY)
+  if (pageToken) endpoint.searchParams.set('pageToken', pageToken)
+  const headers = accessToken ? { Authorization: `Bearer ${accessToken}` } : {}
+  const res = await fetch(endpoint.toString(), { headers })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err?.error?.message ?? `YouTube API błąd ${res.status}`)
+  }
+  const data = await res.json()
+  const items = []
+  for (const item of data.items ?? []) {
+    const videoId = item.snippet?.resourceId?.videoId
+    const title = item.snippet?.title
+    if (videoId && title && title !== 'Deleted video' && title !== 'Private video') {
+      items.push({ ytId: videoId, title, url: `https://youtu.be/${videoId}` })
+    }
+  }
+  return { items, nextPageToken: data.nextPageToken ?? null }
+}
+
 export async function fetchYtPlaylistItems(playlistId, accessToken = null) {
   if (!accessToken && !YT_API_KEY) throw new Error('Brak klucza YouTube API (VITE_YOUTUBE_API_KEY)')
   if (playlistId.startsWith('RD')) throw new Error('Listy "Mix" i "Polecane przez YouTube" nie są dostępne przez API. Dodaj utwory ręcznie lub użyj zwykłej playlisty YT.')
@@ -66,6 +111,8 @@ export async function fetchYtPlaylistItems(playlistId, accessToken = null) {
   return items
 }
 
+export const YT_LIKED_PLAYLIST_ID = 'LL'
+
 export async function fetchUserYtPlaylists(accessToken) {
   const playlists = []
   let pageToken = ''
@@ -94,6 +141,9 @@ export async function fetchUserYtPlaylists(accessToken) {
     }
     pageToken = data.nextPageToken ?? ''
   } while (pageToken)
+
+  playlists.unshift({ id: YT_LIKED_PLAYLIST_ID, thumbnail: null, itemCount: null })
+
   return playlists
 }
 

@@ -192,6 +192,7 @@ export const pl = {
   // GuestView - playlist suggestion
   suggestPlaylist: 'Zaproponuj swoja liste',
   suggestPlaylistDesc: 'Zaloguj się na YT żeby zaimportować swoje listy',
+  ytLikedVideos: 'Polubione filmy',
   suggestPlaylistConnect: 'Zaloguj sie przez YouTube',
   suggestPlaylistConnecting: 'Laczenie...',
   suggestPlaylistLoading: 'Pobieranie playlist...',
@@ -223,6 +224,9 @@ export const pl = {
   deleteMore: 'Usun wiecej',
   noResultsFor: 'Brak wynikow dla',
   selectedCount: 'zaznaczonych',
+  selectAll: 'Zaznacz wszystkie',
+  clearAll: 'Odznacz wszystkie',
+  loadMore: 'Załaduj więcej',
   deleteSelected: 'Usun zaznaczone',
   queueHeader: 'Kolejka',
   minQueued: 'Min. zakolejkowanych:',
