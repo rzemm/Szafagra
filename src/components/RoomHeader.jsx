@@ -24,6 +24,7 @@ export function RoomHeader({
   onShareGuestLink,
   guestCopied,
   proposalsCount = 0,
+  nominationsCount = 0,
   onOpenCookieSettings,
   updateDisplayName,
   onCreateRoomFromYt,
@@ -48,11 +49,18 @@ export function RoomHeader({
               🎵 {t('panelSongs')}
             </button>
             <button
-              className={`btn-panel-toggle${leftPanel === 'proposals' ? ' active' : ''}`}
+              className={`btn-panel-toggle${leftPanel === 'proposals' ? ' active' : ''}${proposalsCount > 0 ? ' btn-panel-toggle--highlight' : ''}`}
               onClick={() => toggleLeftPanel('proposals')}
               title={t('panelProposalsTitle')}
             >
               📥 {t('panelProposals')}{proposalsCount > 0 ? ` (${proposalsCount})` : ''}
+            </button>
+            <button
+              className={`btn-panel-toggle${leftPanel === 'nominations' ? ' active' : ''}`}
+              onClick={() => toggleLeftPanel('nominations')}
+              title={t('panelNominationsTitle')}
+            >
+              🎤 {t('panelNominations')}{nominationsCount > 0 ? ` (${nominationsCount})` : ''}
             </button>
             <button
               className={`btn-panel-toggle${leftPanel === 'settings' ? ' active' : ''}`}

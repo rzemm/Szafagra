@@ -56,7 +56,11 @@ function buildHeaderModel({
     ownedRooms,
     onShareGuestLink: shareLinks.copyVoterLink,
     guestCopied: copied === 'voter',
-    proposalsCount: Object.keys(room?.votingProposals ?? {}).length + (suggestions?.length ?? 0),
+    proposalsCount: (() => {
+      const existingYtIds = new Set((room?.songs ?? []).map((s) => s.ytId))
+      return (suggestions ?? []).filter((s) => !existingYtIds.has(s.ytId)).length
+    })(),
+    nominationsCount: Object.keys(room?.votingProposals ?? {}).length,
   }
 }
 
@@ -133,7 +137,6 @@ function buildOwnerSidebarModel({
       room,
       suggestions,
       showThumbnails: playbackState.showThumbnails,
-      removeVotingProposal: commands.removeVotingProposal,
       approveSuggestion: commands.approveSuggestion,
       approveAllSuggestions: commands.approveAllSuggestions,
       rejectSuggestion: commands.rejectSuggestion,
@@ -152,6 +155,16 @@ function buildOwnerSidebarModel({
       newSongTitle: ui.uiState.newSongTitle,
       fetchingTitle: ui.uiState.fetchingTitle,
       urlErr: ui.uiState.urlErr,
+      requireSuggestionApproval: room?.settings?.requireSuggestionApproval ?? true,
+      allowSuggestions: settings.allowSuggestions ?? true,
+      saveSettings: commands.saveSettings,
+    },
+    nominationsPanel: {
+      room,
+      showThumbnails: playbackState.showThumbnails,
+      removeVotingProposal: commands.removeVotingProposal,
+      playSongNow: viewMode.playSongNow,
+      canEditRoom,
     },
   }
 }

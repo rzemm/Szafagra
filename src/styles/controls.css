@@ -109,6 +109,8 @@ button {
 .btn-icon.play:disabled { color: var(--text-dim); opacity: 0.4; cursor: not-allowed; }
 .btn-icon.queue-add { color: var(--text-dim); font-size: 1rem; font-weight: 700; }
 .btn-icon.queue-add:hover { background: rgba(80, 200, 120, 0.15); color: #50c878; }
+.btn-icon.success { color: #2ecc71; }
+.btn-icon.success:hover { background: rgba(46, 204, 113, 0.15); color: #2ecc71; }
 
 .btn-accent {
   background: var(--accent);

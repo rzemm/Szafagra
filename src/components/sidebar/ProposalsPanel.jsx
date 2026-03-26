@@ -23,7 +23,6 @@ export function ProposalsPanel({ model, yt }) {
     room,
     suggestions,
     showThumbnails,
-    removeVotingProposal,
     approveSuggestion,
     approveAllSuggestions,
     rejectSuggestion,
@@ -42,14 +41,16 @@ export function ProposalsPanel({ model, yt }) {
     newSongTitle,
     fetchingTitle,
     urlErr,
+    requireSuggestionApproval,
+    saveSettings,
+    allowSuggestions,
   } = model
   const { t } = useLanguage()
   const [showYtImport, setShowYtImport] = useState(false)
 
-  const votingProposals = room?.votingProposals ?? {}
-  const proposalEntries = Object.entries(votingProposals).sort(([, a], [, b]) => (a.addedAt ?? 0) - (b.addedAt ?? 0))
-  const newSongs = suggestions ?? []
-  const totalCount = proposalEntries.length + newSongs.length
+  const existingYtIds = new Set((room?.songs ?? []).map((s) => s.ytId))
+  const allNewSongs = suggestions ?? []
+  const newSongs = allNewSongs.filter((s) => !existingYtIds.has(s.ytId))
 
   return (
     <div className="section proposals-panel">
@@ -140,59 +141,51 @@ export function ProposalsPanel({ model, yt }) {
         </Suspense>
       )}
 
-      {totalCount === 0 ? (
-        <p className="proposals-empty">{t('noVotingProposals')}</p>
+      {allowSuggestions && canEditRoom && (
+        <div className="settings-group">
+          <div className="setting-row">
+            <span className="setting-label">{t('newSongsDestLabel')}</span>
+            <div className="setting-toggle-group">
+              <button
+                className={`btn-setting${requireSuggestionApproval ? ' active' : ''}`}
+                onClick={() => saveSettings('requireSuggestionApproval', true)}
+              >{t('newSongsDestQueue')}</button>
+              <button
+                className={`btn-setting${!requireSuggestionApproval ? ' active' : ''}`}
+                onClick={() => saveSettings('requireSuggestionApproval', false)}
+              >{t('newSongsDestList')}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {newSongs.length === 0 ? (
+        <p className="proposals-empty">{t('noListProposals')}</p>
       ) : (
         <>
-          {proposalEntries.length > 0 && (
-            <>
-              <p className="proposals-section-label">{t('proposalsVoting')}</p>
-              <ul className="proposals-list">
-                {proposalEntries.map(([userId, song]) => (
-                  <li key={userId} className="proposals-item">
-                    {showThumbnails && (
-                      <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="song-thumb" />
-                    )}
-                    <span className="song-title proposals-item-title">{song.title}</span>
-                    {canEditRoom && (
-                      <button className="btn-icon danger" onClick={() => removeVotingProposal(userId)} title={t('removeProposal')}>x</button>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </>
+          <p className="proposals-section-label">{t('proposalsNewSongs')}</p>
+          {canEditRoom && newSongs.length > 1 && (
+            <div style={{ display: 'flex', gap: '0.4rem', padding: '0 0.5rem 0.25rem' }}>
+              <button className="btn-setting-action btn-setting-action--success" style={{ flex: 1 }} onClick={() => approveAllSuggestions(newSongs)}>{t('approveAll')}</button>
+              <button className="btn-setting-action btn-setting-action--danger" style={{ flex: 1 }} onClick={() => rejectAllSuggestions(newSongs)}>{t('rejectAll')}</button>
+            </div>
           )}
-
-          {newSongs.length > 0 && (
-            <>
-              <div className="proposals-section-header">
-                <p className="proposals-section-label">{t('proposalsNewSongs')}</p>
-                {canEditRoom && newSongs.length > 1 && (
+          <ul className="proposals-list">
+            {newSongs.map((song) => (
+              <li key={song.id} className="proposals-item">
+                {showThumbnails && (
+                  <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="song-thumb" />
+                )}
+                <span className="song-title proposals-item-title">{song.title}</span>
+                {canEditRoom && (
                   <>
-                    <button className="btn-setting-action" onClick={() => approveAllSuggestions(newSongs)}>{t('approveAll')}</button>
-                    <button className="btn-setting-action btn-setting-action--dim" onClick={() => rejectAllSuggestions(newSongs)}>{t('rejectAll')}</button>
+                    <button className="btn-icon success" onClick={() => approveSuggestion(song)} title={t('addToList')}>✓</button>
+                    <button className="btn-icon danger" onClick={() => rejectSuggestion(song.id)} title={t('reject')}>x</button>
                   </>
                 )}
-              </div>
-              <ul className="proposals-list">
-                {newSongs.map((song) => (
-                  <li
-                    key={song.id}
-                    className="proposals-item proposals-item--clickable"
-                    onClick={() => canEditRoom && approveSuggestion(song)}
-                  >
-                    {showThumbnails && (
-                      <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="song-thumb" />
-                    )}
-                    <span className="song-title proposals-item-title">{song.title}</span>
-                    {canEditRoom && (
-                      <button className="btn-icon danger" onClick={(e) => { e.stopPropagation(); rejectSuggestion(song.id) }} title={t('reject')}>x</button>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
+              </li>
+            ))}
+          </ul>
         </>
       )}
     </div>
