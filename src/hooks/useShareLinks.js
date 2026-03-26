@@ -17,8 +17,16 @@ export function useShareLinks({ roomId, roomType, guestToken, buildRoomUrl, fall
     navigator.clipboard.writeText(link).then(() => onCopied('admin'))
   }, [adminUrl, guestUrl, onCopied, roomType])
 
-  const copyVoterLink = useCallback(() => {
+  const copyVoterLink = useCallback(async () => {
     if (!guestUrl) return
+    if (navigator.share) {
+      try {
+        await navigator.share({ url: guestUrl })
+        return
+      } catch {
+        // user cancelled or share failed – fall through to clipboard
+      }
+    }
     navigator.clipboard.writeText(guestUrl).then(() => onCopied('voter'))
   }, [guestUrl, onCopied])
 

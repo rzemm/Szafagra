@@ -46,6 +46,7 @@ export function SettingsPanel({ model }) {
     partyDate: model.partyDate,
     partyLocation: model.partyLocation,
     partyDescription: model.partyDescription,
+    openParty: model.openParty ?? false,
     confirmCancel: confirmCancelEvent,
   }
 

@@ -1244,7 +1244,7 @@
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  width: min(100%, 400px);
+  width: min(100%, 480px);
   display: flex;
   flex-direction: column;
   overflow: hidden;

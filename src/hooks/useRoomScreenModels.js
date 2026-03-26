@@ -13,6 +13,7 @@ function buildHomeScreenModel({
     upcomingOpenParties,
     topRatedRooms,
     onCreateRoom: commands.handleCreateRoom,
+    onCreatePartyRoom: commands.handleCreatePartyRoom,
     onDeleteRoom: commands.handleDeleteRoom,
     onJoinRoom: commands.handleJoinRoom,
     onSeedRooms: commands.handleSeedRooms,
@@ -121,6 +122,7 @@ function buildOwnerSidebarModel({
       partyDate: settings.partyDate ?? '',
       partyLocation: settings.partyLocation ?? '',
       partyDescription: settings.partyDescription ?? '',
+      openParty: settings.openParty ?? false,
     },
     proposalsPanel: {
       room,

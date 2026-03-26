@@ -44,6 +44,7 @@ export function HomePage({
   upcomingOpenParties,
   topRatedRooms,
   onCreateRoom,
+  onCreatePartyRoom,
   onDeleteRoom,
   onJoinRoom,
   onPreviewRoom,
@@ -68,11 +69,7 @@ export function HomePage({
     return new URLSearchParams(window.location.search).get('party')?.trim() ?? ''
   })
   const [discoverTab, setDiscoverTab] = useState('parties')
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [showPartyConfig, setShowPartyConfig] = useState(false)
-  const [partyUnlimited, setPartyUnlimited] = useState(true)
-  const [partySuggestionsLimit, setPartySuggestionsLimit] = useState(5)
-  const [partyRequireLogin, setPartyRequireLogin] = useState(true)
+  const [showPartyWizard, setShowPartyWizard] = useState(false)
   const [headerSlide, setHeaderSlide] = useState(0)
   const {
     nearbyInput,
@@ -95,18 +92,12 @@ export function HomePage({
   const previewRoom = topRatedRooms.find((room) => room.id === previewRoomId) ?? null
   const previewParty = upcomingOpenParties.find((party) => party.id === previewPartyId) ?? null
 
-  const handleCreate = async (roomMode) => {
-    setShowCreateModal(false)
-    await onCreateRoom(roomMode)
-  }
-
-  const handleCreateParty = async () => {
-    setShowPartyConfig(false)
-    await onCreateRoom('party', {
-      allowSuggestions: true,
-      suggestionsPerUser: partyUnlimited ? null : partySuggestionsLimit,
-      suggestionsRequireLogin: partyUnlimited ? true : partyRequireLogin,
-    })
+  const handleCreateParty = async ({ name, extraSettings }) => {
+    const result = await onCreatePartyRoom(name, extraSettings)
+    if (result) {
+      window.sessionStorage.setItem('szafagra.newPartyShare', result.guestToken)
+      window.location.href = `${window.location.pathname}?room=${encodeURIComponent(result.roomId)}`
+    }
   }
 
   const handleSeed = async () => {
@@ -271,9 +262,9 @@ export function HomePage({
                 )}
               </div>
               {isLoggedIn ? (
-                <button className="homepage-btn homepage-btn--primary" onClick={() => setShowCreateModal(true)} disabled={creatingRoom}>
+                <button className="homepage-btn homepage-btn--primary" onClick={() => setShowPartyWizard(true)} disabled={creatingRoom}>
                   <span className="homepage-btn-icon">{'\u2726'}</span>
-                  {creatingRoom ? t('creating') : t('createNewRoom')}
+                  {creatingRoom ? t('creating') : t('createRoomBtn')}
                 </button>
               ) : (
                 <p className="home-rooms-empty home-rooms-empty--create-hint">{t('signInToCreate')}</p>
@@ -447,36 +438,13 @@ export function HomePage({
         </Suspense>
       )}
 
-      {(showCreateModal || showPartyConfig) && (
+      {showPartyWizard && (
         <Suspense fallback={null}>
           <LazyHomeCreateRoomModals
+            isOpen={showPartyWizard}
             creatingRoom={creatingRoom}
-            showCreateModal={showCreateModal}
-            showPartyConfig={showPartyConfig}
-            partyUnlimited={partyUnlimited}
-            partySuggestionsLimit={partySuggestionsLimit}
-            partyRequireLogin={partyRequireLogin}
             t={t}
-            onCloseCreateModal={() => setShowCreateModal(false)}
-            onOpenPartyConfig={() => {
-              setShowCreateModal(false)
-              setShowPartyConfig(true)
-            }}
-            onCreateRoom={handleCreate}
-            onBackToCreateModal={() => {
-              setShowPartyConfig(false)
-              setShowCreateModal(true)
-            }}
-            onClosePartyConfig={() => {
-              setShowPartyConfig(false)
-              setShowCreateModal(true)
-            }}
-            onTogglePartyUnlimited={(checked) => {
-              setPartyUnlimited(checked)
-              if (checked) setPartyRequireLogin(true)
-            }}
-            onPartySuggestionsLimitChange={setPartySuggestionsLimit}
-            onPartyRequireLoginChange={setPartyRequireLogin}
+            onClose={() => setShowPartyWizard(false)}
             onCreateParty={handleCreateParty}
           />
         </Suspense>

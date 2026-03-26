@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { HomePage } from './components/HomePage'
 import { UsernamePickerModal } from './components/UsernamePickerModal'
 import {
@@ -22,6 +23,26 @@ export default function App() {
   const screen = useRoomScreen(route)
   const consent = useConsentManager()
   const { t } = useLanguage()
+  const [newPartyGuestToken] = useState(() => {
+    if (typeof window === 'undefined') return null
+    return window.sessionStorage.getItem('szafagra.newPartyShare') ?? null
+  })
+  const [showPartyShare, setShowPartyShare] = useState(!!newPartyGuestToken)
+
+  const handleClosePartyShare = () => {
+    window.sessionStorage.removeItem('szafagra.newPartyShare')
+    setShowPartyShare(false)
+  }
+
+  const [partyShareCopied, setPartyShareCopied] = useState(false)
+  const handleCopyPartyShare = () => {
+    if (!newPartyGuestToken) return
+    const url = `${window.location.origin}/?room=${encodeURIComponent(newPartyGuestToken)}`
+    navigator.clipboard.writeText(url).then(() => {
+      setPartyShareCopied(true)
+      window.setTimeout(() => setPartyShareCopied(false), 2000)
+    })
+  }
 
   if (!screen.auth.authReady) {
     return <SplashScreen message={t('connecting')} />
@@ -64,12 +85,48 @@ export default function App() {
     )
   }
 
+  const partyShareUrl = newPartyGuestToken
+    ? `${typeof window !== 'undefined' ? window.location.origin : ''}/?room=${encodeURIComponent(newPartyGuestToken)}`
+    : ''
+
   return (
     <div className="app">
       {screen.usernamePrompt.needsUsername && (
         <UsernamePickerModal onConfirm={screen.usernamePrompt.confirmUsername} />
       )}
       {content}
+      {showPartyShare && screen.roomScreen.showOwnerUI && screen.roomScreen.room && (
+        <div className="create-room-overlay" onClick={handleClosePartyShare}>
+          <div className="party-config-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="create-room-header">
+              <span className="create-room-title">{t('shareRoomTitle')}</span>
+              <button className="create-room-close" onClick={handleClosePartyShare}>×</button>
+            </div>
+            <div className="party-config-body">
+              <div className="setting-row" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '0.4rem' }}>
+                <input
+                  className="song-settings-input"
+                  type="text"
+                  readOnly
+                  value={partyShareUrl}
+                  onFocus={(e) => e.target.select()}
+                />
+                <p style={{ margin: '0.5rem 0 0', fontSize: '0.85rem', color: 'var(--text-dim)', lineHeight: 1.5 }}>
+                  {t('shareRoomDesc')}
+                </p>
+              </div>
+            </div>
+            <div className="party-config-footer">
+              <button className="party-config-btn party-config-btn--back" onClick={handleClosePartyShare}>
+                {t('shareRoomClose')}
+              </button>
+              <button className="party-config-btn party-config-btn--create" onClick={handleCopyPartyShare}>
+                {partyShareCopied ? t('shareRoomCopied') : t('shareRoomCopy')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {consent.isBannerVisible && (
         <CookieConsentBanner

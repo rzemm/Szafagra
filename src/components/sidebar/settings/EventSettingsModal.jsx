@@ -10,12 +10,13 @@ export function EventSettingsModal({
   const [eventDate, setEventDate] = useState(initialEvent.partyDate ?? '')
   const [eventLocation, setEventLocation] = useState(initialEvent.partyLocation ?? '')
   const [eventDescription, setEventDescription] = useState(initialEvent.partyDescription ?? '')
+  const [eventOpenParty, setEventOpenParty] = useState(initialEvent.openParty ?? false)
   const [eventSaving, setEventSaving] = useState(false)
 
   const handleSave = async () => {
     if (!eventDate) return
     setEventSaving(true)
-    await saveSettings('openParty', true)
+    await saveSettings('openParty', eventOpenParty)
     await saveSettings('partyDate', eventDate)
     await saveSettings('partyLocation', eventLocation)
     await saveSettings('partyDescription', eventDescription)
@@ -72,6 +73,17 @@ export function EventSettingsModal({
             placeholder={t('eventDescPlaceholder')}
             rows={3}
           />
+          <div className="setting-row" style={{ marginTop: '0.75rem' }}>
+            <span className="song-settings-label">{t('eventPublicLabel')}</span>
+            <label className="toggle-switch">
+              <input
+                type="checkbox"
+                checked={eventOpenParty}
+                onChange={(e) => setEventOpenParty(e.target.checked)}
+              />
+              <span className="toggle-slider" />
+            </label>
+          </div>
         </div>
         <div className="song-settings-footer" style={{ gap: '0.5rem' }}>
           <button className="btn-setting-action" onClick={onClose}>{t('cancel')}</button>

@@ -8,6 +8,7 @@ import {
   changeRoomGuestToken,
   clearVotingProposals,
   createContactMessage,
+  createPartyRoom,
   createPrivateRoom,
   createPrivateRoomCopy,
   createPublicRoom,
@@ -156,10 +157,22 @@ export function useRoomLifecycleCommands({
     }
   }, [])
 
+  const handleCreatePartyRoom = useCallback(async (name, extraSettings = {}) => {
+    if (!auth.user || auth.user.isAnonymous) return null
+    setCreatingRoom(true)
+    const result = await executeAction(
+      () => createPartyRoom(auth.user.uid, name, extraSettings),
+      'Nie udało się utworzyć szafy.',
+    )
+    setCreatingRoom(false)
+    return result ?? null
+  }, [auth.user, executeAction, setCreatingRoom])
+
   return {
     renameRoom,
     handleDeleteRoom,
     handleCreateRoom,
+    handleCreatePartyRoom,
     handleCreateRoomFromYt,
     handleAddYtToRoom,
     handleCopyRoom,
