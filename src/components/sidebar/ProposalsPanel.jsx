@@ -1,6 +1,5 @@
 import { lazy, Suspense, useState } from 'react'
 import { useLanguage } from '../../context/useLanguage'
-import { useYouTubeAuth } from '../../hooks/useYouTubeAuth'
 import { ScrollText } from '../ScrollText'
 
 const LazyYouTubeImportModal = lazy(() => import('../YouTubeImportModal').then((module) => ({ default: module.YouTubeImportModal })))
@@ -19,7 +18,7 @@ const IconSpotify = () => (
   </svg>
 )
 
-export function ProposalsPanel({ model }) {
+export function ProposalsPanel({ model, yt }) {
   const {
     room,
     suggestions,
@@ -45,7 +44,6 @@ export function ProposalsPanel({ model }) {
     urlErr,
   } = model
   const { t } = useLanguage()
-  const yt = useYouTubeAuth()
   const [showYtImport, setShowYtImport] = useState(false)
 
   const votingProposals = room?.votingProposals ?? {}

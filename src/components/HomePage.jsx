@@ -145,7 +145,6 @@ export function HomePage({
         <div className="homepage-top">
           <div className="homepage-logo">
             <img src={logoUrl} alt="szafi.fi" className="homepage-logo-img" />
-            <h1 className="homepage-logo-title">szafi.fi</h1>
           </div>
           <div className="homepage-header-carousel">
             <div className="homepage-header-dots">

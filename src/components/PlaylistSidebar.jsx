@@ -2,9 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { SongsPanel } from './sidebar/SongsPanel'
 import { SettingsPanel } from './sidebar/SettingsPanel'
 import { ProposalsPanel } from './sidebar/ProposalsPanel'
+import { useYouTubeAuth } from '../hooks/useYouTubeAuth'
 
 export function PlaylistSidebar({ model }) {
   const { ui, songsPanel, settingsPanel, proposalsPanel } = model
+  const yt = useYouTubeAuth()
   const [sidebarWidth, setSidebarWidth] = useState(360)
   const isResizing = useRef(false)
   const startX = useRef(0)
@@ -53,7 +55,7 @@ export function PlaylistSidebar({ model }) {
       )}
 
       {ui.leftPanel === 'proposals' && (
-        <ProposalsPanel model={proposalsPanel} />
+        <ProposalsPanel model={proposalsPanel} yt={yt} />
       )}
     </aside>
     {ui.leftPanel && (
