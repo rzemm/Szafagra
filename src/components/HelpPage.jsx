@@ -54,8 +54,6 @@ const CONTENT = {
   userPermissions: {
     pl: (
       <>
-        <h3>Nowe piosenki wymagają akceptacji</h3>
-        <p>Gdy włączone, każda piosenka zaproponowana przez gościa trafia do poczekalni i czeka na akceptację właściciela. Gdy wyłączone, piosenki są dodawane do listy automatycznie.</p>
         <h3>Propozycje z listy</h3>
         <p>Goście mogą nominować do głosowania piosenki już istniejące na liście szafy.</p>
         <ul>
@@ -73,8 +71,6 @@ const CONTENT = {
     ),
     en: (
       <>
-        <h3>New songs require approval</h3>
-        <p>When enabled, every song suggested by a guest enters a queue and must be approved by the room owner. When disabled, songs are added to the list automatically.</p>
         <h3>Suggest from list</h3>
         <p>Guests can nominate songs already on the room's list for voting.</p>
         <ul>
@@ -128,6 +124,12 @@ const CONTENT = {
       <>
         <h3>Tryb wspólnego tworzenia listy</h3>
         <p>Gdy włączony, goście mogą samodzielnie dodawać piosenki do listy szafy — nie tylko głosować. To tryb, w którym playlista należy do wszystkich obecnych.</p>
+        <h3>Nowe utwory trafiają do</h3>
+        <p>Określa, co się dzieje z piosenką po jej dodaniu przez gościa.</p>
+        <ul>
+          <li><strong>Kolejki</strong> — piosenka czeka na akceptację właściciela przed pojawieniem się na liście.</li>
+          <li><strong>Listy</strong> — piosenka jest dodawana do listy automatycznie, bez zatwierdzania.</li>
+        </ul>
         <h3>Bez limitu propozycji</h3>
         <p>Każdy gość może dodać dowolną liczbę piosenek. Gdy wyłączone, możesz określić maksymalną liczbę na osobę.</p>
         <h3>Max propozycji na osobę</h3>
@@ -140,6 +142,12 @@ const CONTENT = {
       <>
         <h3>Collaborative playlist mode</h3>
         <p>When enabled, guests can add songs to the room's list directly — not just vote. Everyone helps build the playlist together.</p>
+        <h3>New songs go to</h3>
+        <p>Determines what happens to a song after a guest adds it.</p>
+        <ul>
+          <li><strong>Queue</strong> — the song waits for the owner's approval before appearing on the list.</li>
+          <li><strong>List</strong> — the song is added to the list automatically, without approval.</li>
+        </ul>
         <h3>Unlimited suggestions</h3>
         <p>Each guest can add any number of songs. When off, you can set a maximum per person.</p>
         <h3>Max suggestions per person</h3>
@@ -186,6 +194,8 @@ const CONTENT = {
         <p>Wyświetlana nazwa szafy, widoczna dla gości i na liście wydarzeń na stronie głównej Szafi.fi.</p>
         <h3>Widoczność</h3>
         <p>Gdy włączona, szafa jest widoczna publicznie na stronie głównej Szafi.fi. Gdy wyłączona, dostępna tylko przez bezpośredni link.</p>
+        <h3>Skopiuj link do szafy</h3>
+        <p>Kopiuje do schowka bezpośredni link, którym goście mogą dołączyć do szafy.</p>
         <h3>Statystyki</h3>
         <p>Średnia ocena gości (1–5 gwiazdek), łączna liczba odtworzonych piosenek i oddanych głosów.</p>
         <h3>Eksport / import</h3>
@@ -198,6 +208,8 @@ const CONTENT = {
         <p>The display name of the room, shown to guests and in the event listing on the Szafi.fi homepage.</p>
         <h3>Visibility</h3>
         <p>When on, the room is publicly visible on the Szafi.fi homepage. When off, only accessible via a direct link.</p>
+        <h3>Copy room link</h3>
+        <p>Copies a direct link to the clipboard that guests can use to join the room.</p>
         <h3>Stats</h3>
         <p>Average guest rating (1–5 stars), total songs played and votes cast.</p>
         <h3>Export / import</h3>

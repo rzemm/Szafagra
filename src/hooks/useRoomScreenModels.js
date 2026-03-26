@@ -70,6 +70,7 @@ function buildOwnerSidebarModel({
   playlistActions,
   songActions,
   viewMode,
+  shareLinks,
 }) {
   return {
     ui: {
@@ -118,6 +119,8 @@ function buildOwnerSidebarModel({
       onToggleShowRoomCode: () => ui.togglePanel('showRoomCode'),
       isVisible: settings.isVisible !== false,
       canEditRoom,
+      onCopyRoomLink: shareLinks.copyVoterLink,
+      roomLinkCopied: ui.uiState.copied === 'voter',
       onSubmitMessage: commands.submitContactMessage,
       partyDate: settings.partyDate ?? '',
       partyLocation: settings.partyLocation ?? '',
@@ -188,6 +191,7 @@ export function buildOwnerScreenModel({
       commands,
       playlistActions,
       songActions,
+      shareLinks,
       viewMode: {
         isViewMode: route.isViewMode,
         playSongNow: playback.playSongNow,

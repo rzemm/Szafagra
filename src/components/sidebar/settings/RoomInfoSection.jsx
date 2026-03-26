@@ -6,9 +6,11 @@ export function RoomInfoSection({ model, t }) {
     exportPlaylist,
     importPlaylist,
     isVisible,
+    onCopyRoomLink,
     onRenameRoom,
     onSubmitMessage,
     room,
+    roomLinkCopied,
     saveSettings,
   } = model
 
@@ -51,6 +53,12 @@ export function RoomInfoSection({ model, t }) {
           <input type="checkbox" checked={isVisible !== false} onChange={(event) => saveSettings('isVisible', event.target.checked)} disabled={!canEditRoom} />
           <span className="toggle-slider" />
         </label>
+      </div>
+
+      <div className="setting-row">
+        <button className="btn-setting-action" style={{ flex: 1 }} onClick={onCopyRoomLink}>
+          {roomLinkCopied ? t('copiedLink') : t('copyRoomLink')}
+        </button>
       </div>
 
       <div className="setting-row setting-row--stats">
