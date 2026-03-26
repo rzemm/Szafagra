@@ -74,6 +74,8 @@ export const en = {
   createRoomFootnote: 'In the next step you\u2019ll fine-tune a few settings \u2014 you can reconfigure your room at any time.',
   recentLists: 'Recent lists',
   nearbyPartiesTab: 'Upcoming parties',
+  myRecentVotesTab: 'My recent votes',
+  noGuestVisitedRooms: 'No recent rooms',
   topRatedTab: 'Top rated',
   noUpcomingParties: 'No upcoming parties',
   noTopRatedRooms: 'No rated rooms yet',

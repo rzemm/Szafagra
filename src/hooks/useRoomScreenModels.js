@@ -3,6 +3,7 @@ function buildHomeScreenModel({
   ownedRooms,
   upcomingOpenParties,
   topRatedRooms,
+  guestVisitedRooms,
   commands,
   ui,
 }) {
@@ -12,6 +13,7 @@ function buildHomeScreenModel({
     ownedRooms,
     upcomingOpenParties,
     topRatedRooms,
+    guestVisitedRooms,
     onCreateRoom: commands.handleCreateRoom,
     onCreatePartyRoom: commands.handleCreatePartyRoom,
     onDeleteRoom: commands.handleDeleteRoom,
@@ -297,6 +299,7 @@ export function buildHomeScreen({
   ownedRooms,
   upcomingOpenParties,
   topRatedRooms,
+  guestVisitedRooms,
   commands,
   ui,
 }) {
@@ -305,6 +308,7 @@ export function buildHomeScreen({
     ownedRooms,
     upcomingOpenParties,
     topRatedRooms,
+    guestVisitedRooms,
     commands,
     ui,
   })

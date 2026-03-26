@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { subscribeLatestRooms, subscribeOwnedRooms, subscribeOpenParties, subscribePublicRooms } from '../services/jukeboxService'
+import { subscribeLatestRooms, subscribeOwnedRooms, subscribeOpenParties, subscribePublicRooms, subscribeRoomsByIds, subscribeUserRoomsDoc } from '../services/jukeboxService'
 
 export function useOwnedRooms(uid, enabled) {
   const [rooms, setRooms] = useState([])
@@ -69,6 +69,41 @@ export function useLatestForeignRooms(uid, enabled) {
       )
     })
   }, [enabled, uid])
+
+  return enabled && uid ? rooms : []
+}
+
+export function useGuestVisitedRooms(uid, enabled) {
+  const [guestOf, setGuestOf] = useState({})
+  const [rooms, setRooms] = useState([])
+
+  useEffect(() => {
+    if (!enabled || !uid) return
+    return subscribeUserRoomsDoc(uid, (data) => {
+      setGuestOf(data.guestOf ?? {})
+    })
+  }, [enabled, uid])
+
+  useEffect(() => {
+    if (!enabled || !uid) return
+    const entries = Object.entries(guestOf)
+      .sort((a, b) => (b[1].lastVisited?.toMillis?.() ?? 0) - (a[1].lastVisited?.toMillis?.() ?? 0))
+      .slice(0, 8)
+
+    if (entries.length === 0) {
+      setRooms([])
+      return
+    }
+
+    const roomIds = entries.map(([id]) => id)
+    return subscribeRoomsByIds(roomIds, (fetchedRooms) => {
+      const sorted = roomIds
+        .map((id) => fetchedRooms.find((r) => r.id === id))
+        .filter(Boolean)
+        .filter((r) => r.ownerId !== uid)
+      setRooms(sorted)
+    })
+  }, [enabled, uid, guestOf])
 
   return enabled && uid ? rooms : []
 }

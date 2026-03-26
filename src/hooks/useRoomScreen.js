@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { genId } from '../lib/jukebox'
 import { useJukeboxPlayback } from './useJukeboxPlayback'
-import { useOwnedRooms, useUpcomingOpenParties, useTopRatedRooms } from './useRoomListings'
+import { useGuestVisitedRooms, useOwnedRooms, useUpcomingOpenParties, useTopRatedRooms } from './useRoomListings'
 import { usePlaylistActions } from './usePlaylistActions'
 import { useRoomAuth } from './useRoomAuth'
 import { useRoomCommands } from './useRoomCommands'
@@ -51,6 +51,7 @@ export function useRoomScreen(route) {
   const ownedRooms = useOwnedRooms(auth.user?.uid, isLoggedIn)
   const upcomingOpenParties = useUpcomingOpenParties(onHomepage)
   const topRatedRooms = useTopRatedRooms(onHomepage)
+  const guestVisitedRooms = useGuestVisitedRooms(auth.user?.uid, isLoggedIn && onHomepage)
 
   const executeAction = useCallback(async (action, errorMessage) => {
     ui.dispatch({ type: 'setField', field: 'uiError', value: '' })
@@ -146,6 +147,7 @@ export function useRoomScreen(route) {
       ownedRooms,
       upcomingOpenParties,
       topRatedRooms,
+      guestVisitedRooms,
       commands,
       ui,
     }),

@@ -5,6 +5,7 @@ import {
   deleteDoc,
   deleteField,
   doc,
+  documentId,
   getDoc,
   increment,
   limit,
@@ -244,6 +245,19 @@ export function subscribeLatestRooms(callback, count = 5) {
 export function subscribeOpenParties(callback) {
   const q = query(roomsRef, where('settings.openParty', '==', true))
   return onSnapshot(q, snap => {
+    callback(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+  })
+}
+
+export function subscribeUserRoomsDoc(uid, callback) {
+  return onSnapshot(userRoomsRef(uid), (snap) => {
+    callback(snap.data() ?? {})
+  })
+}
+
+export function subscribeRoomsByIds(roomIds, callback) {
+  const q = query(roomsRef, where(documentId(), 'in', roomIds))
+  return onSnapshot(q, (snap) => {
     callback(snap.docs.map(d => ({ id: d.id, ...d.data() })))
   })
 }

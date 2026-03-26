@@ -43,6 +43,7 @@ export function HomePage({
   ownedRooms,
   upcomingOpenParties,
   topRatedRooms,
+  guestVisitedRooms,
   onCreateRoom,
   onCreatePartyRoom,
   onDeleteRoom,
@@ -279,6 +280,14 @@ export function HomePage({
                 >
                   {t('nearbyPartiesTab')}
                 </button>
+                {isLoggedIn && (
+                  <button
+                    className={`home-discover-tab${discoverTab === 'myVotes' ? ' active' : ''}`}
+                    onClick={() => setDiscoverTab('myVotes')}
+                  >
+                    {t('myRecentVotesTab')}
+                  </button>
+                )}
               </div>
 
               {import.meta.env.DEV && discoverTab === 'toprated' && (
@@ -388,6 +397,30 @@ export function HomePage({
                     ))
                   ) : (
                     <p className="home-rooms-empty">{t('noTopRatedRooms')}</p>
+                  )
+                )}
+
+                {discoverTab === 'myVotes' && (
+                  (guestVisitedRooms ?? []).length > 0 ? (
+                    (guestVisitedRooms ?? []).map((room) => (
+                      <button
+                        key={room.id}
+                        className="home-room-card home-room-card--clickable"
+                        onClick={() => onJoinRoom(room.guestToken)}
+                      >
+                        <div className="home-room-card-body">
+                          <ScrollText className="home-room-label">{room.name || t('defaultRoomName')}</ScrollText>
+                          <div className="home-room-stats">
+                            <span className="home-room-stat home-room-stat--songs">
+                              <span className="home-stat-icon">{'\u266A'}</span>
+                              <span className="home-stat-val">{room.songs?.length ?? 0}</span>
+                            </span>
+                          </div>
+                        </div>
+                      </button>
+                    ))
+                  ) : (
+                    <p className="home-rooms-empty">{t('noGuestVisitedRooms')}</p>
                   )
                 )}
               </div>
