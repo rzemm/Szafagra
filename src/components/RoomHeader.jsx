@@ -71,11 +71,7 @@ export function RoomHeader({
             </button>
           </>
         )}
-        {showOwnerUI ? (
-          <a href="/" className="header-logo"><img src={logoUrl} alt="Szafagra" className="header-logo-img" /></a>
-        ) : (
-          <span className="header-logo"><img src={logoUrl} alt="Szafagra" className="header-logo-img" /></span>
-        )}
+        <a href="/" className="header-logo"><img src={logoUrl} alt="Szafagra" className="header-logo-img" /></a>
       </div>
 
 
