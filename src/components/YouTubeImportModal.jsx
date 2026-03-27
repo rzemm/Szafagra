@@ -199,7 +199,7 @@ export function YouTubeImportModal({ accessToken, onClose, onCreateRoom, onAddTo
 
               {songs && songs.length > 0 && (
                 <>
-                  {onImportAllSongs && (
+                  {!isLikedView && onImportAllSongs && (
                     <button className="ytimport-action-btn" onClick={handleImportAll} disabled={busy}>
                       {busy ? '...' : t('ytImportAll')}
                     </button>

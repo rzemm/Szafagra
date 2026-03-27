@@ -216,6 +216,7 @@ export function GuestView({
             suggestion={suggestion}
             playlist={playlist}
             ytAuth={ytAuth}
+            existingYtIds={new Set((jukeboxState?.songs ?? []).map((s) => s.ytId))}
             t={t}
           />
 

@@ -12,6 +12,9 @@ export function useGuestPlaylistSuggestion({ ytAccessToken, submitPlaylistSugges
   const [submittingPlaylist, setSubmittingPlaylist] = useState(false)
   const [submittedPlaylist, setSubmittedPlaylist] = useState(false)
   const [importProgress, setImportProgress] = useState(null)
+  const [selectedSongIds, setSelectedSongIds] = useState(new Set())
+  const [likedTotalCount, setLikedTotalCount] = useState(null)
+  const [importingPlaylistId, setImportingPlaylistId] = useState(null)
 
   useEffect(() => {
     if (!ytAccessToken) return
@@ -29,13 +32,16 @@ export function useGuestPlaylistSuggestion({ ytAccessToken, submitPlaylistSugges
     setPlaylistSongs(null)
     setNextPageToken(null)
     setLoadingPlaylistSongs(true)
+    setSelectedSongIds(new Set())
+    setLikedTotalCount(null)
     const isLiked = playlist.id === YT_LIKED_PLAYLIST_ID
     try {
-      const { items, nextPageToken: next } = isLiked
+      const { items, nextPageToken: next, totalResults } = isLiked
         ? await fetchLikedVideosPage(ytAccessToken)
         : await fetchYtPlaylistPage(playlist.id, ytAccessToken)
       setPlaylistSongs(items)
       setNextPageToken(next)
+      if (isLiked && totalResults != null) setLikedTotalCount(totalResults)
     } catch {
       setPlaylistSongs([])
     } finally {
@@ -60,6 +66,15 @@ export function useGuestPlaylistSuggestion({ ytAccessToken, submitPlaylistSugges
     }
   }
 
+  const toggleSongSelection = (ytId) => {
+    setSelectedSongIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(ytId)) next.delete(ytId)
+      else next.add(ytId)
+      return next
+    })
+  }
+
   const handlePickSong = async (song) => {
     if (submittingPlaylist) return
     setSubmittingPlaylist(true)
@@ -70,15 +85,31 @@ export function useGuestPlaylistSuggestion({ ytAccessToken, submitPlaylistSugges
       setSelectedPlaylist(null)
       setPlaylistSongs(null)
       setNextPageToken(null)
+      setSelectedSongIds(new Set())
       setTimeout(() => setSubmittedPlaylist(false), 4000)
     }
+  }
+
+  const handleImportSelected = async () => {
+    if (submittingPlaylist || selectedSongIds.size === 0 || !playlistSongs) return
+    setSubmittingPlaylist(true)
+    const toImport = playlistSongs.filter((s) => selectedSongIds.has(s.ytId))
+    for (const song of toImport) {
+      await submitPlaylistSuggestion({ songs: [song] })
+    }
+    setSubmittingPlaylist(false)
+    setSubmittedPlaylist(true)
+    setSelectedPlaylist(null)
+    setPlaylistSongs(null)
+    setNextPageToken(null)
+    setSelectedSongIds(new Set())
+    setTimeout(() => setSubmittedPlaylist(false), 4000)
   }
 
   const handleImportAll = async () => {
     if (submittingPlaylist || !selectedPlaylist) return
     setSubmittingPlaylist(true)
 
-    // fetch all remaining pages
     let allSongs = [...(playlistSongs ?? [])]
     let token = nextPageToken
     const isLiked = selectedPlaylist.id === YT_LIKED_PLAYLIST_ID
@@ -105,13 +136,44 @@ export function useGuestPlaylistSuggestion({ ytAccessToken, submitPlaylistSugges
     setSelectedPlaylist(null)
     setPlaylistSongs(null)
     setNextPageToken(null)
+    setSelectedSongIds(new Set())
     setTimeout(() => setSubmittedPlaylist(false), 4000)
+  }
+
+  const handleImportAllDirect = async (playlist) => {
+    if (importingPlaylistId) return
+    setImportingPlaylistId(playlist.id)
+    const isLiked = playlist.id === YT_LIKED_PLAYLIST_ID
+    let allSongs = []
+    let token = null
+    try {
+      do {
+        const { items, nextPageToken: next } = isLiked
+          ? await fetchLikedVideosPage(ytAccessToken, token)
+          : await fetchYtPlaylistPage(playlist.id, ytAccessToken, token)
+        allSongs = [...allSongs, ...items]
+        token = next
+      } while (token)
+      setImportProgress({ done: 0, total: allSongs.length })
+      for (let i = 0; i < allSongs.length; i++) {
+        await submitPlaylistSuggestion({ songs: [allSongs[i]] })
+        setImportProgress({ done: i + 1, total: allSongs.length })
+      }
+      setImportProgress(null)
+      setSubmittedPlaylist(true)
+      setTimeout(() => setSubmittedPlaylist(false), 4000)
+    } catch {
+      // silently ignore
+    } finally {
+      setImportingPlaylistId(null)
+    }
   }
 
   const resetSelectedPlaylist = () => {
     setSelectedPlaylist(null)
     setPlaylistSongs(null)
     setNextPageToken(null)
+    setSelectedSongIds(new Set())
   }
 
   return {
@@ -127,8 +189,14 @@ export function useGuestPlaylistSuggestion({ ytAccessToken, submitPlaylistSugges
     handleSelectPlaylist,
     handleLoadMore,
     handlePickSong,
+    handleImportSelected,
     handleImportAll,
+    handleImportAllDirect,
     importProgress,
+    importingPlaylistId,
     resetSelectedPlaylist,
+    selectedSongIds,
+    toggleSongSelection,
+    likedTotalCount,
   }
 }
