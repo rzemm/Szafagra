@@ -419,6 +419,7 @@ export const pl = {
   ytImportFromLiked: 'Importuj z ulubionych',
   ytImportSelected: (n) => `Importuj wybrane (${n})`,
   ytImportPlaylists: 'Playlisty',
+  ytImportAllList: 'Zaimportuj całą listę',
 
   // UsernamePicker
   usernamePickerTitle: 'Wybierz swój pseudonim',
