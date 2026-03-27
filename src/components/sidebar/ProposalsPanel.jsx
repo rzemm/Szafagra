@@ -94,11 +94,7 @@ export function ProposalsPanel({ model, yt }) {
         <div className="setting-row setting-row--service-icon">
           <IconYouTube />
           {yt.accessToken ? (
-            <div className="service-btns-inline">
-              <button className="btn-setting-action" onClick={() => setShowYtImport(true)}>{t('ytImportOpen')}</button>
-              <button className="btn-setting-action" onClick={() => { yt.disconnect(); yt.connect() }}>{t('ytSwitchAccount')}</button>
-              <button className="btn-setting-action btn-setting-action--dim" onClick={yt.disconnect}>{t('ytDisconnect')}</button>
-            </div>
+            <span className="service-connected-label">{t('ytConnected')}</span>
           ) : (
             <button className="btn-setting-action" style={{ flex: 1 }} onClick={yt.connect} disabled={yt.connecting}>
               {yt.connecting ? t('ytConnecting') : t('ytConnect')}
@@ -106,6 +102,13 @@ export function ProposalsPanel({ model, yt }) {
           )}
           {yt.error && <span className="code-error-msg">{yt.error}</span>}
         </div>
+        {yt.accessToken && (
+          <div className="service-btns-row">
+            <button className="btn-setting-action" onClick={() => setShowYtImport(true)}>{t('ytImportOpen')}</button>
+            <button className="btn-setting-action" onClick={() => { yt.disconnect(); yt.connect() }}>{t('ytSwitchAccount')}</button>
+            <button className="btn-setting-action btn-setting-action--dim" onClick={yt.disconnect}>{t('ytDisconnect')}</button>
+          </div>
+        )}
 
         <div className="setting-row setting-row--service-disabled">
           <IconSpotify />
@@ -132,7 +135,12 @@ export function ProposalsPanel({ model, yt }) {
               setShowYtImport(false)
             }}
             onImportAllSongs={async (songs) => {
-              await onAddYtToRoom(room?.id, songs)
+              if (room?.id) {
+                await onAddYtToRoom(room.id, songs)
+              } else {
+                await onCreateRoomFromYt(songs[0]?.title ?? 'Import', songs)
+                yt.disconnect()
+              }
               setShowYtImport(false)
             }}
             currentRoomId={room?.id ?? null}

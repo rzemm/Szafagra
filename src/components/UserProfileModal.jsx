@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useLanguage } from '../context/useLanguage'
 
-export function UserProfileModal({ user, onClose, onUpdateDisplayName }) {
+export function UserProfileModal({ user, onClose, onUpdateDisplayName, onSignOut }) {
   const { t } = useLanguage()
   const [name, setName] = useState(user?.displayName ?? '')
   const [saving, setSaving] = useState(false)
@@ -65,6 +65,14 @@ export function UserProfileModal({ user, onClose, onUpdateDisplayName }) {
           </div>
 
         </div>
+
+        {onSignOut && (
+          <div className="upmodal-section upmodal-section--footer">
+            <button className="upmodal-signout-btn" onClick={onSignOut}>
+              {t('signOut')}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

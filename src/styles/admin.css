@@ -279,6 +279,22 @@
   justify-content: flex-end;
 }
 
+.service-btns-row {
+  display: flex;
+  gap: 0.3rem;
+  padding: 0 0.5rem 0.25rem;
+}
+
+.service-btns-row .btn-setting-action {
+  flex: 1;
+}
+
+.service-connected-label {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
 .setting-row--service-disabled {
   opacity: 0.45;
 }

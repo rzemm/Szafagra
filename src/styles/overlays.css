@@ -570,6 +570,30 @@
   gap: 0.5rem;
 }
 
+.upmodal-section--footer {
+  border-top: 1px solid var(--border);
+  padding-top: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.upmodal-signout-btn {
+  background: none;
+  border: 1px solid #c0392b;
+  border-radius: 7px;
+  color: #c0392b;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0.4rem 0.9rem;
+  width: 100%;
+  transition: background 0.1s, color 0.1s;
+}
+
+.upmodal-signout-btn:hover {
+  background: #c0392b;
+  color: #fff;
+}
+
 .upmodal-label {
   font-size: 0.72rem;
   font-weight: 700;

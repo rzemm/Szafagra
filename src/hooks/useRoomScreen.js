@@ -167,6 +167,8 @@ export function useRoomScreen(route) {
         copied: ui.uiState.copied,
         suggestions,
         commands,
+        ui,
+        songActions,
       }),
       ownerView: buildOwnerScreenModel({
         room,

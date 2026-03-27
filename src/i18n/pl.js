@@ -118,7 +118,7 @@ export const pl = {
   partyShareText: 'Sprawdź tę imprezę w Szafagra',
   fetchingTitlePlaceholder: 'Pobieranie tytułu...',
   addSongTitlePrefix: 'Muzyka',
-  addSongPlaceholder: 'Dodaj piosenkę lub listę - wklej link z YouTube albo wpisz tytuł',
+  addSongPlaceholder: 'Wklej link do utworu/listy z YT lub wyszukaj',
 
   // CookieConsent
   alwaysActive: 'Zawsze aktywne',
@@ -388,6 +388,7 @@ export const pl = {
   ytConnect: 'Zaimportuj listy z Twojego Youtube',
   ytConnecting: 'Łączenie...',
   ytImportOpen: 'Importuj',
+  ytConnected: 'Zalogowano',
   ytSwitchAccount: 'Zmień konto',
   ytDisconnect: 'Rozłącz',
   ytAuthHelpTitle: 'Jeśli logowanie YouTube nie działa:',

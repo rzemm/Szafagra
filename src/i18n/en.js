@@ -118,7 +118,7 @@ export const en = {
   partyShareText: 'Check out this party on Szafagra',
   fetchingTitlePlaceholder: 'Fetching title...',
   addSongTitlePrefix: 'Music',
-  addSongPlaceholder: 'Add song or playlist \u2013 paste YouTube link or type title',
+  addSongPlaceholder: 'Paste YT link or search',
 
   // CookieConsent
   alwaysActive: 'Always active',
@@ -388,6 +388,7 @@ export const en = {
   ytConnect: 'Connect',
   ytConnecting: 'Connecting...',
   ytImportOpen: 'Import playlists',
+  ytConnected: 'Connected',
   ytSwitchAccount: 'Switch YT account',
   ytDisconnect: 'Disconnect',
   ytAuthHelpTitle: 'If YouTube sign-in is not working:',

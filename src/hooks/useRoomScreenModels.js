@@ -41,6 +41,8 @@ function buildHeaderModel({
   copied,
   suggestions,
   commands,
+  ui,
+  songActions,
 }) {
   return {
     showOwnerUI,
@@ -61,6 +63,17 @@ function buildHeaderModel({
       return (suggestions ?? []).filter((s) => !existingYtIds.has(s.ytId)).length
     })(),
     nominationsCount: Object.keys(room?.votingProposals ?? {}).length,
+    songUrl: ui?.uiState?.newSongUrl ?? '',
+    onSongUrlChange: ui?.handleSongUrlChange,
+    onSongUrlBlur: songActions?.handleUrlBlur,
+    onAddSong: songActions?.addSong,
+    songSearchSuggestions: songActions?.suggestions ?? [],
+    selectSuggestion: songActions?.selectSuggestion,
+    clearSuggestions: songActions?.clearSuggestions,
+    songTitle: ui?.uiState?.newSongTitle ?? '',
+    fetchingTitle: ui?.uiState?.fetchingTitle ?? false,
+    songUrlErr: ui?.uiState?.urlErr,
+    hasRoom: !!room,
   }
 }
 

@@ -31,6 +31,17 @@ export function RoomHeader({
   onAddYtToRoom,
   currentRoomId,
   ownedRooms,
+  songUrl = '',
+  onSongUrlChange,
+  onSongUrlBlur,
+  onAddSong,
+  songSearchSuggestions = [],
+  selectSuggestion,
+  clearSuggestions,
+  songTitle = '',
+  fetchingTitle = false,
+  songUrlErr,
+  hasRoom = false,
 }) {
   const { t, toggleLang } = useLanguage()
   const [profileOpen, setProfileOpen] = useState(false)
@@ -74,14 +85,44 @@ export function RoomHeader({
         <a href="/" className="header-logo"><img src={logoUrl} alt="Szafagra" className="header-logo-img" /></a>
       </div>
 
+      {showOwnerUI && (
+        <div className="header-add-song">
+          <div className="song-input-wrapper">
+            <input
+              className="header-song-input"
+              value={songUrl}
+              onChange={(e) => onSongUrlChange?.(e.target.value)}
+              onBlur={onSongUrlBlur}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') onAddSong?.()
+                if (e.key === 'Escape') clearSuggestions?.()
+              }}
+              placeholder={fetchingTitle ? t('fetchingTitlePlaceholder') : songTitle ? `${t('addSongTitlePrefix')} ${songTitle}` : t('addSongPlaceholder')}
+              title={songUrlErr || undefined}
+              style={songUrlErr ? { borderColor: 'var(--accent)' } : undefined}
+              disabled={!hasRoom}
+            />
+            {songSearchSuggestions.length > 0 && (
+              <ul className="song-suggestions-dropdown">
+                {songSearchSuggestions.map((s) => (
+                  <li
+                    key={s.ytId}
+                    className="song-suggestion-item"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => selectSuggestion?.(s)}
+                  >
+                    {s.thumbnail && <img src={s.thumbnail} className="suggestion-thumb" alt="" />}
+                    <span className="suggestion-title">{s.title}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <button className="btn-header-add" onClick={onAddSong} disabled={!songUrl?.trim() || !hasRoom}>+</button>
+        </div>
+      )}
 
       <div className="header-actions">
-        {showOwnerUI && (
-          <button className="header-utility-link" onClick={onOpenCookieSettings}>
-            {t('cookies')}
-          </button>
-        )}
-
         {showOwnerUI && (
           <button className="lang-toggle" onClick={toggleLang}>{t('langToggle')}</button>
         )}
@@ -106,13 +147,13 @@ export function RoomHeader({
                 </span>
               )}
             </button>
-            <button className="header-google-logout" onClick={signOutUser}>{t('signOut')}</button>
             {profileOpen && (
               <Suspense fallback={null}>
                 <LazyUserProfileModal
                   user={user}
                   onClose={() => setProfileOpen(false)}
                   onUpdateDisplayName={updateDisplayName}
+                  onSignOut={signOutUser}
                   onCreateRoomFromYt={onCreateRoomFromYt}
                   onAddYtToRoom={onAddYtToRoom}
                   currentRoomId={currentRoomId}
@@ -124,7 +165,7 @@ export function RoomHeader({
         ) : null}
 
         {showOwnerUI ? (
-          <a className="btn-share" href="https://buycoffee.to/szafifi" target="_blank" rel="noreferrer">{t('buyCoffee')}</a>
+          <a className="btn-share" href="https://buycoffee.to/szafifi" target="_blank" rel="noreferrer" title={t('buyCoffee')}>☕</a>
         ) : (
           <button className="btn-header-share" onClick={onShareGuestLink} title={t('shareLink')}>
             {guestCopied ? 'OK' : (
