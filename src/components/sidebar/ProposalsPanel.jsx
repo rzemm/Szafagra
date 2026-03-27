@@ -137,6 +137,7 @@ export function ProposalsPanel({ model, yt }) {
             }}
             currentRoomId={room?.id ?? null}
             ownedRooms={ownedRooms ?? []}
+            existingYtIds={existingYtIds}
           />
         </Suspense>
       )}

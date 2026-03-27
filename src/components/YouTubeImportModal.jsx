@@ -3,7 +3,7 @@ import { useLanguage } from '../context/useLanguage'
 import { fetchUserYtPlaylists, fetchYtPlaylistPage, fetchLikedVideosPage, YT_LIKED_PLAYLIST_ID } from '../lib/youtube'
 import { ScrollText } from './ScrollText'
 
-export function YouTubeImportModal({ accessToken, onClose, onCreateRoom, onAddToRoom, onPickSong, onImportAllSongs, currentRoomId, ownedRooms = [] }) {
+export function YouTubeImportModal({ accessToken, onClose, onCreateRoom, onAddToRoom, onPickSong, onImportAllSongs, currentRoomId, ownedRooms = [], existingYtIds = new Set() }) {
   const { t } = useLanguage()
   const [playlists, setPlaylists] = useState(null)
   const [loadingPlaylists, setLoadingPlaylists] = useState(true)
@@ -17,6 +17,7 @@ export function YouTubeImportModal({ accessToken, onClose, onCreateRoom, onAddTo
   const [busy, setBusy] = useState(false)
   const [importProgress, setImportProgress] = useState(null)
   const [selectedSongIds, setSelectedSongIds] = useState(new Set())
+  const [likedTotalCount, setLikedTotalCount] = useState(null)
 
   const currentRoom = ownedRooms.find((r) => r.id === currentRoomId) ?? null
   const isLikedView = selected?.id === YT_LIKED_PLAYLIST_ID
@@ -34,13 +35,15 @@ export function YouTubeImportModal({ accessToken, onClose, onCreateRoom, onAddTo
     setSongsError(null)
     setLoadingSongs(true)
     setSelectedSongIds(new Set())
+    setLikedTotalCount(null)
     const isLiked = playlist.id === YT_LIKED_PLAYLIST_ID
     try {
-      const { items, nextPageToken: next } = isLiked
+      const { items, nextPageToken: next, totalResults } = isLiked
         ? await fetchLikedVideosPage(accessToken)
         : await fetchYtPlaylistPage(playlist.id, accessToken)
       setSongs(items)
       setNextPageToken(next)
+      if (isLiked && totalResults != null) setLikedTotalCount(totalResults)
     } catch (err) {
       setSongsError(err.message)
     } finally {
@@ -132,8 +135,9 @@ export function YouTubeImportModal({ accessToken, onClose, onCreateRoom, onAddTo
     setSelectedSongIds(new Set())
   }
 
+  const likedCountLabel = likedTotalCount != null ? ` (${likedTotalCount})` : songs != null ? ` (${songs.length}${nextPageToken ? '+' : ''})` : ''
   const headerTitle = isLikedView
-    ? `${t('ytImportFromLiked')}${songs != null ? ` (${songs.length}${nextPageToken ? '+' : ''})` : ''}`
+    ? `${t('ytImportFromLiked')}${likedCountLabel}`
     : t('ytImportTitle')
 
   const regularPlaylists = playlists ? playlists.filter((pl) => pl.id !== YT_LIKED_PLAYLIST_ID) : []
@@ -216,8 +220,8 @@ export function YouTubeImportModal({ accessToken, onClose, onCreateRoom, onAddTo
                       isLikedView ? (
                         <button
                           key={song.ytId}
-                          className={`song-item song-item-clickable${selectedSongIds.has(song.ytId) ? ' song-item--selected' : ''}`}
-                          onClick={() => toggleSongSelection(song.ytId)}
+                          className={`song-item song-item-clickable${selectedSongIds.has(song.ytId) ? ' song-item--selected' : ''}${existingYtIds.has(song.ytId) ? ' song-item--exists' : ''}`}
+                          onClick={() => !existingYtIds.has(song.ytId) && toggleSongSelection(song.ytId)}
                           disabled={busy}
                         >
                           <img src={`https://img.youtube.com/vi/${song.ytId}/default.jpg`} alt="" className="song-thumb" />

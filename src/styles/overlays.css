@@ -1055,6 +1055,11 @@
   color: #16a34a;
 }
 
+.ytimport-songs-list button.song-item--exists {
+  opacity: 0.38;
+  cursor: default;
+}
+
 .ytimport-songs-list button.song-item {
   width: 100%;
   padding: 0;

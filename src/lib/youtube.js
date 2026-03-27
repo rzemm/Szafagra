@@ -49,7 +49,7 @@ export async function fetchLikedVideosPage(accessToken, pageToken = null) {
   const items = (data.items ?? [])
     .filter((item) => item.id && item.snippet?.title)
     .map((item) => ({ ytId: item.id, title: item.snippet.title, url: `https://youtu.be/${item.id}` }))
-  return { items, nextPageToken: data.nextPageToken ?? null }
+  return { items, nextPageToken: data.nextPageToken ?? null, totalResults: data.pageInfo?.totalResults ?? null }
 }
 
 export async function fetchYtPlaylistPage(playlistId, accessToken = null, pageToken = null) {
