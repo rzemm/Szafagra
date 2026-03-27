@@ -416,6 +416,9 @@ export const en = {
   ytImportAddToOther: 'Add to another room...',
   ytImportAll: 'Import all',
   ytImportingProgress: (done, total) => `Importing ${done}/${total}...`,
+  ytImportFromLiked: 'Import from liked',
+  ytImportSelected: (n) => `Import selected (${n})`,
+  ytImportPlaylists: 'Playlists',
 
   // UsernamePicker
   usernamePickerTitle: 'Choose your username',

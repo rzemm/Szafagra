@@ -416,6 +416,9 @@ export const pl = {
   ytImportAddToOther: 'Dodaj do innej szafy...',
   ytImportAll: 'Zaimportuj wszystko',
   ytImportingProgress: (done, total) => `Importowanie ${done}/${total}...`,
+  ytImportFromLiked: 'Importuj z ulubionych',
+  ytImportSelected: (n) => `Importuj wybrane (${n})`,
+  ytImportPlaylists: 'Playlisty',
 
   // UsernamePicker
   usernamePickerTitle: 'Wybierz swój pseudonim',
