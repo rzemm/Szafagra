@@ -1,6 +1,5 @@
 import { useCallback } from 'react'
 import { attachSongIds, createAddedBySuggestion, createSong } from '../domain/song'
-import { seedSampleRooms } from '../dev/seedRooms'
 import { genId } from '../lib/jukebox'
 import {
   addSongToList,
@@ -147,10 +146,10 @@ export function useRoomLifecycleCommands({
     if (roomValue) route.navigateToRoom(roomValue)
   }, [route])
 
-  const handleSeedRooms = useCallback(async () => {
+  const _handleSeedRooms = useCallback(async () => {
     if (!window.confirm('Utworzyć 5 przykładowych list w bazie danych?')) return
     try {
-      await seedSampleRooms()
+      alert('Seed flow removed.')
       alert('Gotowe! Odśwież stronę, aby zobaczyć listy.')
     } catch (error) {
       alert(`Błąd: ${error.message}`)
@@ -178,7 +177,6 @@ export function useRoomLifecycleCommands({
     handleCopyRoom,
     handleAppendToRoom,
     handleJoinRoom,
-    handleSeedRooms,
   }
 }
 

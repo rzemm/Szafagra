@@ -1,5 +1,10 @@
-import { useEffect, useState } from 'react'
-import { subscribeLatestRooms, subscribeOwnedRooms, subscribeOpenParties, subscribePublicRooms, subscribeRoomsByIds, subscribeUserRoomsDoc } from '../services/jukeboxService'
+import { useEffect, useMemo, useState } from 'react'
+import {
+  subscribeOpenParties,
+  subscribeOwnedRooms,
+  subscribeRoomsByIds,
+  subscribeUserRoomsDoc,
+} from '../services/jukeboxService'
 
 export function useOwnedRooms(uid, enabled) {
   const [rooms, setRooms] = useState([])
@@ -21,7 +26,7 @@ export function useUpcomingOpenParties(enabled) {
       const now = new Date().toISOString()
       setParties(
         rooms
-          .filter((r) => r.settings?.partyDate && r.settings.partyDate > now)
+          .filter((room) => room.settings?.partyDate && room.settings.partyDate > now)
           .sort((a, b) => a.settings.partyDate.localeCompare(b.settings.partyDate))
       )
     })
@@ -30,52 +35,12 @@ export function useUpcomingOpenParties(enabled) {
   return enabled ? parties : []
 }
 
-export function useTopRatedRooms(enabled) {
-  const [rooms, setRooms] = useState([])
-
-  useEffect(() => {
-    if (!enabled) return
-    return subscribePublicRooms((allRooms) => {
-      setRooms(
-        allRooms
-          .filter((r) => r.settings?.isVisible !== false && (r.songs?.length ?? 0) > 0)
-          .map((r) => {
-            const vals = Object.values(r.ratings ?? {})
-            const avg = vals.length > 0 ? vals.reduce((s, v) => s + v, 0) / vals.length : 0
-            return { ...r, _avgRating: avg, _ratingCount: vals.length }
-          })
-          .filter((r) => r._ratingCount > 0)
-          .sort((a, b) => b._avgRating - a._avgRating)
-          .slice(0, 5)
-      )
-    })
-  }, [enabled])
-
-  return enabled ? rooms : []
-}
-
-export function useLatestForeignRooms(uid, enabled) {
-  const [rooms, setRooms] = useState([])
-
-  useEffect(() => {
-    if (!enabled || !uid) return
-    return subscribeLatestRooms((latestRooms) => {
-      setRooms(
-        latestRooms
-          .filter((room) => room.ownerId !== uid)
-          .filter((room) => (room.songs?.length ?? 0) > 0)
-          .filter((room) => room.settings?.isVisible !== false)
-          .slice(0, 5)
-      )
-    })
-  }, [enabled, uid])
-
-  return enabled && uid ? rooms : []
-}
-
 export function useGuestVisitedRooms(uid, enabled) {
   const [guestOf, setGuestOf] = useState({})
   const [rooms, setRooms] = useState([])
+  const entries = useMemo(() => Object.entries(guestOf)
+    .sort((a, b) => (b[1].lastVisited?.toMillis?.() ?? 0) - (a[1].lastVisited?.toMillis?.() ?? 0))
+    .slice(0, 8), [guestOf])
 
   useEffect(() => {
     if (!enabled || !uid) return
@@ -85,25 +50,18 @@ export function useGuestVisitedRooms(uid, enabled) {
   }, [enabled, uid])
 
   useEffect(() => {
-    if (!enabled || !uid) return
-    const entries = Object.entries(guestOf)
-      .sort((a, b) => (b[1].lastVisited?.toMillis?.() ?? 0) - (a[1].lastVisited?.toMillis?.() ?? 0))
-      .slice(0, 8)
-
-    if (entries.length === 0) {
-      setRooms([])
-      return
-    }
+    if (!enabled || !uid || entries.length === 0) return
 
     const roomIds = entries.map(([id]) => id)
     return subscribeRoomsByIds(roomIds, (fetchedRooms) => {
-      const sorted = roomIds
-        .map((id) => fetchedRooms.find((r) => r.id === id))
+      const sortedRooms = roomIds
+        .map((id) => fetchedRooms.find((room) => room.id === id))
         .filter(Boolean)
-        .filter((r) => r.ownerId !== uid)
-      setRooms(sorted)
+        .filter((room) => room.ownerId !== uid)
+      setRooms(sortedRooms)
     })
-  }, [enabled, uid, guestOf])
+  }, [enabled, uid, entries])
 
-  return enabled && uid ? rooms : []
+  if (!enabled || !uid) return []
+  return entries.length === 0 ? [] : rooms
 }

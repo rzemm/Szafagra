@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { genId } from '../lib/jukebox'
 import { useJukeboxPlayback } from './useJukeboxPlayback'
-import { useGuestVisitedRooms, useOwnedRooms, useUpcomingOpenParties, useTopRatedRooms } from './useRoomListings'
+import { useGuestVisitedRooms, useOwnedRooms, useUpcomingOpenParties } from './useRoomListings'
 import { usePlaylistActions } from './usePlaylistActions'
 import { useRoomAuth } from './useRoomAuth'
 import { useRoomCommands } from './useRoomCommands'
@@ -50,7 +50,6 @@ export function useRoomScreen(route) {
   const onHomepage = !route.hasRoomParam
   const ownedRooms = useOwnedRooms(auth.user?.uid, isLoggedIn)
   const upcomingOpenParties = useUpcomingOpenParties(onHomepage)
-  const topRatedRooms = useTopRatedRooms(onHomepage)
   const guestVisitedRooms = useGuestVisitedRooms(auth.user?.uid, isLoggedIn && onHomepage)
 
   const executeAction = useCallback(async (action, errorMessage) => {
@@ -146,7 +145,6 @@ export function useRoomScreen(route) {
       auth,
       ownedRooms,
       upcomingOpenParties,
-      topRatedRooms,
       guestVisitedRooms,
       commands,
       ui,
@@ -158,7 +156,6 @@ export function useRoomScreen(route) {
       uiError: ui.uiState.uiError,
       header: buildRoomHeaderModel({
         auth,
-        ownedRooms,
         room,
         showOwnerUI,
         leftPanel: ui.leftPanel,
@@ -166,7 +163,6 @@ export function useRoomScreen(route) {
         shareLinks,
         copied: ui.uiState.copied,
         suggestions,
-        commands,
         ui,
         songActions,
       }),

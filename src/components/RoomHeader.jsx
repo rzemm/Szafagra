@@ -1,5 +1,4 @@
 import { lazy, Suspense, useState } from 'react'
-import { HelpModal } from './HelpPage'
 import { useLanguage } from '../context/useLanguage'
 import logoUrl from '../assets/logo.png'
 
@@ -25,12 +24,7 @@ export function RoomHeader({
   guestCopied,
   proposalsCount = 0,
   nominationsCount = 0,
-  onOpenCookieSettings,
   updateDisplayName,
-  onCreateRoomFromYt,
-  onAddYtToRoom,
-  currentRoomId,
-  ownedRooms,
   songUrl = '',
   onSongUrlChange,
   onSongUrlBlur,
@@ -45,7 +39,6 @@ export function RoomHeader({
 }) {
   const { t, toggleLang } = useLanguage()
   const [profileOpen, setProfileOpen] = useState(false)
-  const [helpOpen, setHelpOpen] = useState(false)
 
   return (
     <header className={`header${!showOwnerUI ? ' header--guest' : ''}`}>
@@ -154,10 +147,6 @@ export function RoomHeader({
                   onClose={() => setProfileOpen(false)}
                   onUpdateDisplayName={updateDisplayName}
                   onSignOut={signOutUser}
-                  onCreateRoomFromYt={onCreateRoomFromYt}
-                  onAddYtToRoom={onAddYtToRoom}
-                  currentRoomId={currentRoomId}
-                  ownedRooms={ownedRooms}
                 />
               </Suspense>
             )}
@@ -176,7 +165,6 @@ export function RoomHeader({
           </button>
         )}
       </div>
-      {helpOpen && <HelpModal onClose={() => setHelpOpen(false)} />}
     </header>
   )
 }

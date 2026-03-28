@@ -21,8 +21,6 @@ export function HomeCreateRoomModals({ isOpen, creatingRoom, t, onClose, onCreat
   const [eventDescription, setEventDescription] = useState('')
   const [eventOpenParty, setEventOpenParty] = useState(false)
 
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
   const combinedDateTime = eventDate
     ? (eventTime ? `${eventDate}T${eventTime}` : `${eventDate}T00:00`)
     : ''
@@ -67,15 +65,14 @@ export function HomeCreateRoomModals({ isOpen, creatingRoom, t, onClose, onCreat
     return settings
   }
 
-  const handleSubmit = (withEvent) => {
-    setIsSubmitting(true)
-    onCreateParty({ name: partyName, extraSettings: buildExtraSettings(withEvent) })
+  const handleSubmit = async (withEvent) => {
+    await onCreateParty({ name: partyName, extraSettings: buildExtraSettings(withEvent) })
   }
 
   if (!isOpen) return null
 
   // Loading overlay
-  if (isSubmitting) {
+  if (creatingRoom) {
     return (
       <div className="create-room-overlay">
         <div className="party-config-modal" style={{ alignItems: 'center', padding: '2rem 1.5rem', gap: '0.75rem' }}>
@@ -333,14 +330,14 @@ export function HomeCreateRoomModals({ isOpen, creatingRoom, t, onClose, onCreat
           <button className="party-config-btn party-config-btn--back" onClick={() => setStep(2)}>
             {t('partyConfigBack')}
           </button>
-          <button className="party-config-btn party-config-btn--back" onClick={() => handleSubmit(false)}>
-            {t('eventModalSkip')}
-          </button>
-          <button
-            className="party-config-btn party-config-btn--create"
-            onClick={() => handleSubmit(true)}
-            disabled={!eventDate}
-          >
+            <button className="party-config-btn party-config-btn--back" onClick={() => void handleSubmit(false)}>
+              {t('eventModalSkip')}
+            </button>
+            <button
+              className="party-config-btn party-config-btn--create"
+              onClick={() => void handleSubmit(true)}
+              disabled={!eventDate}
+            >
             {t('eventModalOk')}
           </button>
         </div>

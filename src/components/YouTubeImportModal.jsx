@@ -1,145 +1,38 @@
-import { useEffect, useState } from 'react'
-import { useLanguage } from '../context/useLanguage'
-import { fetchUserYtPlaylists, fetchYtPlaylistPage, fetchLikedVideosPage, YT_LIKED_PLAYLIST_ID } from '../lib/youtube'
 import { ScrollText } from './ScrollText'
+import { useLanguage } from '../context/useLanguage'
+import { useYouTubePlaylistImport } from '../hooks/useYouTubePlaylistImport'
 
-export function YouTubeImportModal({ accessToken, onClose, onCreateRoom, onAddToRoom, onPickSong, onImportAllSongs, currentRoomId, ownedRooms = [], existingYtIds = new Set() }) {
+export function YouTubeImportModal({ accessToken, onClose, onImportAllSongs, existingYtIds = new Set() }) {
   const { t } = useLanguage()
-  const [playlists, setPlaylists] = useState(null)
-  const [loadingPlaylists, setLoadingPlaylists] = useState(true)
-  const [playlistsError, setPlaylistsError] = useState(null)
-  const [selected, setSelected] = useState(null)
-  const [songs, setSongs] = useState(null)
-  const [nextPageToken, setNextPageToken] = useState(null)
-  const [loadingSongs, setLoadingSongs] = useState(false)
-  const [loadingMore, setLoadingMore] = useState(false)
-  const [songsError, setSongsError] = useState(null)
-  const [busy, setBusy] = useState(false)
-  const [selectedSongIds, setSelectedSongIds] = useState(new Set())
-  const [likedTotalCount, setLikedTotalCount] = useState(null)
-  const [importingPlaylistId, setImportingPlaylistId] = useState(null)
-
-  const currentRoom = ownedRooms.find((r) => r.id === currentRoomId) ?? null
-  const isLikedView = selected?.id === YT_LIKED_PLAYLIST_ID
-
-  useEffect(() => {
-    fetchUserYtPlaylists(accessToken)
-      .then((data) => { setPlaylists(data); setLoadingPlaylists(false) })
-      .catch((err) => { setPlaylistsError(err.message); setLoadingPlaylists(false) })
-  }, [accessToken])
-
-  const handleSelect = async (playlist) => {
-    setSelected(playlist)
-    setSongs(null)
-    setNextPageToken(null)
-    setSongsError(null)
-    setLoadingSongs(true)
-    setSelectedSongIds(new Set())
-    setLikedTotalCount(null)
-    const isLiked = playlist.id === YT_LIKED_PLAYLIST_ID
-    try {
-      const { items, nextPageToken: next, totalResults } = isLiked
-        ? await fetchLikedVideosPage(accessToken)
-        : await fetchYtPlaylistPage(playlist.id, accessToken)
-      setSongs(items)
-      setNextPageToken(next)
-      if (isLiked && totalResults != null) setLikedTotalCount(totalResults)
-    } catch (err) {
-      setSongsError(err.message)
-    } finally {
-      setLoadingSongs(false)
-    }
-  }
-
-  const handleLoadMore = async () => {
-    if (!nextPageToken || !selected || loadingMore) return
-    setLoadingMore(true)
-    const isLiked = selected.id === YT_LIKED_PLAYLIST_ID
-    try {
-      const { items, nextPageToken: next } = isLiked
-        ? await fetchLikedVideosPage(accessToken, nextPageToken)
-        : await fetchYtPlaylistPage(selected.id, accessToken, nextPageToken)
-      setSongs((prev) => [...(prev ?? []), ...items])
-      setNextPageToken(next)
-    } catch {
-      // silently ignore
-    } finally {
-      setLoadingMore(false)
-    }
-  }
-
-  const toggleSongSelection = (ytId) => {
-    setSelectedSongIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(ytId)) next.delete(ytId)
-      else next.add(ytId)
-      return next
-    })
-  }
-
-  const handleImportSelected = async () => {
-    if (busy || selectedSongIds.size === 0 || !songs || !onImportAllSongs) return
-    setBusy(true)
-    const toImport = songs.filter((s) => selectedSongIds.has(s.ytId))
-    await onImportAllSongs(toImport)
-    setBusy(false)
-    setSelectedSongIds(new Set())
-    onClose()
-  }
-
-  const handleImportAll = async () => {
-    if (busy || !selected || !onImportAllSongs) return
-    setBusy(true)
-    const isLiked = selected.id === YT_LIKED_PLAYLIST_ID
-    let allSongs = [...(songs ?? [])]
-    let token = nextPageToken
-    while (token) {
-      try {
-        const { items, nextPageToken: next } = isLiked
-          ? await fetchLikedVideosPage(accessToken, token)
-          : await fetchYtPlaylistPage(selected.id, accessToken, token)
-        allSongs = [...allSongs, ...items]
-        token = next
-      } catch {
-        break
-      }
-    }
-    await onImportAllSongs(allSongs)
-    setBusy(false)
-    onClose()
-  }
-
-  const handleImportAllDirect = async (playlist, e) => {
-    e.stopPropagation()
-    if (importingPlaylistId || !onImportAllSongs) return
-    setImportingPlaylistId(playlist.id)
-    const isLiked = playlist.id === YT_LIKED_PLAYLIST_ID
-    let allSongs = []
-    let token = null
-    try {
-      do {
-        const { items, nextPageToken: next } = isLiked
-          ? await fetchLikedVideosPage(accessToken, token)
-          : await fetchYtPlaylistPage(playlist.id, accessToken, token)
-        allSongs = [...allSongs, ...items]
-        token = next
-      } while (token)
-      await onImportAllSongs(allSongs)
-      onClose()
-    } catch {
-      // silently ignore
-    } finally {
-      setImportingPlaylistId(null)
-    }
-  }
-
-  const handleBack = () => {
-    setSelected(null)
-    setSongs(null)
-    setNextPageToken(null)
-    setSongsError(null)
-    setSelectedSongIds(new Set())
-  }
+  const {
+    busy,
+    handleBack,
+    handleImportAll,
+    handleImportAllDirect,
+    handleImportSelected,
+    handleLoadMore,
+    handleSelect,
+    importingPlaylistId,
+    isLikedView,
+    likedPlaylist,
+    likedTotalCount,
+    loadingMore,
+    loadingPlaylists,
+    loadingSongs,
+    nextPageToken,
+    playlists,
+    playlistsError,
+    regularPlaylists,
+    selected,
+    selectedSongIds,
+    songs,
+    songsError,
+    toggleSongSelection,
+  } = useYouTubePlaylistImport({
+    accessToken,
+    onClose,
+    onImportAllSongs,
+  })
 
   const countLabel = isLikedView
     ? likedTotalCount != null ? ` (${likedTotalCount})` : songs != null ? ` (${songs.length}${nextPageToken ? '+' : ''})` : ''
@@ -151,9 +44,6 @@ export function YouTubeImportModal({ accessToken, onClose, onCreateRoom, onAddTo
       : `${selected.title}${countLabel}`
     : t('ytImportTitle')
 
-  const regularPlaylists = playlists ? playlists.filter((pl) => pl.id !== YT_LIKED_PLAYLIST_ID) : []
-  const likedPlaylist = playlists ? playlists.find((pl) => pl.id === YT_LIKED_PLAYLIST_ID) : null
-
   return (
     <div className="ytimport-overlay" role="presentation" onClick={onClose}>
       <div
@@ -161,11 +51,11 @@ export function YouTubeImportModal({ accessToken, onClose, onCreateRoom, onAddTo
         role="dialog"
         aria-modal="true"
         aria-label={headerTitle}
-        onClick={(e) => e.stopPropagation()}
+        onClick={(event) => event.stopPropagation()}
       >
         <div className="ytimport-header">
           <span className="ytimport-title">{headerTitle}</span>
-          <button className="ytimport-close" onClick={onClose} aria-label={t('closeModal')}>✕</button>
+          <button className="ytimport-close" onClick={onClose} aria-label={t('closeModal')}>&#x2715;</button>
         </div>
 
         <div className="ytimport-body">
@@ -173,7 +63,7 @@ export function YouTubeImportModal({ accessToken, onClose, onCreateRoom, onAddTo
             <div className="ytimport-detail">
               <div className="ytimport-detail-nav">
                 <button className="ytimport-back" onClick={handleBack}>
-                  ← {t('ytImportBack')}
+                  {'\u2190'} {t('ytImportBack')}
                 </button>
                 {selectedSongIds.size > 0 && (
                   <button
@@ -247,7 +137,7 @@ export function YouTubeImportModal({ accessToken, onClose, onCreateRoom, onAddTo
                       onClick={() => handleSelect(likedPlaylist)}
                       role="button"
                       tabIndex={0}
-                      onKeyDown={(e) => e.key === 'Enter' && handleSelect(likedPlaylist)}
+                      onKeyDown={(event) => event.key === 'Enter' && handleSelect(likedPlaylist)}
                     >
                       {likedPlaylist.thumbnail ? (
                         <img src={likedPlaylist.thumbnail} alt="" className="ytimport-thumb" />
@@ -267,33 +157,33 @@ export function YouTubeImportModal({ accessToken, onClose, onCreateRoom, onAddTo
                       {t('ytImportPlaylists')}
                     </li>
                   )}
-                  {regularPlaylists.map((pl) => (
+                  {regularPlaylists.map((playlist) => (
                     <li
-                      key={pl.id}
+                      key={playlist.id}
                       className="ytimport-item"
-                      onClick={() => handleSelect(pl)}
+                      onClick={() => handleSelect(playlist)}
                       role="button"
                       tabIndex={0}
-                      onKeyDown={(e) => e.key === 'Enter' && handleSelect(pl)}
+                      onKeyDown={(event) => event.key === 'Enter' && handleSelect(playlist)}
                     >
-                      {pl.thumbnail ? (
-                        <img src={pl.thumbnail} alt="" className="ytimport-thumb" />
+                      {playlist.thumbnail ? (
+                        <img src={playlist.thumbnail} alt="" className="ytimport-thumb" />
                       ) : (
                         <div className="ytimport-thumb ytimport-thumb--empty" />
                       )}
                       <div className="ytimport-item-info">
-                        <div className="ytimport-item-title">{pl.title}</div>
+                        <div className="ytimport-item-title">{playlist.title}</div>
                         <div className="ytimport-item-count">
-                          {pl.itemCount != null ? `${pl.itemCount} ${t('ytImportVideos')}` : ''}
+                          {playlist.itemCount != null ? `${playlist.itemCount} ${t('ytImportVideos')}` : ''}
                         </div>
                       </div>
                       {onImportAllSongs && (
                         <button
                           className="ytimport-item-import-btn"
-                          onClick={(e) => handleImportAllDirect(pl, e)}
+                          onClick={(event) => handleImportAllDirect(playlist, event)}
                           disabled={!!importingPlaylistId}
                         >
-                          {importingPlaylistId === pl.id ? '...' : t('ytImportAllList')}
+                          {importingPlaylistId === playlist.id ? '...' : t('ytImportAllList')}
                         </button>
                       )}
                     </li>

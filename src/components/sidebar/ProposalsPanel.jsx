@@ -30,7 +30,6 @@ export function ProposalsPanel({ model, yt }) {
     canEditRoom,
     onCreateRoomFromYt,
     onAddYtToRoom,
-    ownedRooms,
     newSongUrl,
     handleSongUrlChange,
     handleUrlBlur,
@@ -121,19 +120,6 @@ export function ProposalsPanel({ model, yt }) {
           <LazyYouTubeImportModal
             accessToken={yt.accessToken}
             onClose={() => setShowYtImport(false)}
-            onCreateRoom={async (name, songs) => {
-              await onCreateRoomFromYt(name, songs)
-              yt.disconnect()
-              setShowYtImport(false)
-            }}
-            onAddToRoom={async (roomId, songs) => {
-              await onAddYtToRoom(roomId, songs)
-              setShowYtImport(false)
-            }}
-            onPickSong={async (song) => {
-              await onAddYtToRoom(room?.id, [song])
-              setShowYtImport(false)
-            }}
             onImportAllSongs={async (songs) => {
               if (room?.id) {
                 await onAddYtToRoom(room.id, songs)
@@ -143,8 +129,6 @@ export function ProposalsPanel({ model, yt }) {
               }
               setShowYtImport(false)
             }}
-            currentRoomId={room?.id ?? null}
-            ownedRooms={ownedRooms ?? []}
             existingYtIds={existingYtIds}
           />
         </Suspense>
