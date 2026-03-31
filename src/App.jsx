@@ -116,27 +116,6 @@ export default function App() {
                   {t('shareRoomDesc')}
                 </p>
               </div>
-
-              <p style={{ margin: '0', fontSize: '0.85rem', color: 'var(--text-dim)', lineHeight: 1.55 }}>
-                {t('shareRoomImportHint')}
-              </p>
-
-              <div className="share-room-services">
-                <div className="share-room-service share-room-service--disabled">
-                  <button className="share-room-service-btn" disabled>
-                    <svg width="22" height="16" viewBox="0 0 28 20" fill="none" aria-hidden="true"><rect width="28" height="20" rx="4" fill="#FF0000"/><path d="M11.5 6l6 4-6 4V6z" fill="#fff"/></svg>
-                    {t('shareRoomConnectYt')}
-                  </button>
-                  <span className="share-room-soon">{t('comingSoon')}</span>
-                </div>
-                <div className="share-room-service share-room-service--disabled">
-                  <button className="share-room-service-btn" disabled>
-                    <svg width="18" height="18" viewBox="0 0 22 22" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="11" fill="#1DB954"/><path d="M15.5 14.5c-2.5-1.5-5.5-1.6-9-0.9-0.4 0.1-0.5-0.5-0.1-0.6 3.7-0.8 7-0.6 9.7 1 0.3 0.2 0.1 0.7-0.6 0.5zm1-2.5c-2.9-1.8-7.3-2.3-10.7-1.3-0.4 0.1-0.7-0.3-0.4-0.6 3.8-1.1 8.5-0.6 11.7 1.4 0.4 0.2 0.1 0.8-0.6 0.5zm0.1-2.6C13.2 7.5 8 7.4 5 8.3c-0.5 0.1-0.8-0.4-0.4-0.7 3.4-1 9-0.9 12.5 1.2 0.4 0.3 0.1 0.9-0.5 0.6z" fill="#fff"/></svg>
-                    {t('shareRoomConnectSpotify')}
-                  </button>
-                  <span className="share-room-soon">{t('shareRoomSpotifyWip')}</span>
-                </div>
-              </div>
             </div>
             <div className="party-config-footer">
               <button className="party-config-btn party-config-btn--back" onClick={handleClosePartyShare}>
