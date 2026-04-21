@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /c/Piu/Witryny/Szafagra -maxdepth 2 -not -path */node_modules/* -not -path */.git/* -not -path */dist/*)",
+      "Bash(grep -v \"^$\")"
+    ]
+  }
+}
