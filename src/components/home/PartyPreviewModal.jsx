@@ -1,21 +1,14 @@
 import { useState } from 'react'
+import { auth } from '../../firebase'
 import { toggleEventInterest } from '../../services/jukeboxService'
 
-function getVisitorId() {
-  let id = localStorage.getItem('szafagra_vid')
-  if (!id) {
-    id = Math.random().toString(36).slice(2, 10) + Date.now().toString(36)
-    localStorage.setItem('szafagra_vid', id)
-  }
-  return id
-}
-
 export function PartyPreviewModal({ party, lang, t, onClose }) {
-  const visitorId = getVisitorId()
+  // Firestore rules only allow toggling the entry under the caller's own uid.
+  const visitorId = auth.currentUser?.uid ?? null
   const [partySearch, setPartySearch] = useState('')
   const [partyShowThumbs, setPartyShowThumbs] = useState(false)
   const [shareCopied, setShareCopied] = useState(false)
-  const interested = !!(party.eventInterest?.[visitorId])
+  const interested = !!(visitorId && party.eventInterest?.[visitorId])
   const interestCount = Object.keys(party.eventInterest ?? {}).length
   const date = party.settings?.partyDate
   const location = party.settings?.partyLocation
@@ -131,7 +124,7 @@ export function PartyPreviewModal({ party, lang, t, onClose }) {
           )}
           <button
             className={`party-preview-interest-btn${interested ? ' active' : ''}`}
-            onClick={() => toggleEventInterest(party.id, visitorId, interested)}
+            onClick={() => visitorId && toggleEventInterest(party.id, visitorId, interested).catch(() => {})}
           >
             {interested ? t('notInterestedBtn') : t('interestedBtn')}
           </button>

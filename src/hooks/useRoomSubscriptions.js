@@ -9,17 +9,25 @@ export function useRoomSubscriptions(roomId) {
   useEffect(() => {
     if (!roomId) return
 
-    const unsubRoom = onSnapshot(doc(db, 'rooms', roomId), snap => {
-      setRoom(snap.exists() ? { id: snap.id, ...snap.data() } : null)
-    })
+    const unsubRoom = onSnapshot(
+      doc(db, 'rooms', roomId),
+      snap => {
+        setRoom(snap.exists() ? { id: snap.id, ...snap.data() } : null)
+      },
+      () => setRoom(null),
+    )
 
-    const unsubSuggestions = onSnapshot(collection(db, 'rooms', roomId, 'suggestions'), snap => {
-      setSuggestions(
-        snap.docs
-          .map(d => ({ id: d.id, ...d.data() }))
-          .sort((a, b) => (a.createdAt?.toMillis?.() ?? 0) - (b.createdAt?.toMillis?.() ?? 0))
-      )
-    })
+    const unsubSuggestions = onSnapshot(
+      collection(db, 'rooms', roomId, 'suggestions'),
+      snap => {
+        setSuggestions(
+          snap.docs
+            .map(d => ({ id: d.id, ...d.data() }))
+            .sort((a, b) => (a.createdAt?.toMillis?.() ?? 0) - (b.createdAt?.toMillis?.() ?? 0))
+        )
+      },
+      () => setSuggestions([]),
+    )
 
     return () => {
       unsubRoom()

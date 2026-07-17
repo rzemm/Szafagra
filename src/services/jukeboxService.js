@@ -5,12 +5,9 @@ import {
   deleteDoc,
   deleteField,
   doc,
-  documentId,
   getDoc,
   increment,
-  limit,
   onSnapshot,
-  orderBy,
   query,
   serverTimestamp,
   setDoc,
@@ -27,6 +24,7 @@ const suggestionRef = (roomId, id) => doc(db, 'rooms', roomId, 'suggestions', id
 const tokenRef = token => doc(db, 'tokenIndex', token)
 const userRoomsRef = uid => doc(db, 'userRooms', uid)
 const publicAccessRef = (uid, roomId) => doc(db, 'publicAccess', uid, 'rooms', roomId)
+const guestAccessRef = (uid, roomId) => doc(db, 'guestAccess', uid, 'rooms', roomId)
 const contactMessagesRef = collection(db, 'contactMessages')
 const usernameDoc = name => doc(db, 'usernames', name.trim().toLowerCase())
 const userProfileDoc = uid => doc(db, 'userProfiles', uid)
@@ -208,6 +206,18 @@ export function ensurePublicRoomAccess(uid, roomId) {
   }, { merge: true })
 }
 
+// Registers (or refreshes) the caller's guest access to a room. Firestore
+// rules verify that the provided token matches the room's current guestToken;
+// private rooms are readable only with such a record (or as the owner).
+export function ensureGuestRoomAccess(uid, roomId, guestToken) {
+  return setDoc(guestAccessRef(uid, roomId), {
+    roomId,
+    token: guestToken,
+    grantedAt: serverTimestamp(),
+    lastVisited: serverTimestamp(),
+  }, { merge: true })
+}
+
 export function recordGuestVisit(uid, roomId, guestToken) {
   return setDoc(userRoomsRef(uid), {
     guestOf: { [roomId]: { guestToken, lastVisited: serverTimestamp() } },
@@ -229,19 +239,6 @@ export function subscribeOwnedRooms(uid, callback) {
   })
 }
 
-export function subscribeLatestRooms(callback, count = 5) {
-  const latestRoomsQuery = query(
-    roomsRef,
-    orderBy('updatedAt', 'desc'),
-    limit(Math.max(count * 3, 10)),
-  )
-
-  return onSnapshot(latestRoomsQuery, snap => {
-    const rooms = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-    callback(rooms)
-  })
-}
-
 export function subscribeOpenParties(callback) {
   const q = query(roomsRef, where('settings.openParty', '==', true))
   return onSnapshot(q, snap => {
@@ -255,18 +252,29 @@ export function subscribeUserRoomsDoc(uid, callback) {
   })
 }
 
+// Per-document listeners instead of a documentId-in query: read rules for
+// private rooms depend on per-user access records, which a collection query
+// cannot prove. Rooms the caller can no longer read are silently dropped.
 export function subscribeRoomsByIds(roomIds, callback) {
-  const q = query(roomsRef, where(documentId(), 'in', roomIds))
-  return onSnapshot(q, (snap) => {
-    callback(snap.docs.map(d => ({ id: d.id, ...d.data() })))
-  })
-}
+  const roomsById = new Map()
+  const emit = () => {
+    callback(roomIds.map((id) => roomsById.get(id)).filter(Boolean))
+  }
 
-export function subscribePublicRooms(callback, count = 30) {
-  const q = query(roomsRef, where('type', '==', 'public'), limit(count))
-  return onSnapshot(q, snap => {
-    callback(snap.docs.map(d => ({ id: d.id, ...d.data() })))
-  })
+  const unsubs = roomIds.map((id) => onSnapshot(
+    roomRef(id),
+    (snap) => {
+      if (snap.exists()) roomsById.set(id, { id: snap.id, ...snap.data() })
+      else roomsById.delete(id)
+      emit()
+    },
+    () => {
+      roomsById.delete(id)
+      emit()
+    },
+  ))
+
+  return () => unsubs.forEach((unsub) => unsub())
 }
 
 export function saveRoomSetting(roomId, key, value) {

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { test } from 'vitest'
 import {
   buildAdvanceToOptionState,
   buildImmediatePlayState,
@@ -25,17 +26,7 @@ function withMockedRandom(value, fn) {
   }
 }
 
-function runTest(name, fn) {
-  try {
-    fn()
-    console.log(`PASS ${name}`)
-  } catch (error) {
-    console.error(`FAIL ${name}`)
-    throw error
-  }
-}
-
-runTest('moveToNextTrack prefers queue before voting options', () => {
+test('moveToNextTrack prefers queue before voting options', () => {
   const result = moveToNextTrack({
     state: {
       currentSong: song('current'),
@@ -50,7 +41,7 @@ runTest('moveToNextTrack prefers queue before voting options', () => {
   assert.deepEqual(result.nextOptions, { 0: [song('opt-a')] })
 })
 
-runTest('moveToNextTrack falls back to winning option when queue is empty', () => {
+test('moveToNextTrack falls back to winning option when queue is empty', () => {
   const result = withMockedRandom(0, () => moveToNextTrack({
     state: {
       queue: [],
@@ -72,7 +63,7 @@ runTest('moveToNextTrack falls back to winning option when queue is empty', () =
   assert.deepEqual(result.nextVotes, {})
 })
 
-runTest('finalizeAdvanceState appends winner songs and regenerates options', () => {
+test('finalizeAdvanceState appends winner songs and regenerates options', () => {
   const result = withMockedRandom(0, () => finalizeAdvanceState({
     state: {
       songs: [song('queued-next'), song('winner-1'), song('winner-2'), song('fresh-1'), song('fresh-2'), song('fresh-3')],
@@ -101,7 +92,7 @@ runTest('finalizeAdvanceState appends winner songs and regenerates options', () 
   assert.deepEqual(result.nextVotes, {})
 })
 
-runTest('buildImmediatePlayState resets votes and removes played song from options', () => {
+test('buildImmediatePlayState resets votes and removes played song from options', () => {
   const result = withMockedRandom(0, () => buildImmediatePlayState({
     songs: [song('play-now'), song('queue-1'), song('replacement')],
     queue: [song('queue-1')],
@@ -117,7 +108,7 @@ runTest('buildImmediatePlayState resets votes and removes played song from optio
   assert.equal(result.nextOptions[0][0].id, 'replacement')
 })
 
-runTest('buildQueuedState appends song to queue and refreshes options', () => {
+test('buildQueuedState appends song to queue and refreshes options', () => {
   const result = withMockedRandom(0, () => buildQueuedState({
     currentSong: song('current'),
     queue: [song('queue-1')],
@@ -132,7 +123,7 @@ runTest('buildQueuedState appends song to queue and refreshes options', () => {
   assert.equal(result.nextOptions[0][0].id, 'replacement')
 })
 
-runTest('buildOptionRemovalState removes votes for deleted option and refills it', () => {
+test('buildOptionRemovalState removes votes for deleted option and refills it', () => {
   const result = withMockedRandom(0, () => buildOptionRemovalState({
     currentSong: song('current'),
     queue: [song('queue-1')],
@@ -152,7 +143,7 @@ runTest('buildOptionRemovalState removes votes for deleted option and refills it
   assert.deepEqual(result.nextOptions['1'], [song('stay-1')])
 })
 
-runTest('buildAdvanceToOptionState skips blocked songs', () => {
+test('buildAdvanceToOptionState skips blocked songs', () => {
   const result = buildAdvanceToOptionState({
     nextOptions: {
       0: [song('skip-me'), song('play-me'), song('then-me')],
@@ -164,7 +155,7 @@ runTest('buildAdvanceToOptionState skips blocked songs', () => {
   assert.deepEqual(result.nextOptions, {})
 })
 
-runTest('resizeOptions trims options when new size is smaller', () => {
+test('resizeOptions trims options when new size is smaller', () => {
   const result = resizeOptions({
     0: [song('a'), song('b'), song('c')],
     1: [song('d'), song('e'), song('f')],
@@ -176,7 +167,7 @@ runTest('resizeOptions trims options when new size is smaller', () => {
   })
 })
 
-runTest('resizeOptions expands options with unused songs when new size is larger', () => {
+test('resizeOptions expands options with unused songs when new size is larger', () => {
   const result = withMockedRandom(0, () => resizeOptions({
     0: [song('a')],
     1: [song('b')],
@@ -189,7 +180,7 @@ runTest('resizeOptions expands options with unused songs when new size is larger
   assert.notEqual(result['0'][1].id, result['1'][1].id)
 })
 
-runTest('generateVotingOptions returns three groups and empty votes', () => {
+test('generateVotingOptions returns three groups and empty votes', () => {
   const result = withMockedRandom(0, () => generateVotingOptions({
     songs: [song('a'), song('b'), song('c'), song('d')],
   }, 1))
@@ -199,7 +190,7 @@ runTest('generateVotingOptions returns three groups and empty votes', () => {
   assert.equal(Object.values(result.nextOptions).flat().length, 3)
 })
 
-runTest('buildInitialPlaybackState picks first track and preloads queue', () => {
+test('buildInitialPlaybackState picks first track and preloads queue', () => {
   const result = withMockedRandom(0, () => buildInitialPlaybackState({
     songs: [song('a'), song('b'), song('c'), song('d')],
   }, 2))

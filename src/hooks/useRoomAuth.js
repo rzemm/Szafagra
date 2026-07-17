@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { signInAnonymously, signInWithPopup, signOut, updateProfile, GoogleAuthProvider, onAuthStateChanged } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import { auth, db } from '../firebase'
-import { ensurePublicRoomAccess, recordGuestVisit, hasSetUsername, claimUsername } from '../services/jukeboxService'
+import { ensureGuestRoomAccess, ensurePublicRoomAccess, recordGuestVisit, hasSetUsername, claimUsername } from '../services/jukeboxService'
 
 const googleProvider = new GoogleAuthProvider()
 
@@ -88,6 +88,13 @@ export function useRoomAuth(roomParam) {
         const tokenSnap = await getDoc(doc(db, 'tokenIndex', roomParam))
         const tokenExists = tokenSnap.exists()
         const resolvedRoomId = tokenExists ? tokenSnap.data().roomId : roomParam
+
+        if (tokenExists) {
+          // Arriving via a guest link proves knowledge of the token; register
+          // access before reading the room, otherwise rules deny the read.
+          await ensureGuestRoomAccess(currentUser.uid, resolvedRoomId, roomParam).catch(() => {})
+        }
+
         const roomSnap = await getDoc(doc(db, 'rooms', resolvedRoomId))
 
         if (!roomSnap.exists()) {
@@ -118,7 +125,9 @@ export function useRoomAuth(roomParam) {
         setIsGuestLink(tokenExists)
       } catch (err) {
         console.error('Room auth failed', err)
-        setRoomError('Nie udało się otworzyć szafy.')
+        setRoomError(err?.code === 'permission-denied'
+          ? 'Ta szafa nie istnieje albo link jest nieprawidłowy.'
+          : 'Nie udało się otworzyć szafy.')
         setRoomId(null)
         setRoomType(null)
         setIsOwner(false)

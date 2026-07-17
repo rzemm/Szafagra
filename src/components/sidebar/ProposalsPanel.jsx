@@ -3,6 +3,7 @@ import { useLanguage } from '../../context/useLanguage'
 import { ScrollText } from '../ScrollText'
 
 const LazyYouTubeImportModal = lazy(() => import('../YouTubeImportModal').then((module) => ({ default: module.YouTubeImportModal })))
+const LazySpotifyImportModal = lazy(() => import('../SpotifyImportModal').then((module) => ({ default: module.SpotifyImportModal })))
 
 const IconYouTube = () => (
   <svg width="28" height="20" viewBox="0 0 28 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -46,6 +47,7 @@ export function ProposalsPanel({ model, yt }) {
   } = model
   const { t } = useLanguage()
   const [showYtImport, setShowYtImport] = useState(false)
+  const [showSpotifyImport, setShowSpotifyImport] = useState(false)
 
   const existingYtIds = new Set((room?.songs ?? []).map((s) => s.ytId))
   const allNewSongs = suggestions ?? []
@@ -109,9 +111,11 @@ export function ProposalsPanel({ model, yt }) {
           </div>
         )}
 
-        <div className="setting-row setting-row--service-disabled">
+        <div className="setting-row setting-row--service-icon">
           <IconSpotify />
-          <span className="service-soon">{t('comingSoon')}</span>
+          <button className="btn-setting-action" style={{ flex: 1 }} onClick={() => setShowSpotifyImport(true)} disabled={!room}>
+            {t('spotifyImportOpen')}
+          </button>
         </div>
       </div>
 
@@ -130,6 +134,21 @@ export function ProposalsPanel({ model, yt }) {
               setShowYtImport(false)
             }}
             existingYtIds={existingYtIds}
+          />
+        </Suspense>
+      )}
+
+      {showSpotifyImport && (
+        <Suspense fallback={null}>
+          <LazySpotifyImportModal
+            onClose={() => setShowSpotifyImport(false)}
+            existingYtIds={existingYtIds}
+            onImportSongs={async (songs) => {
+              if (room?.id) {
+                await onAddYtToRoom(room.id, songs)
+              }
+              setShowSpotifyImport(false)
+            }}
           />
         </Suspense>
       )}

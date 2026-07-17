@@ -6,114 +6,47 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function roomDoc(roomId) {
-      return get(/databases/$(database)/documents/rooms/$(roomId));
-    }
-
     function roomData(roomId) {
-      return roomDoc(roomId).data;
+      return get(/databases/$(database)/documents/rooms/$(roomId)).data;
     }
 
     function roomExists(roomId) {
       return exists(/databases/$(database)/documents/rooms/$(roomId));
     }
 
-    function isPrivateRoom(roomId) {
-      return roomExists(roomId) && roomData(roomId).type == 'private';
-    }
-
     function isPublicRoom(roomId) {
       return roomExists(roomId) && roomData(roomId).type == 'public';
     }
 
-    function isRoomOwner(roomId) {
-      return signedIn() &&
-        isPrivateRoom(roomId) &&
-        roomData(roomId).ownerId == request.auth.uid;
-    }
-
     function hasPublicAccess(roomId) {
-      return signedIn() &&
-        exists(/databases/$(database)/documents/publicAccess/$(request.auth.uid)/rooms/$(roomId));
+      return exists(/databases/$(database)/documents/publicAccess/$(request.auth.uid)/rooms/$(roomId));
     }
 
-    function canManageRoom(roomId) {
-      return isRoomOwner(roomId) || (isPublicRoom(roomId) && hasPublicAccess(roomId));
+    // Guest access is granted by a per-user record created after proving
+    // knowledge of the room's current guest token. Changing the room token
+    // automatically revokes access records that hold the old token.
+    function guestAccessGrantsRoom(roomId, guestToken) {
+      return exists(/databases/$(database)/documents/guestAccess/$(request.auth.uid)/rooms/$(roomId)) &&
+        guestToken != '' &&
+        get(/databases/$(database)/documents/guestAccess/$(request.auth.uid)/rooms/$(roomId)).data.get('token', '') == guestToken;
     }
 
-    function stateChangedKeys() {
-      return request.resource.data.diff(resource.data).affectedKeys();
-    }
-
-    function onlyGuestWritableStateFieldsChanged() {
-      return stateChangedKeys().hasOnly(['nextVotes', 'skipVoters', 'votingProposals']);
-    }
-
-    function onlyOwnVotingProposalChanged() {
-      let before = resource.data.get('votingProposals', {});
-      let after = request.resource.data.get('votingProposals', {});
-      let diff = after.diff(before);
-      // Single-proposal mode: key equals userId
-      return (
-        diff.affectedKeys().hasOnly([request.auth.uid]) &&
-        after[request.auth.uid] is map &&
-        after[request.auth.uid].keys().hasOnly(['id', 'title', 'ytId']) &&
-        after[request.auth.uid].id is string &&
-        after[request.auth.uid].title is string &&
-        after[request.auth.uid].ytId is string
-      ) || (
-        // Unlimited mode: only adding exactly one entry, no removals or modifications
-        diff.removedKeys().size() == 0 &&
-        diff.changedKeys().size() == 0 &&
-        diff.addedKeys().size() == 1
+    function canManageRoomId(roomId) {
+      let room = roomData(roomId);
+      return signedIn() && (
+        (room.type == 'private' && room.ownerId == request.auth.uid) ||
+        (room.type == 'public' && hasPublicAccess(roomId))
       );
     }
 
-    function onlyOwnVoteChanged() {
-      return request.resource.data.nextVotes
-        .diff(resource.data.nextVotes)
-        .affectedKeys()
-        .hasOnly([request.auth.uid]) &&
-        (
-          !(request.auth.uid in request.resource.data.nextVotes) ||
-          request.resource.data.nextVotes[request.auth.uid] is string
-        );
-    }
-
-    function onlyOwnSkipVoteChanged() {
-      return request.resource.data.skipVoters
-        .diff(resource.data.skipVoters)
-        .affectedKeys()
-        .hasOnly([request.auth.uid]) &&
-        (
-          !(request.auth.uid in request.resource.data.skipVoters) ||
-          request.resource.data.skipVoters[request.auth.uid] == true
-        );
-    }
-
-    function onlyOwnRatingChanged() {
-      let keys = request.resource.data.diff(resource.data).affectedKeys();
-      return keys.hasOnly(['ratings', 'updatedAt']) &&
-        request.resource.data.ratings.diff(
-          resource.data.get('ratings', {})
-        ).affectedKeys().hasOnly([request.auth.uid]);
-    }
-
-    function guestCanUpdateState() {
-      return signedIn() &&
-        onlyGuestWritableStateFieldsChanged() &&
-        (
-          !stateChangedKeys().hasAny(['nextVotes']) ||
-          onlyOwnVoteChanged()
-        ) &&
-        (
-          !stateChangedKeys().hasAny(['skipVoters']) ||
-          onlyOwnSkipVoteChanged()
-        ) &&
-        (
-          !stateChangedKeys().hasAny(['votingProposals']) ||
-          onlyOwnVotingProposalChanged()
-        );
+    function canReadRoomId(roomId) {
+      let room = roomData(roomId);
+      return signedIn() && (
+        room.type == 'public' ||
+        room.ownerId == request.auth.uid ||
+        room.get('settings', {}).get('openParty', false) == true ||
+        guestAccessGrantsRoom(roomId, room.get('guestToken', ''))
+      );
     }
 
     function validContactSource() {
@@ -154,26 +87,66 @@ service cloud.firestore {
     }
 
     match /userRooms/{uid} {
-      allow read, write: if request.auth.uid == uid;
+      allow read, write: if signedIn() && request.auth.uid == uid;
     }
 
     match /publicAccess/{uid}/rooms/{roomId} {
-      allow read: if request.auth.uid == uid;
-      allow create, update: if request.auth.uid == uid &&
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow create, update: if signedIn() && request.auth.uid == uid &&
         isPublicRoom(roomId) &&
         request.resource.data.roomId == roomId;
-      allow delete: if request.auth.uid == uid;
+      allow delete: if signedIn() && request.auth.uid == uid;
+    }
+
+    match /guestAccess/{uid}/rooms/{roomId} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      // Creating or refreshing an access record requires proving knowledge
+      // of the room's current guest token.
+      allow create, update: if signedIn() && request.auth.uid == uid &&
+        request.resource.data.roomId == roomId &&
+        request.resource.data.get('token', '') != '' &&
+        request.resource.data.get('token', '') == roomData(roomId).get('guestToken', '');
+      allow delete: if signedIn() && request.auth.uid == uid;
     }
 
     match /tokenIndex/{token} {
-      allow read: if signedIn();
+      // Get-by-id only: you must already know the token. Listing would allow
+      // enumerating every room's join code.
+      allow get: if signedIn();
+      allow list: if false;
       allow create: if signedIn() &&
+        request.resource.data.roomId is string &&
         roomExists(request.resource.data.roomId) &&
         (
           roomData(request.resource.data.roomId).type == 'public' ||
           roomData(request.resource.data.roomId).ownerId == request.auth.uid
         );
-      allow update, delete: if false;
+      allow update: if false;
+      // Room managers can rotate codes; anyone may clean up tokens that
+      // point at rooms which no longer exist.
+      allow delete: if signedIn() && (
+        !roomExists(resource.data.roomId) ||
+        canManageRoomId(resource.data.roomId)
+      );
+    }
+
+    match /usernames/{name} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn() &&
+        request.resource.data.keys().hasOnly(['uid', 'username']) &&
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.username is string &&
+        name.size() >= 2 && name.size() <= 32;
+      allow update: if signedIn() &&
+        resource.data.uid == request.auth.uid &&
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.keys().hasOnly(['uid', 'username']);
+      allow delete: if false;
+    }
+
+    match /userProfiles/{uid} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
     }
 
     match /contactMessages/{messageId} {
@@ -182,8 +155,135 @@ service cloud.firestore {
     }
 
     match /rooms/{roomId} {
-      allow read: if signedIn();
+      function canManage() {
+        return signedIn() && (
+          (resource.data.type == 'private' && resource.data.ownerId == request.auth.uid) ||
+          (resource.data.type == 'public' && hasPublicAccess(roomId))
+        );
+      }
+
+      function canRead() {
+        return signedIn() && (
+          resource.data.type == 'public' ||
+          resource.data.ownerId == request.auth.uid ||
+          resource.data.get('settings', {}).get('openParty', false) == true ||
+          guestAccessGrantsRoom(roomId, resource.data.get('guestToken', ''))
+        );
+      }
+
+      function stateChangedKeys() {
+        return request.resource.data.diff(resource.data).affectedKeys();
+      }
+
+      function onlyOwnVoteChanged() {
+        return request.resource.data.get('nextVotes', {})
+          .diff(resource.data.get('nextVotes', {}))
+          .affectedKeys()
+          .hasOnly([request.auth.uid]) &&
+          (
+            !(request.auth.uid in request.resource.data.get('nextVotes', {})) ||
+            request.resource.data.nextVotes[request.auth.uid] is string
+          );
+      }
+
+      function onlyOwnSkipVoteChanged() {
+        return request.resource.data.get('skipVoters', {})
+          .diff(resource.data.get('skipVoters', {}))
+          .affectedKeys()
+          .hasOnly([request.auth.uid]) &&
+          (
+            !(request.auth.uid in request.resource.data.get('skipVoters', {})) ||
+            request.resource.data.skipVoters[request.auth.uid] == true
+          );
+      }
+
+      function onlyOwnEventInterestChanged() {
+        return request.resource.data.get('eventInterest', {})
+          .diff(resource.data.get('eventInterest', {}))
+          .affectedKeys()
+          .hasOnly([request.auth.uid]) &&
+          (
+            !(request.auth.uid in request.resource.data.get('eventInterest', {})) ||
+            request.resource.data.eventInterest[request.auth.uid] == true
+          );
+      }
+
+      function onlyOwnVotingProposalChanged() {
+        let before = resource.data.get('votingProposals', {});
+        let after = request.resource.data.get('votingProposals', {});
+        let diff = after.diff(before);
+        // Single-proposal mode: key equals userId
+        return (
+          diff.affectedKeys().hasOnly([request.auth.uid]) &&
+          after[request.auth.uid] is map &&
+          after[request.auth.uid].keys().hasOnly(['id', 'title', 'ytId', 'addedAt']) &&
+          after[request.auth.uid].id is string &&
+          after[request.auth.uid].title is string &&
+          after[request.auth.uid].ytId is string
+        ) || (
+          // Unlimited mode: only adding exactly one entry, no removals or modifications
+          diff.removedKeys().size() == 0 &&
+          diff.changedKeys().size() == 0 &&
+          diff.addedKeys().size() == 1
+        );
+      }
+
+      function guestCanUpdateState() {
+        return signedIn() &&
+          stateChangedKeys().hasOnly(['nextVotes', 'skipVoters', 'votingProposals', 'eventInterest']) &&
+          (
+            !stateChangedKeys().hasAny(['nextVotes']) ||
+            onlyOwnVoteChanged()
+          ) &&
+          (
+            !stateChangedKeys().hasAny(['skipVoters']) ||
+            onlyOwnSkipVoteChanged()
+          ) &&
+          (
+            !stateChangedKeys().hasAny(['votingProposals']) ||
+            onlyOwnVotingProposalChanged()
+          ) &&
+          (
+            !stateChangedKeys().hasAny(['eventInterest']) ||
+            onlyOwnEventInterestChanged()
+          );
+      }
+
+      function onlyOwnRatingChanged() {
+        return stateChangedKeys().hasOnly(['ratings', 'updatedAt']) &&
+          request.resource.data.ratings.diff(
+            resource.data.get('ratings', {})
+          ).affectedKeys().hasOnly([request.auth.uid]);
+      }
+
+      function onlyVoteCounterBumped() {
+        return stateChangedKeys().hasOnly(['totalVotes', 'updatedAt']) &&
+          request.resource.data.totalVotes is int &&
+          request.resource.data.totalVotes == resource.data.get('totalVotes', 0) + 1;
+      }
+
+      // Guests may append a single song when the room allows suggestions
+      // without owner approval.
+      function guestSongAppended() {
+        return signedIn() &&
+          stateChangedKeys().hasOnly(['songs']) &&
+          resource.data.get('settings', {}).get('allowSuggestions', false) == true &&
+          resource.data.get('settings', {}).get('requireSuggestionApproval', true) == false &&
+          request.resource.data.songs is list &&
+          request.resource.data.songs.hasAll(resource.data.get('songs', [])) &&
+          request.resource.data.songs.size() == resource.data.get('songs', []).size() + 1;
+      }
+
+      allow get: if canRead();
+      // Queries must be constrained so that one of these branches is provable
+      // from the query filters (owned rooms, public rooms, open parties).
+      allow list: if signedIn() && (
+        resource.data.type == 'public' ||
+        resource.data.ownerId == request.auth.uid ||
+        resource.data.settings.openParty == true
+      );
       allow create: if signedIn() &&
+        request.resource.data.guestToken is string &&
         (
           (
             request.resource.data.type == 'private' &&
@@ -194,13 +294,20 @@ service cloud.firestore {
             request.resource.data.ownerId == null
           )
         );
-      allow delete: if canManageRoom(roomId);
-      allow update: if canManageRoom(roomId) || guestCanUpdateState() || onlyOwnRatingChanged();
+      allow delete: if canManage();
+      allow update: if canManage() || (
+        canRead() && (
+          guestCanUpdateState() ||
+          onlyOwnRatingChanged() ||
+          onlyVoteCounterBumped() ||
+          guestSongAppended()
+        )
+      );
 
       match /suggestions/{suggestionId} {
-        allow read: if signedIn();
-        allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
-        allow delete: if canManageRoom(roomId);
+        allow read: if canReadRoomId(roomId);
+        allow create: if canReadRoomId(roomId) && request.resource.data.userId == request.auth.uid;
+        allow delete: if canManageRoomId(roomId);
       }
     }
   }
